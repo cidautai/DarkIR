@@ -1,0 +1,6 @@
+**/__pycache__/
+/wandb
+*.png
+*.PNG
+*.jpg
+
