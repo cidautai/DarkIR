@@ -25,8 +25,8 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 device = torch.device('cuda')
 batch_size_train = 4
 batch_size_test = 1
-PATH_MODEL = 'models/Network_base_Char_L2frequency_cosine_NBDN50k.pt'
-NEW_PATH_MODEL = 'models/Network_base_Char_L2frequency_cosine_NBDN50k.pt'
+PATH_MODEL = 'models/Network_base_3encoder_Char_L2frequency_cosine_NBDN50k.pt'
+NEW_PATH_MODEL = 'models/Network_base_3encoder_Char_L2frequency_cosine_NBDN50k.pt'
 
 wandb_log = True  # flag if we want to output the results in wandb
 resume_training = False  # flag if we want to resume training
@@ -37,8 +37,8 @@ last_epochs = 200
 
 # branch = block_branch_try(3, 2, FFN_Expand = 2, dilation = 1, drop_out_rate = 0)
 # print('Defining model')
-model = Network(img_channel=3, width=16, middle_blk_num=1, enc_blk_nums=[2, 2, 4, 8],
-               dec_blk_nums=[2, 2, 2, 2])
+model = Network(img_channel=3, width=16, middle_blk_num=1, enc_blk_nums=[2, 2, 4],
+               dec_blk_nums=[2, 2, 2])
 
 print('Number of parameters: ', sum(p.numel()
       for p in model.parameters() if p.requires_grad))
@@ -59,7 +59,7 @@ if wandb_log:
     wandb.login()
     wandb.init(
         # set the wandb project where this run will be logged
-        project="motion-stabilization", entity="cidautai", name="Network_base_Char_L2frequency_cosine_NBDN50k", save_code=True
+        project="motion-stabilization", entity="cidautai", name="Network_base_3encoder_Char_L2frequency_cosine_NBDN50k", save_code=True
     )
 
 
@@ -157,11 +157,11 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
                 # PSNR (dB) metric
                 valid_psnr_batch = 20 * \
                     torch.log10(1. / torch.sqrt(valid_loss_batch))
-                valid_ssim = SSIM(enhanced_batch_valid, high_batch_valid)
+                valid_ssim_batch = SSIM(enhanced_batch_valid, high_batch_valid)
 
             # valid_loss.append(valid_loss_batch.item())
             valid_psnr.append(valid_psnr_batch.item())
-            valid_ssim.append(valid_ssim.item())
+            valid_ssim.append(valid_ssim_batch.item())
 
     # We take the first image [0] from each batch, and convert it to numpy array
     high_img = high_batch_valid[0]
