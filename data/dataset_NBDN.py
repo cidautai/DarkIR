@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 import torch.optim
 
-from data.datapipeline import *
+from .datapipeline import *
 import cv2 as cv
 
 
@@ -51,7 +51,7 @@ def random_sort_pairs(list1, list2):
     return list1, list2
 
 
-def main_dataset_nbdn(train_path='../../../NBDN_dataset_50k/train', test_path='../../../NBDN_dataset_50k/test',
+def main_dataset_nbdn(train_path='/home/danfei/Python_Workspace/NBDN_dataset_50k/train', test_path='/home/danfei/Python_Workspace/NBDN_dataset_50k/test',
                        batch_size_train=4, batch_size_test=1, verbose=False, cropsize=512,
                        num_workers=1, crop_type='Random'):
 
@@ -73,8 +73,8 @@ def main_dataset_nbdn(train_path='../../../NBDN_dataset_50k/train', test_path='.
     paths_blur = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur ]
     paths_sharp = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element) * 100] for path_element in paths_sharp ]
     
-    paths_blur_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur_valid ]
-    paths_sharp_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp_valid ]   
+    # paths_blur_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur_valid ]
+    # paths_sharp_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp_valid ]   
     
     # print(paths_blur, paths_sharp)
     print(len(paths_blur), len(paths_sharp), len(paths_blur_valid), len(paths_sharp_valid))
@@ -93,8 +93,11 @@ def main_dataset_nbdn(train_path='../../../NBDN_dataset_50k/train', test_path='.
     list_blur = flatten_list_comprehension(paths_blur)#[:200]
     list_sharp = flatten_list_comprehension(paths_sharp)#[:200]
 
-    list_blur_valid = flatten_list_comprehension(paths_blur_valid)#[:30]
-    list_sharp_valid = flatten_list_comprehension(paths_sharp_valid)#[:30]
+    list_blur_valid = paths_blur_valid#[:30]
+    list_sharp_valid = paths_sharp_valid#[:30]
+
+    # list_blur_valid = flatten_list_comprehension(paths_blur_valid)#[:30]
+    # list_sharp_valid = flatten_list_comprehension(paths_sharp_valid)#[:30]
 
     # we random sort the lists using random_sort_pairs
     

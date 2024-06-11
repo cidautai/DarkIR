@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from archs.arch_util import LayerNorm2d
-from archs.local_arch import Local_Base
-from archs.arch_model import NAFBlock
+from .arch_util import LayerNorm2d
+from .local_arch import Local_Base
+from .arch_model import NAFBlock
 
 class SimpleGate(nn.Module):
     def forward(self, x):
