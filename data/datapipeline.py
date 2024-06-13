@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
 from torchvision.utils import make_grid
-
+import torch.nn.functional as F
 def crop_center(img, cropx=224, cropy=256):
     """
     Given an image, it returns a center cropped version of size [cropx,cropy]
@@ -41,6 +41,14 @@ class RandomCropSame:
 
     def __call__(self, img1, img2):
         i, j, th, tw = self.get_params(img1, self.size)
+        #pad the images with zeros if their size is lower than the cropsize
+        if img1.shape[1] <= self.size[0] or img1.shape[2] <= self.size[1]:
+            print(img1.shape[1], self.size[0])
+            
+            img1 = self.pad(img1)
+            img2 = self.pad(img2)
+            print(1, img1.shape)
+            
         return TF.crop(img1, i, j, th, tw), TF.crop(img2, i, j, th, tw)  # Use th and tw here
 
     def get_params(self, img, output_size):
@@ -55,6 +63,14 @@ class RandomCropSame:
         j = torch.randint(0, w - tw + 1, size=(1,)).item()
         
         return i, j, th, tw
+
+    def pad(self, img):
+        _, h, w = img.shape
+        mod_pad_h = self.size[0] - h
+        mod_pad_w = self.size[1] - w
+        img = F.pad(img, (0, mod_pad_w, 0, mod_pad_h))
+        
+        return img
 
 class MyDataset_RandCrop(Dataset):
     """
@@ -172,117 +188,14 @@ class MyDataset_Crop(Dataset):
         if self.flips:
             high_and_low      = self.flips(high_and_low)
             rgb_high, rgb_low = high_and_low #separate again the images
-
+        
+        # print(rgb_high.shape, rgb_low.shape)
         if self.cropsize: # do random crops of the image
             if self.random_crop:   
                 rgb_high, rgb_low = self.random_crop(rgb_high, rgb_low)
             elif self.center_crop:
                 rgb_high, rgb_low = self.center_crop(rgb_high), self.center_crop(rgb_low)
-
+        # print(rgb_high.shape, rgb_low.shape)
+        # print(0, rgb_high.shape)
+    
         return rgb_high, rgb_low
-
-class MyDataset(Dataset):
-    """
-    A Dataset of the low and high light images with data values in each channel in the range 0-1 (normalized).
-    """
-    
-    def __init__(self, images_low, images_high, image_size = (256, 256, 3), test=False, cropsize = 256):
-        """
-        -images_high: list of RGB images of normal-light used for training or testing the model
-        - images_low: list of RGB images of low-light used for training or testing the model
-        - test: indicates if the dataset is for training (False) or testing (True)
-        -image_size: contains the dimension of the final image (H, W, C). This is important
-                     to do the propper crop of the image.
-        """
-        self.imgs_low   = sorted(images_low)
-        self.imgs_high  = sorted(images_high)
-        self.test       = test
-        self.cropsize   = cropsize
-        
-    def __len__(self):
-        return len(self.imgs_low)
-
-    def __getitem__(self, idx):
-        """
-        Given a (random) index. The dataloader selects the corresponding image path, and loads the image.
-        Then it returns the image, after applying any required transformation.
-        """
-        img_low  = self.imgs_low[idx]
-        img_high = self.imgs_high[idx]
-        
-        # Load the image and convert to numpy array
-        rgb_low  = np.array(Image.open(img_low).convert('RGB'))
-        rgb_high = np.array(Image.open(img_high).convert('RGB'))
-
-        h, w, c = self.image_size
-
-        # normalize to [0,1] fp32
-        rgb_low = (rgb_low / 255).astype(np.float32)
-        assert rgb_low.shape[-1] == 3 # check it is a 3ch image
-        
-        rgb_high = (rgb_high / 255).astype(np.float32)
-        assert rgb_high.shape[-1] == 3 # check it is a 3ch image
-
-        #### Crop the image only if test = False
-        if not self.test:
-            rgb_low = crop_center(rgb_low, h, w)
-            rgb_high = crop_center(rgb_high, h, w)
-        
-        #### Convert to PyTorch and change to Pytorch format, instead of [H,W,3] to [3,H,W]
-        rgb_low = torch.from_numpy(rgb_low)
-        rgb_low = rgb_low.permute((2, 0, 1))
-        
-        rgb_high = torch.from_numpy(rgb_high)
-        rgb_high = rgb_high.permute((2, 0, 1))
-
-        return rgb_high, rgb_low  
-    
-class MyDataset_nocrop(Dataset):
-    """
-    A Dataset of the low and high light images with data values in each channel in the range 0-1 (normalized).
-    """
-    
-    def __init__(self, images_low, images_high, test=False):
-        """
-        -images_high: list of RGB images of normal-light used for training or testing the model
-        - images_low: list of RGB images of low-light used for training or testing the model
-        - test: indicates if the dataset is for training (False) or testing (True)
-        -image_size: contains the dimension of the final image (H, W, C). This is important
-                     to do the propper crop of the image.
-        """
-        self.imgs_low   = sorted(images_low)
-        self.imgs_high  = sorted(images_high)
-        self.test       = test
-        
-    def __len__(self):
-        return len(self.imgs_low)
-
-    def __getitem__(self, idx):
-        """
-        Given a (random) index. The dataloader selects the corresponding image path, and loads the image.
-        Then it returns the image, after applying any required transformation.
-        """
-        img_low  = self.imgs_low[idx]
-        img_high = self.imgs_high[idx]
-        
-        # Load the image and convert to numpy array
-        rgb_low  = np.array(Image.open(img_low).convert('RGB'))
-        rgb_high = np.array(Image.open(img_high).convert('RGB'))
-
-        # normalize to [0,1] fp32
-        rgb_low = (rgb_low / 255).astype(np.float32)
-        assert rgb_low.shape[-1] == 3 # check it is a 3ch image
-        
-        rgb_high = (rgb_high / 255).astype(np.float32)
-        assert rgb_high.shape[-1] == 3 # check it is a 3ch image
-
-        #### Crop the image
-        
-        #### Convert to PyTorch and change to Pytorch format, instead of [H,W,3] to [3,H,W]
-        rgb_low = torch.from_numpy(rgb_low)
-        rgb_low = rgb_low.permute((2, 0, 1))
-        
-        rgb_high = torch.from_numpy(rgb_high)
-        rgb_high = rgb_high.permute((2, 0, 1))
-
-        return rgb_high, rgb_low  
