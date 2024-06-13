@@ -23,10 +23,10 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 
 # define some parameters based on the run we want to make
 device = torch.device('cuda')
-batch_size_train = 4
+batch_size_train = 8
 batch_size_test = 1
-PATH_MODEL = 'models/Network_base_3encoder_Char_L2frequency_cosine_NBDN50k.pt'
-NEW_PATH_MODEL = 'models/Network_base_3encoder_Char_L2frequency_cosine_NBDN50k.pt'
+PATH_MODEL = 'models/Network_base_changed3_masks_3encoder_Char_cosine_NBDN50k.pt'
+NEW_PATH_MODEL = 'models/Network_base_masks_changed3_3encoder_Char_cosine_NBDN50k.pt'
 
 wandb_log = True  # flag if we want to output the results in wandb
 resume_training = False  # flag if we want to resume training
@@ -37,8 +37,8 @@ last_epochs = 200
 
 # branch = block_branch_try(3, 2, FFN_Expand = 2, dilation = 1, drop_out_rate = 0)
 # print('Defining model')
-model = Network(img_channel=3, width=16, middle_blk_num=1, enc_blk_nums=[2, 2, 4],
-               dec_blk_nums=[2, 2, 2])
+model = Network(img_channel=3, width=16, middle_blk_num=3, enc_blk_nums=[1, 1, 2],
+               dec_blk_nums=[2, 2, 1], residual_layers=1)
 
 print('Number of parameters: ', sum(p.numel()
       for p in model.parameters() if p.requires_grad))
@@ -59,7 +59,7 @@ if wandb_log:
     wandb.login()
     wandb.init(
         # set the wandb project where this run will be logged
-        project="motion-stabilization", entity="cidautai", name="Network_base_3encoder_Char_L2frequency_cosine_NBDN50k", save_code=True
+        project="motion-stabilization", entity="cidautai", name="Network_base_masks_changed3_1206_3encoder_Char_cosine_NBDN50k", save_code=True
     )
 
 
@@ -79,9 +79,9 @@ scheduler = CosineAnnealingLR(optim, T_max=T_max, eta_min=1e-6)
 
 
 # we define the losses
-# pixel_loss = L1Loss()
-pixel_loss     = CharbonnierLoss(reduction = 'mean').to(device)
-frequency_loss = nn.MSELoss(reduction = 'mean').to(device)
+pixel_loss = L1Loss()
+# pixel_loss     = CharbonnierLoss(reduction = 'mean').to(device)
+# frequency_loss = nn.MSELoss(reduction = 'mean').to(device)
 SSIM = SSIMloss()
 
 for epoch in tqdm(range(start_epochs, last_epochs)):
@@ -109,14 +109,14 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         optim.zero_grad()
 
         # Feed the data into the model
-        enhanced_batch, amplitude_batch = model(low_batch)
+        enhanced_batch = model(low_batch)
 
         # print(enhanced_batch.device, high_batch.device)
         # calculate loss function to optimize
         l_pixel = pixel_loss(enhanced_batch, high_batch)
-        l_frequency = frequency_loss(amplitude_batch, high_batch)
+        # l_frequency = frequency_loss(amplitude_batch, high_batch)
         # l_percep, l_style = perceptual_loss(enhanced_batch, high_batch)
-        optim_loss = l_pixel + 0.1 * l_frequency
+        optim_loss = l_pixel
 
         # Calculate loss function for the PSNR
         loss = torch.mean((high_batch - enhanced_batch)**2)
@@ -137,9 +137,10 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         # train_og_loss.append(og_loss.item())
         train_og_psnr.append(og_psnr.item())
         train_ssim.append(ssim.item())
-        # i+=1
-        # print(f'{i} Batch completed')
 
+        #update scheduler
+        scheduler.step()
+        
     # run this part if test loader is defined
     if test_loader:
         model.eval()
@@ -150,7 +151,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
             low_batch_valid = low_batch_valid.to(device)
 
             with torch.no_grad():
-                enhanced_batch_valid, amplitude_batch_valid = model(low_batch_valid)
+                enhanced_batch_valid = model(low_batch_valid)
                 # loss
                 valid_loss_batch = torch.mean(
                     (high_batch_valid - enhanced_batch_valid)**2)
@@ -167,11 +168,11 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
     high_img = high_batch_valid[0]
     low_img = low_batch_valid[0]
     enhanced_img = enhanced_batch_valid[0]
-    amplitude_img = amplitude_batch_valid[0]
+    # amplitude_img = amplitude_batch_valid[0]
 
 
     caption = "1: Input, 2: Output, 3: Ground_Truth, 4: Amplitude_Img"
-    images_list = [low_img, enhanced_img, high_img, amplitude_img]
+    images_list = [low_img, enhanced_img, high_img]
     images = log_images(images_list, caption)
     logger = {'train_loss': np.mean(train_loss), 'train_psnr': np.mean(train_psnr), 'train_ssim': np.mean(train_ssim),
               'train_og_psnr': np.mean(train_og_psnr), 'epoch': epoch,  'valid_psnr': np.mean(valid_psnr), 
@@ -191,8 +192,9 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         'loss': np.mean(train_loss)
     }
     torch.save(model_to_save, NEW_PATH_MODEL)
+
     print('Scheduler last learning rate: ',scheduler.get_last_lr())
-    scheduler.step()
+    
 
 
 if wandb_log:
