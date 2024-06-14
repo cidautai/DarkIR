@@ -92,7 +92,7 @@ else:
 model = model.to(device)
 
 #calculate MACs and number of parameters
-macs, params = get_model_complexity_info(model, (3, 256, 256))
+macs, params = get_model_complexity_info(model, (3, 256, 256), print_per_layer_stat = False)
 print('Computational complexity: ', macs)
 print('Number of parameters: ', params)
 

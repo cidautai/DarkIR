@@ -8,7 +8,7 @@ datasets:
     train_path: /mnt/valab-datasets/LOLBlur/train
 
     n_workers: 4  # per GPU
-    batch_size_train: 8
+    batch_size_train: 4
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
@@ -20,13 +20,13 @@ datasets:
 
 #### network structures
 network:
-  name: NAFNet
+  name: Network
   img_channels: 3
   width: 32
-  middle_blk_nums: 1
-  enc_blk_nums: [2,2,4,8]
-  dec_blk_nums: [2,2,2,2]
-  residual_layers: 0
+  middle_blk_nums: 3
+  enc_blk_nums: [1,2,3]
+  dec_blk_nums: [3,1,1]
+  residual_layers: 3
 
 
 #### training settings: learning rate scheme, loss
@@ -34,7 +34,7 @@ train:
   lr_initial: !!float 5e-4
   lr_scheme: CosineAnnealing
   betas: [0.9, 0.9]
-  epochs: 250
+  epochs: 1000
   lr_gamma: 0.5
   weight_decay: !!float 1e-3
   eta_min: !!float 1e-6
@@ -45,12 +45,12 @@ train:
 
 #### save model
 save:
-  path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/NAFNet_base32_4encoder_l1_cosine_LOLBlur.pt
+  path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/Network_base32_3encoder_l1_cosine_LOLBlur.pt
 
 #### wandb:
 wandb:
   init: True
   project: motion-stabilization
   entity: cidautai
-  name: NAFNet_base32_4encoder_l1_cosine_LOLBlur
+  name: Network_base32_3encoder_l1_cosine_LOLBlur
   save_code: True
