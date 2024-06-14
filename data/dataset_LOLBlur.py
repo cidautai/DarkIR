@@ -10,7 +10,6 @@ import torch.optim
 from .datapipeline import *
 import cv2 as cv
 
-
 def create_path(IMGS_PATH, list_new_files):
     '''
     Util function to add the file path of all the images to the list of names of the selected 
@@ -50,24 +49,30 @@ def random_sort_pairs(list1, list2):
 
     return list1, list2
 
-
-def main_dataset_nbdn(train_path='/home/danfei/Python_Workspace/NBDN_dataset_50k/train', test_path='/home/danfei/Python_Workspace/NBDN_dataset_50k/test',
+def main_dataset_lolblur(train_path='/mnt/valab-datasets/LOLBlur/train', test_path='/mnt/valab-datasets/LOLBlur/test',
                        batch_size_train=4, batch_size_test=1, verbose=False, cropsize=512, flips = None,
                        num_workers=1, crop_type='Random'):
-
+    
+    
     PATH_TRAIN = train_path
     PATH_VALID = test_path
-
-    # paths to the blur and sharp sets of images
-    paths_blur = [os.path.join(PATH_TRAIN, 'blur', path) for path in os.listdir(os.path.join(PATH_TRAIN, 'blur'))]
-    paths_sharp = [os.path.join(PATH_TRAIN, 'sharp', path) for path in os.listdir(os.path.join(PATH_TRAIN, 'sharp'))]
     
-    paths_blur_valid = [os.path.join(PATH_VALID, 'blur', path) for path in os.listdir(os.path.join(PATH_VALID, 'blur'))]
-    paths_sharp_valid = [os.path.join(PATH_VALID, 'sharp', path) for path in os.listdir(os.path.join(PATH_VALID, 'sharp'))]    
+    # paths to the blur and sharp sets of images
+    paths_blur = [os.path.join(PATH_TRAIN, 'low_blur_noise', path) for path in os.listdir(os.path.join(PATH_TRAIN, 'low_blur_noise'))]
+    paths_sharp = [os.path.join(PATH_TRAIN, 'high_sharp_scaled', path) for path in os.listdir(os.path.join(PATH_TRAIN, 'high_sharp_scaled'))]
+    
+    paths_blur_valid = [os.path.join(PATH_VALID, 'low_blur_noise', path) for path in os.listdir(os.path.join(PATH_VALID, 'low_blur_noise'))]
+    paths_sharp_valid = [os.path.join(PATH_VALID, 'high_sharp_scaled', path) for path in os.listdir(os.path.join(PATH_VALID, 'high_sharp_scaled'))]        
+    
+    print(len(paths_blur), len(paths_blur_valid), len(paths_sharp), len(paths_sharp_valid))
     
     # extract the images from their corresponding folders, now we get a list of lists
     paths_blur = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur ]
-    paths_sharp = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element) * 100] for path_element in paths_sharp ]
+    paths_sharp = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp ]
+
+    paths_blur_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur_valid ]
+    paths_sharp_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp_valid ]
+
 
 
     def flatten_list_comprehension(matrix):
@@ -76,8 +81,8 @@ def main_dataset_nbdn(train_path='/home/danfei/Python_Workspace/NBDN_dataset_50k
     list_blur = flatten_list_comprehension(paths_blur)
     list_sharp = flatten_list_comprehension(paths_sharp)
 
-    list_blur_valid = paths_blur_valid
-    list_sharp_valid = paths_sharp_valid
+    list_blur_valid = flatten_list_comprehension(paths_blur_valid)
+    list_sharp_valid = flatten_list_comprehension(paths_sharp_valid)
 
     # check if all the image routes are correct
     trues = [os.path.isfile(file) for file in list_blur +
@@ -93,8 +98,6 @@ def main_dataset_nbdn(train_path='/home/danfei/Python_Workspace/NBDN_dataset_50k
         print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid))
         print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid))
 
-    # define the transforms applied to the image for training and testing (only tensor transform) when read
-    # transforms from PIL to torchTensor, normalized to [0,1] and the correct permutations for torching working
     tensor_transform = transforms.ToTensor()
     if flips:
         flip_transform = transforms.Compose([
@@ -120,7 +123,8 @@ def main_dataset_nbdn(train_path='/home/danfei/Python_Workspace/NBDN_dataset_50k
     return train_loader, test_loader
 
 if __name__ == '__main__':
-    train, test = main_dataset_nbdn(train_path='../../../NBDN_dataset_50k/train', test_path='../../../NBDN_dataset_50k/test',
-                       batch_size_train=8, batch_size_test=1, verbose=True, cropsize=256,
-                       num_workers=1, crop_type='Random') 
-    print(len(train), len(test))
+    
+    train_loader, test_loader = main_dataset_lolblur(verbose = True, crop_type='Center', cropsize=256)
+    print(len(train_loader), len(test_loader))
+    
+    
