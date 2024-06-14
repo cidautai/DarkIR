@@ -20,6 +20,7 @@ from losses.loss import MSELoss, PerceptualLoss, L1Loss, CharbonnierLoss, SSIMlo
 from data.dataset_NBDN import main_dataset_nbdn
 from options.options import parse
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from ptflops import get_model_complexity_info
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.
@@ -73,8 +74,14 @@ else:
     raise NotImplementedError
 model = model.to(device)
 
-print('Number of parameters: ', sum(p.numel()
-      for p in model.parameters() if p.requires_grad))
+#calculate MACs and number of parameters
+macs, params = get_model_complexity_info(model, (3, 256, 256))
+print('Computational complexity: ', macs)
+print('Number of parameters: ', params)
+
+# save this stats into opt to upload to wandb
+opt['macs'] = macs
+opt['params'] = params
 
 # define the optimizer
 optim = torch.optim.AdamW(model.parameters(), lr = opt['train']['lr_initial'],
