@@ -18,6 +18,7 @@ from data.datapipeline import *
 from archs import Network
 from losses.loss import MSELoss, PerceptualLoss, L1Loss, CharbonnierLoss, SSIMloss
 from data.dataset_NBDN import main_dataset_nbdn
+from data.dataset_LOLBlur import main_dataset_lolblur
 from options.options import parse
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from ptflops import get_model_complexity_info

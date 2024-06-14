@@ -1,0 +1,57 @@
+#### general settings
+resume_training: False
+
+#### datasets
+datasets:
+  train:
+    train_path: /home/danfei/Python_Workspace/NBDN_dataset_50k/train
+
+    n_workers: 4  # per GPU
+    batch_size_train: 8
+    cropsize: 256   # size you want to crop out as input sample.
+    flips: True
+    verbose: True
+    crop_type: Center
+  val:
+    test_path: /home/danfei/Python_Workspace/NBDN_dataset_50k/test
+    cropsize: 256
+    batch_size_test: 1
+
+#### network structures
+network:
+  name: Network
+  img_channels: 3
+  width: 32
+  middle_blk_nums: 3
+  enc_blk_nums: [1, 2, 3]
+  dec_blk_nums: [3, 1, 1]
+  residual_layers: 3
+
+
+#### training settings: learning rate scheme, loss
+train:
+  lr_initial: !!float 5e-4
+  lr_scheme: CosineAnnealing
+  betas: [0.9, 0.9]
+  epochs: 200
+  lr_gamma: 0.5
+  weight_decay: !!float 1e-3
+  eta_min: !!float 1e-6
+
+  pixel_criterion: l1
+  pixel_weight: 1.0
+
+
+#### save model
+save:
+  path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/Network_base32_masks_changed2_3encoder_Char_cosine_NBDN50k.pt
+
+#### wandb:
+wandb:
+  init: True
+  project: motion-stabilization
+  entity: cidautai
+  name: Network_base32_masks_changed2_3encoder_Char_cosine_NBDN50k
+  save_code: True
+
+
