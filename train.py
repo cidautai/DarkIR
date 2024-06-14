@@ -90,10 +90,10 @@ optim = torch.optim.AdamW(model.parameters(), lr = opt['train']['lr_initial'],
 
 # Initialize the cosine annealing scheduler
 # we want the cycle of iterations to
-T_max = len(train_loader) // opt['datasets']['train']['batch_size_train'] * last_epochs
+# T_max = len(train_loader) // opt['datasets']['train']['batch_size_train'] * last_epochs
 # be the same as the total number of iterations
 if opt['train']['lr_scheme'] == 'CosineAnnealing':
-    scheduler = CosineAnnealingLR(optim, T_max=T_max, eta_min=opt['train']['eta_min'])
+    scheduler = CosineAnnealingLR(optim, T_max=last_epochs, eta_min=opt['train']['eta_min'])
 else: 
     raise NotImplementedError
 
@@ -179,8 +179,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         train_og_psnr.append(og_psnr.item())
         train_ssim.append(ssim.item())
 
-        #update scheduler
-        scheduler.step()
+
         
     # run this part if test loader is defined
     if test_loader:
@@ -233,6 +232,8 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
     }
     torch.save(model_to_save, NEW_PATH_MODEL)
 
+    #update scheduler
+    scheduler.step()
     print('Scheduler last learning rate: ', scheduler.get_last_lr())
     
 
