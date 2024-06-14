@@ -16,6 +16,7 @@ import torch.optim
 
 from data.datapipeline import *
 from archs import Network
+from archs import NAFNet
 from losses.loss import MSELoss, PerceptualLoss, L1Loss, CharbonnierLoss, SSIMloss
 from data.dataset_NBDN import main_dataset_nbdn
 from data.dataset_LOLBlur import main_dataset_lolblur
@@ -25,7 +26,7 @@ from ptflops import get_model_complexity_info
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.
-path_options = '/home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/options/train/NBDN.yml'
+path_options = '/home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/options/train/LOLBlur.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
 
@@ -49,20 +50,28 @@ last_epochs = opt['train']['epochs']
 
 
 #load the dataloaders
+if opt['datasets']['name'] == 'NBDN':
+    train_loader, test_loader = main_dataset_nbdn(train_path=opt['datasets']['train']['train_path'],
+                                                test_path = opt['datasets']['val']['test_path'],
+                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
+                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
+                                                flips = opt['datasets']['train']['flips'],
+                                                verbose=opt['datasets']['train']['verbose'],
+                                                cropsize=opt['datasets']['train']['cropsize'],
+                                                num_workers=opt['datasets']['train']['n_workers'],
+                                                crop_type=opt['datasets']['train']['crop_type'])
+if opt['datasets']['name'] == 'LOLBlur':
+    train_loader, test_loader = main_dataset_lolblur(train_path=opt['datasets']['train']['train_path'],
+                                                test_path = opt['datasets']['val']['test_path'],
+                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
+                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
+                                                flips = opt['datasets']['train']['flips'],
+                                                verbose=opt['datasets']['train']['verbose'],
+                                                cropsize=opt['datasets']['train']['cropsize'],
+                                                num_workers=opt['datasets']['train']['n_workers'],
+                                                crop_type=opt['datasets']['train']['crop_type'])
 
-train_loader, test_loader = main_dataset_nbdn(train_path=opt['datasets']['train']['train_path'],
-                                              test_path = opt['datasets']['val']['test_path'],
-                                              batch_size_train=opt['datasets']['train']['batch_size_train'],
-                                              batch_size_test=opt['datasets']['val']['batch_size_test'],
-                                              flips = opt['datasets']['train']['flips'],
-                                              verbose=opt['datasets']['train']['verbose'],
-                                              cropsize=opt['datasets']['train']['cropsize'],
-                                              num_workers=opt['datasets']['train']['n_workers'],
-                                              crop_type=opt['datasets']['train']['crop_type'])
 
-
-
-# branch = block_branch_try(3, 2, FFN_Expand = 2, dilation = 1, drop_out_rate = 0)
 # print('Defining model')
 if network == 'Network':
     model = Network(img_channel=opt['network']['img_channels'], 
@@ -71,6 +80,13 @@ if network == 'Network':
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'], 
                     residual_layers=opt['network']['residual_layers'])
+elif network == 'NAFNet':
+    model = NAFNet(img_channel=opt['network']['img_channels'], 
+                    width=opt['network']['width'], 
+                    middle_blk_num=opt['network']['middle_blk_nums'], 
+                    enc_blk_nums=opt['network']['enc_blk_nums'],
+                    dec_blk_nums=opt['network']['dec_blk_nums'])
+
 else:
     raise NotImplementedError
 model = model.to(device)

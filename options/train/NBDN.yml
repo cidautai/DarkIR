@@ -3,6 +3,7 @@ resume_training: False
 
 #### datasets
 datasets:
+  name: NBDN
   train:
     train_path: /home/danfei/Python_Workspace/NBDN_dataset_50k/train
 

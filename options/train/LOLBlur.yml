@@ -3,6 +3,7 @@ resume_training: False
 
 #### datasets
 datasets:
+  name: LOLBlur
   train:
     train_path: /mnt/valab-datasets/LOLBlur/train
 
