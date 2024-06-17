@@ -1,28 +1,24 @@
 import numpy as np
 import os
-from glob import glob
-from collections import defaultdict
 import time
 import wandb
-from pathlib import Path
 from tqdm import tqdm
 
 # PyTorch library
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
 import torch.optim
+from torch.optim.lr_scheduler import CosineAnnealingLR
+from ptflops import get_model_complexity_info
 
 from data.datapipeline import *
 from archs import Network
 from archs import NAFNet
-from losses.loss import MSELoss, PerceptualLoss, L1Loss, CharbonnierLoss, SSIMloss
+from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIMloss
 from data.dataset_NBDN import main_dataset_nbdn
 from data.dataset_LOLBlur import main_dataset_lolblur
 from options.options import parse
-from torch.optim.lr_scheduler import CosineAnnealingLR
-from ptflops import get_model_complexity_info
+
+
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.
@@ -33,7 +29,7 @@ opt = parse(path_options)
 # define some parameters based on the run we want to make
 device = torch.device('cuda')
 
-#parameters of the network
+#selected network
 network = opt['network']['name']
 
 #parameters for saving model
@@ -73,7 +69,6 @@ if opt['datasets']['name'] == 'LOLBlur':
                                                 crop_type=opt['datasets']['train']['crop_type'])
 
 
-# print('Defining model')
 if network == 'Network':
     model = Network(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
