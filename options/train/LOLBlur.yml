@@ -49,7 +49,7 @@ save:
   best: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/bests/
 #### wandb:
 wandb:
-  init: False
+  init: True
   project: motion-stabilization
   entity: cidautai
   name: Network_base32_3encoder_l1_cosine_LOLBlur
