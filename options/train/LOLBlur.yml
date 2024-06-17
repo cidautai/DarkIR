@@ -46,10 +46,10 @@ train:
 #### save model
 save:
   path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/Network_base32_3encoder_l1_cosine_LOLBlur.pt
-
+  best: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/bests/
 #### wandb:
 wandb:
-  init: True
+  init: False
   project: motion-stabilization
   entity: cidautai
   name: Network_base32_3encoder_l1_cosine_LOLBlur

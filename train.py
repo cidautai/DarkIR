@@ -39,6 +39,7 @@ network = opt['network']['name']
 #parameters for saving model
 PATH_MODEL     = opt['save']['path']
 NEW_PATH_MODEL = opt['save']['path']
+BEST_PATH_MODEL = os.path.join(opt['save']['best'], os.path.basename(opt['save']['path']))
 
 #---------------------------------------------------------------
 
@@ -133,8 +134,6 @@ if wandb_log:
     )
 
 
-
-
 # we define the losses
 if opt['train']['pixel_criterion'] == 'l1':
     pixel_loss = L1Loss()
@@ -146,6 +145,7 @@ else:
     raise NotImplementedError
 
 SSIM = SSIMloss(data_range=1.)
+best_valid_psnr = 0.
 
 for epoch in tqdm(range(start_epochs, last_epochs)):
 
@@ -236,7 +236,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         wandb.log(logger)
 
 
-    print(f"Epoch {epoch + 1} of {last_epochs} took {time.time() - start_time:.3f}s\t Loss:{np.mean(train_loss)}\t PSNR:{np.mean(train_psnr)}\n")
+    print(f"Epoch {epoch + 1} of {last_epochs} took {time.time() - start_time:.3f}s\t Loss:{np.mean(train_loss)}\t PSNR:{np.mean(valid_psnr)}\n")
 
 
     # Save the model after every epoch
@@ -249,9 +249,17 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
     }
     torch.save(model_to_save, NEW_PATH_MODEL)
 
+    #save best model if new valid_psnr is higher than the best one
+    if np.mean(valid_psnr) >= best_valid_psnr:
+        
+        torch.save(model_to_save, BEST_PATH_MODEL)
+        
+        best_valid_psnr = np.mean(valid_psnr) # update best psnr
+
     #update scheduler
     scheduler.step()
     print('Scheduler last learning rate: ', scheduler.get_last_lr())
+    
     
 
 if wandb_log:
