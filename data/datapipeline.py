@@ -38,20 +38,15 @@ class RandomCropSame:
             self.size = size
 
     def __call__(self, img1, img2):
-        i, j, th, tw = self.get_params(img1, self.size)
+        
         #pad the images with zeros if their size is lower than the cropsize
         if img1.shape[1] <= self.size[0] or img1.shape[2] <= self.size[1]:
-            # print(img1.shape[1], self.size[0])
-            
             img1 = self.pad(img1)
             img2 = self.pad(img2)
-            # print(1, img1.shape)
-            # print(2, img2.shape)
-            return TF.crop(img1, i, j, th, tw), TF.crop(img2, i, j, th, tw)  # Use th and tw here
         
-        else:
-            print(3, img1.shape, img2.shape) 
-            return TF.crop(img1, i, j, th, tw), TF.crop(img2, i, j, th, tw)  # Use th and tw here
+        i, j, th, tw = self.get_params(img1, self.size)
+            
+        return TF.crop(img1, i, j, th, tw), TF.crop(img2, i, j, th, tw)  # Use th and tw here
 
     def get_params(self, img, output_size):
         h, w = img.shape[1], img.shape[2]

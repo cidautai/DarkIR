@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 import torch.optim
 
-from datapipeline import *
+from .datapipeline import *
 import cv2 as cv
 
 
