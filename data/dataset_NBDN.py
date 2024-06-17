@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 import torch.optim
 
-from .datapipeline import *
+from datapipeline import *
 import cv2 as cv
 
 
@@ -124,3 +124,7 @@ if __name__ == '__main__':
                        batch_size_train=8, batch_size_test=1, verbose=True, cropsize=256,
                        num_workers=1, crop_type='Random') 
     print(len(train), len(test))
+    
+    for high, low in train:
+        
+        print(high.shape)

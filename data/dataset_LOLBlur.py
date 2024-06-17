@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 import torch.optim
 
-from .datapipeline import *
+from datapipeline import *
 import cv2 as cv
 
 def create_path(IMGS_PATH, list_new_files):
@@ -124,7 +124,10 @@ def main_dataset_lolblur(train_path='/mnt/valab-datasets/LOLBlur/train', test_pa
 
 if __name__ == '__main__':
     
-    train_loader, test_loader = main_dataset_lolblur(verbose = True, crop_type='Center', cropsize=256)
+    train_loader, test_loader = main_dataset_lolblur(verbose = True, crop_type='Random', cropsize=256)
     print(len(train_loader), len(test_loader))
     
+    for high, low in train_loader:
+        
+        print(high.shape)
     

@@ -10,6 +10,7 @@ import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
 from torchvision.utils import make_grid
 import torch.nn.functional as F
+
 def crop_center(img, cropx=224, cropy=256):
     """
     Given an image, it returns a center cropped version of size [cropx,cropy]
@@ -24,11 +25,8 @@ def log_images(images, caption):
     A function to log the resulting images to wandb.
     '''
     n=len(images)
-    #images_array = make_grid([images[0], images[1], images[2]], 3)
     images_array = make_grid(images, n)
-
     images = wandb.Image(images_array, caption = caption)
-    #wandb.log({"examples": images, 'epoch':epoch})
     
     return images
 
@@ -43,13 +41,17 @@ class RandomCropSame:
         i, j, th, tw = self.get_params(img1, self.size)
         #pad the images with zeros if their size is lower than the cropsize
         if img1.shape[1] <= self.size[0] or img1.shape[2] <= self.size[1]:
-            print(img1.shape[1], self.size[0])
+            # print(img1.shape[1], self.size[0])
             
             img1 = self.pad(img1)
             img2 = self.pad(img2)
-            print(1, img1.shape)
-            
-        return TF.crop(img1, i, j, th, tw), TF.crop(img2, i, j, th, tw)  # Use th and tw here
+            # print(1, img1.shape)
+            # print(2, img2.shape)
+            return TF.crop(img1, i, j, th, tw), TF.crop(img2, i, j, th, tw)  # Use th and tw here
+        
+        else:
+            print(3, img1.shape, img2.shape) 
+            return TF.crop(img1, i, j, th, tw), TF.crop(img2, i, j, th, tw)  # Use th and tw here
 
     def get_params(self, img, output_size):
         h, w = img.shape[1], img.shape[2]
