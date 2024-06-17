@@ -160,6 +160,62 @@ class NAFNetLocal(Local_Base, NAFNet):
         with torch.no_grad():
             self.convert(base_size=base_size, train_size=train_size, fast_imp=fast_imp)
 
+class Branch(nn.Module):
+    def __init__(self, c, DW_Expand, FFN_Expand = 2, dilation = 1, drop_out_rate = 0.):
+        super().__init__()
+        self.dw_channel = DW_Expand * c 
+        self.step1 = nn.Sequential(
+                       LayerNorm2d(c),
+                       nn.Conv2d(in_channels=c, out_channels=self.dw_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1),
+                       nn.Conv2d(in_channels=self.dw_channel, out_channels=self.dw_channel, kernel_size=3, padding=dilation, stride=1, groups=self.dw_channel,
+                                            bias=True, dilation = dilation), # the dconv
+                       SimpleGate() 
+        )
+        self.sca = nn.Sequential(
+                       nn.AdaptiveAvgPool2d(1),
+                       nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=self.dw_channel // 2, kernel_size=1, padding=0, stride=1,
+                       groups=1, bias=True, dilation = 1),  
+        )
+        self.conv = nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1) 
+    def forward(self, input):
+        
+        x = self.step1(input)
+        z = self.sca(x)
+        x = x* z
+        x = self.conv(x)
+        
+        return x
+
+class NAFBlock_dilated_14(nn.Module):
+    def __init__(self, c, DW_Expand=2, FFN_Expand=2, drop_out_rate=0., dilations = [1, 4]):
+        super().__init__()
+        dw_channel = c * DW_Expand
+        #we define the 2 branches
+        self.branch_1 = Branch(c, DW_Expand, FFN_Expand = 2, dilation = dilations[0], drop_out_rate = 0.)
+        self.branch_2 = Branch(c, DW_Expand, FFN_Expand = 2, dilation = dilations[1], drop_out_rate = 0.)
+
+        self.sg = SimpleGate()
+        ffn_channel = FFN_Expand * c
+        self.conv4 = nn.Conv2d(in_channels=c, out_channels=ffn_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True)
+        self.conv5 = nn.Conv2d(in_channels=ffn_channel // 2, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True)
+
+        self.norm1 = LayerNorm2d(c)
+        self.norm2 = LayerNorm2d(c)
+
+        self.gamma = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
+
+    def forward(self, inp):
+
+        x_1 = self.branch_1(inp)
+        x_2 = self.branch_2(inp)
+
+        y = inp + x_1 / 2 +  x_2 / 2  # size [B, C, H, W]
+        
+        x = self.conv4(self.norm2(y)) # size [B, 2*C, H, W]
+        x = self.sg(x)  # size [B, C, H, W]
+        x = self.conv5(x) # size [B, C, H, W]
+
+        return y + x * self.gamma
 
 if __name__ == '__main__':
     img_channel = 3
