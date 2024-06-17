@@ -586,17 +586,18 @@ def gradient_penalty_loss(discriminator, real_data, fake_data, weight=None):
     return gradients_penalty
 
 
-def SSIM_loss(pred_img, real_img):
-    SSIM_loss = pytorch_msssim.ssim(pred_img, real_img)
+def SSIM_loss(pred_img, real_img, data_range):
+    SSIM_loss = pytorch_msssim.ssim(pred_img, real_img, data_range = data_range)
     return SSIM_loss
 
 class SSIMloss(nn.Module):
-    def __init__(self, loss_weight=1.0):
+    def __init__(self, loss_weight=1.0, data_range = 1.):
         super(SSIMloss, self).__init__()
         self.loss_weight = loss_weight
+        self.data_range = data_range
 
     def forward(self, pred, target, **kwargs):
-        return self.loss_weight * (1 - SSIM_loss(pred, target))
+        return self.loss_weight * (1 - SSIM_loss(pred, target, self.data_range))
 
 # class LPIPSloss(nn.Module):
 #     def __init__(self, loss_weight=1.0, net_type='alex'):  # 'alex' | 'squeeze' | 'vgg'. Default: 'alex'.

@@ -145,7 +145,7 @@ elif opt['train']['pixel_criterion'] == 'Charbonnier':
 else:
     raise NotImplementedError
 
-SSIM = SSIMloss()
+SSIM = SSIMloss(data_range=1.)
 
 for epoch in tqdm(range(start_epochs, last_epochs)):
 

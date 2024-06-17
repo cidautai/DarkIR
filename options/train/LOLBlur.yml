@@ -20,13 +20,13 @@ datasets:
 
 #### network structures
 network:
-  name: Network
+  name: NAFNet
   img_channels: 3
   width: 32
-  middle_blk_nums: 3
-  enc_blk_nums: [1,2,3]
-  dec_blk_nums: [3,1,1]
-  residual_layers: 3
+  middle_blk_nums: 1
+  enc_blk_nums: [2, 2, 4, 8]
+  dec_blk_nums: [2, 2, 2, 2]
+  residual_layers: 0
 
 
 #### training settings: learning rate scheme, loss
