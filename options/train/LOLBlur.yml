@@ -12,7 +12,7 @@ datasets:
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
-    crop_type: Center
+    crop_type: Random
   val:
     test_path: /mnt/valab-datasets/LOLBlur/test
     cropsize: 256
@@ -20,13 +20,13 @@ datasets:
 
 #### network structures
 network:
-  name: Network
+  name: NAFNet
   img_channels: 3
   width: 32
-  middle_blk_nums: 3
-  enc_blk_nums: [1, 1, 3]
-  dec_blk_nums: [3, 2, 1]
-  residual_layers: 1
+  middle_blk_nums: 1
+  enc_blk_nums: [2, 2, 4, 8]
+  dec_blk_nums: [2, 2, 2, 2]
+  residual_layers: 0
 
 
 #### training settings: learning rate scheme, loss
@@ -45,12 +45,12 @@ train:
 
 #### save model
 save:
-  path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/Network_base32_3encoder_l1_cosine_LOLBlur.pt
+  path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/NAFNet_base32_4encoder_l1_Random_cosine_LOLBlur.pt
   best: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/bests/
 #### wandb:
 wandb:
   init: True
   project: motion-stabilization
   entity: cidautai
-  name: Network_base32_3encoder_l1_cosine_LOLBlur
+  name: NAFNet_base32_4encoder_l1_Random_cosine_LOLBlur
   save_code: True

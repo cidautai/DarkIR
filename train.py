@@ -13,7 +13,7 @@ from ptflops import get_model_complexity_info
 from data.datapipeline import *
 from archs import Network
 from archs import NAFNet
-from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIMloss
+from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIMloss, SSIM
 from data.dataset_NBDN import main_dataset_nbdn
 from data.dataset_LOLBlur import main_dataset_lolblur
 from options.options import parse
@@ -139,7 +139,7 @@ elif opt['train']['pixel_criterion'] == 'Charbonnier':
 else:
     raise NotImplementedError
 
-SSIM = SSIMloss(data_range=1.)
+calc_SSIM = SSIM(data_range=1.)
 best_valid_psnr = 0.
 
 for epoch in tqdm(range(start_epochs, last_epochs)):
@@ -181,7 +181,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         og_psnr = 20 * torch.log10(1. / torch.sqrt(og_loss))
 
         #calculate ssim metric
-        ssim = SSIM(enhanced_batch, high_batch)
+        ssim = calc_SSIM(enhanced_batch, high_batch)
 
         optim_loss.backward()
         optim.step()
@@ -210,7 +210,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
                 # PSNR (dB) metric
                 valid_psnr_batch = 20 * \
                     torch.log10(1. / torch.sqrt(valid_loss_batch))
-                valid_ssim_batch = SSIM(enhanced_batch_valid, high_batch_valid)
+                valid_ssim_batch = calc_SSIM(enhanced_batch_valid, high_batch_valid)
             valid_psnr.append(valid_psnr_batch.item())
             valid_ssim.append(valid_ssim_batch.item())
 
