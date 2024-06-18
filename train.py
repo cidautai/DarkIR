@@ -13,6 +13,7 @@ from ptflops import get_model_complexity_info
 from data.datapipeline import *
 from archs import Network
 from archs import NAFNet
+from archs.network_v2 import Network as Network_v2
 from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIMloss, SSIM
 from data.dataset_NBDN import main_dataset_nbdn
 from data.dataset_LOLBlur import main_dataset_lolblur
@@ -72,16 +73,27 @@ if opt['datasets']['name'] == 'LOLBlur':
 if network == 'Network':
     model = Network(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
-                    middle_blk_num=opt['network']['middle_blk_nums'], 
+                    middle_blk_num=opt['network']['middle_blk_num'], 
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'], 
                     residual_layers=opt['network']['residual_layers'])
 elif network == 'NAFNet':
     model = NAFNet(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
-                    middle_blk_num=opt['network']['middle_blk_nums'], 
+                    middle_blk_num=opt['network']['middle_blk_num'], 
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'])
+
+elif network == 'Network_v2':
+    model = Network_v2(img_channel=opt['network']['img_channels'], 
+                    width=opt['network']['width'], 
+                    middle_blk_num=opt['network']['middle_blk_num'], 
+                    enc_blk_nums=opt['network']['enc_blk_nums'],
+                    dec_blk_nums=opt['network']['dec_blk_nums'], 
+                    residual_layers=opt['network']['residual_layers'],
+                    enc_blk_nums_map=opt['network']['enc_blk_nums_map'],
+                    middle_blk_num_map=opt['network']['middle_blk_num_map'])
+    pass
 
 else:
     raise NotImplementedError

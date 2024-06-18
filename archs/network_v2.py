@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from nafnet_utils.arch_model import NAFBlock, SimpleGate, NAFNet
-from fourllie_archs.SFBlock import AmplitudeNet_skip, FreBlock
-from fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
+from .nafnet_utils.arch_model import NAFBlock, SimpleGate, NAFNet
+from .fourllie_archs.SFBlock import AmplitudeNet_skip, FreBlock
+from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 import kornia
 import functools
 
@@ -55,8 +55,6 @@ class Network(nn.Module):
         self.encoders = nn.ModuleList()
         self.encoders_map = nn.ModuleList()
         self.decoders = nn.ModuleList()
-        # self.middle_blks = nn.ModuleList()
-        # self.middle_blks_map = nn.ModuleList()
         self.ups = nn.ModuleList()
         self.downs = nn.ModuleList()
         self.downs_map = nn.ModuleList()
@@ -113,14 +111,14 @@ class Network(nn.Module):
         #calculate the illumination map and the starting point of the image in the encoder
         ill_map = self.illumination_map(input)
         x = self.intro(input)
-        print('Ill map shape', ill_map.shape)
-        print('Image shape', x.shape)
+        # print('Ill map shape', ill_map.shape)
+        # print('Image shape', x.shape)
         encs = []
-        i = 0
+        # i = 0
         for encoder, down, encoder_map, down_map in zip(self.encoders, self.downs, self.encoders_map, self.downs_map):
             ill_map = encoder_map(ill_map)
             x = encoder(x) * ill_map
-            print(i, x.shape)
+            # print(i, x.shape)
             encs.append(x)
             x = down(x)
             ill_map = down_map(ill_map)
