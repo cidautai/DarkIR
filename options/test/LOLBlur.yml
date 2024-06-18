@@ -6,12 +6,11 @@ network:
   middle_blk_nums: 3
   enc_blk_nums: [1, 1, 3]
   dec_blk_nums: [3, 2, 1]
-  residual_layers: 3
+  residual_layers: 1
 
 #### save model
 save:
-  path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/Network_base32_3encoder_l1_cosine_LOLBlur.pt
-  best: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/bests/
+  path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/bests/Network_base32_3encoder_l1_cosine_LOLBlur.pt
 
 examples_path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/examples
 results_path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/results

@@ -2,8 +2,10 @@ import os
 import yaml
 import numpy as np
 from PIL import Image
+import cv2 as cv
 
 import torch
+import torch.nn.functional as F
 import torchvision.transforms as transforms
 from ptflops import get_model_complexity_info
 
@@ -19,14 +21,30 @@ def path_to_tensor(path):
     img = pil_to_tensor(img).unsqueeze(0)
     
     return img
+def normalize_tensor(tensor):
+    
+    max_value = torch.max(tensor)
+    min_value = torch.min(tensor)
+    output = (tensor - min_value)/(max_value)
+    return output
 
 def save_tensor(tensor, path):
     
-    tensor = torch.clamp(tensor.squeeze(0), 0., 1.)
+    tensor = tensor.squeeze(0)
+    # tensor = normalize_tensor(tensor)
+    print(tensor.shape, tensor.dtype, torch.max(tensor), torch.min(tensor))
     img = tensor_to_pil(tensor)
     img.save(path)
 
-
+def save_tensor_v2(tensor, path):
+    
+    # tensor = normalize_tensor(tensor)
+    numpy_array = torch.clamp(tensor.squeeze(0), 0., 1.).cpu().numpy()
+    # img = tensor_to_pil(tensor)
+    numpy_array = (numpy_array * 255).astype(np.uint8)
+    # print(numpy_array.shape, numpy_array.dtype, np.max(numpy_array), np.min(numpy_array))
+    img = cv.cvtColor(numpy_array, cv.COLOR_BGR2RGB)
+    cv.imwrite(path, img)
 
 #load the config file
 PATH_CONFIG = '/home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/options/test/LOLBlur.yml'
@@ -60,7 +78,7 @@ else:
 
 checkpoints = torch.load(opt['save']['path'])
 # print(checkpoints)
-# model.load_state_dict(checkpoints['model_state_dict'])
+model.load_state_dict(checkpoints['model_state_dict'])
 model = model.to(device)
 
 #calculate MACs and number of parameters
@@ -81,7 +99,8 @@ with torch.no_grad():
     for path in path_images:
         tensor = path_to_tensor(path).to(device)
         
-        output = model(tensor)
+        output = torch.clamp(model(tensor), 0., 1.)
+        print(output.shape, output.dtype, torch.max(output), torch.min(output))
         save_tensor(output, os.path.join(PATH_RESULTS, os.path.basename(path)))
         
 print('Finished predictions.')

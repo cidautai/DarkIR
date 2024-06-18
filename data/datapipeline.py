@@ -69,62 +69,6 @@ class RandomCropSame:
         
         return img
 
-class MyDataset_RandCrop(Dataset):
-    """
-    A Dataset of the low and high light images with data values in each channel in the range 0-1 (normalized).
-    """
-    
-    def __init__(self, images_low, images_high, cropsize = None, tensor_transform = None, flips=None, test=False):
-        """
-        -images_high: list of RGB images of normal-light used for training or testing the model
-        - images_low: list of RGB images of low-light used for training or testing the model
-        - test: indicates if the dataset is for training (False) or testing (True)
-        -image_size: contains the dimension of the final image (H, W, C). This is important
-                     to do the propper crop of the image.
-        """
-        self.imgs_low   = sorted(images_low)
-        self.imgs_high  = sorted(images_high)
-        self.test       = test
-        self.cropsize   = cropsize
-        self.to_tensor  = tensor_transform
-        self.flips      = flips
-        self.rcrop      = RandomCropSame(self.cropsize)
-
-    def __len__(self):
-        return len(self.imgs_low)
-
-    def __getitem__(self, idx):
-        """
-        Given a (random) index. The dataloader selects the corresponding image path, and loads the image.
-        Then it returns the image, after applying any required transformation.
-        """
-        
-        img_low  = self.imgs_low[idx]
-        img_high = self.imgs_high[idx]
-        
-        # Load the image and convert to numpy array
-        rgb_low  = Image.open(img_low).convert('RGB')
-        rgb_high = Image.open(img_high).convert('RGB')
-        
-        # rgb_low  = Image.open(img_low).convert('RGB')
-        # rgb_high = Image.open(img_high).convert('RGB')
-        
-        if self.to_tensor: #transform the image to have the adequate properties
-            rgb_low  = self.to_tensor(rgb_low)
-            rgb_high = self.to_tensor(rgb_high)
-
-        # stack high and low to do the exact same flip on the two images
-        high_and_low = torch.stack((rgb_high, rgb_low))
-        if self.flips:
-            high_and_low      = self.flips(high_and_low)
-            rgb_high, rgb_low = high_and_low #separate again the images
-
-        if self.cropsize: # do random crops of the image
-            rgb_high, rgb_low = self.rcrop(rgb_high, rgb_low)
-
-
-        return rgb_high, rgb_low
-
 class MyDataset_Crop(Dataset):
     """
     A Dataset of the low and high light images with data values in each channel in the range 0-1 (normalized).
@@ -172,10 +116,7 @@ class MyDataset_Crop(Dataset):
         # Load the image and convert to numpy array
         rgb_low  = Image.open(img_low).convert('RGB')
         rgb_high = Image.open(img_high).convert('RGB')
-        
-        # rgb_low  = Image.open(img_low).convert('RGB')
-        # rgb_high = Image.open(img_high).convert('RGB')
-        
+
         if self.to_tensor: #transform the image to have the adequate properties
             rgb_low  = self.to_tensor(rgb_low)
             rgb_high = self.to_tensor(rgb_high)
@@ -192,7 +133,5 @@ class MyDataset_Crop(Dataset):
                 rgb_high, rgb_low = self.random_crop(rgb_high, rgb_low)
             elif self.center_crop:
                 rgb_high, rgb_low = self.center_crop(rgb_high), self.center_crop(rgb_low)
-        # print(rgb_high.shape, rgb_low.shape)
-        # print(0, rgb_high.shape)
     
         return rgb_high, rgb_low
