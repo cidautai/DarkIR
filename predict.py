@@ -36,16 +36,6 @@ def save_tensor(tensor, path):
     img = tensor_to_pil(tensor)
     img.save(path)
 
-def save_tensor_v2(tensor, path):
-    
-    # tensor = normalize_tensor(tensor)
-    numpy_array = torch.clamp(tensor.squeeze(0), 0., 1.).cpu().numpy()
-    # img = tensor_to_pil(tensor)
-    numpy_array = (numpy_array * 255).astype(np.uint8)
-    # print(numpy_array.shape, numpy_array.dtype, np.max(numpy_array), np.min(numpy_array))
-    img = cv.cvtColor(numpy_array, cv.COLOR_BGR2RGB)
-    cv.imwrite(path, img)
-
 #load the config file
 PATH_CONFIG = '/home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/options/test/LOLBlur.yml'
 opt = parse(PATH_CONFIG)
