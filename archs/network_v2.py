@@ -117,7 +117,7 @@ class Network(nn.Module):
         # i = 0
         for encoder, down, encoder_map, down_map in zip(self.encoders, self.downs, self.encoders_map, self.downs_map):
             ill_map = encoder_map(ill_map)
-            x = encoder(x) * ill_map
+            x = encoder(x) + ill_map
             # print(i, x.shape)
             encs.append(x)
             x = down(x)
@@ -125,7 +125,7 @@ class Network(nn.Module):
             # i += 1
 
         ill_map = self.middle_blks_map(ill_map)
-        x = self.middle_blks(x) * ill_map
+        x = self.middle_blks(x) + ill_map
         # print('3', x.shape)
         # apply the mask
         # x = x * mask
