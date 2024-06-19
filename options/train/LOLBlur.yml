@@ -8,7 +8,7 @@ datasets:
     train_path: /mnt/valab-datasets/LOLBlur/train
 
     n_workers: 4  # per GPU
-    batch_size_train: 4
+    batch_size_train: 3
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
@@ -49,12 +49,12 @@ train:
 
 #### save model
 save:
-  path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/Network_v2_base32_3encoder_Spatial_l1_Random_cosine_LOLBlur.pt
+  path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/Network_v2_Dilated_base32_3encoder_SpatialAdded_l1_Random_cosine_LOLBlur.pt
   best: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/bests/
 #### wandb:
 wandb:
   init: True
   project: motion-stabilization
   entity: cidautai
-  name: Network_v2_base32_3encoder_l1_Random_cosine_LOLBlur
+  name: Network_v2_Dilated_base32_3encoder_SpatialAdded_l1_Random_cosine_LOLBlur
   save_code: True

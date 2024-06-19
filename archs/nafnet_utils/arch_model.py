@@ -209,7 +209,6 @@ class NAFBlock_dilated(nn.Module):
 
     def forward(self, inp):
 
-        branch_results = []
         number_branches = len(self.branches)
         y = inp
         for branch in self.branches:
