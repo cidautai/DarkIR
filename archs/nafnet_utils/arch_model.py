@@ -191,9 +191,12 @@ class NAFBlock_dilated(nn.Module):
         super().__init__()
         dw_channel = c * DW_Expand
         #we define the 2 branches
-        self.branch_1 = Branch(c, DW_Expand, FFN_Expand = 2, dilation = dilations[0], drop_out_rate = 0.)
-        self.branch_2 = Branch(c, DW_Expand, FFN_Expand = 2, dilation = dilations[1], drop_out_rate = 0.)
-
+        
+        self.branches = nn.ModuleList()
+        for dilation in dilations:
+            self.branches.append(Branch(c, DW_Expand, FFN_Expand = 2, dilation = dilation, drop_out_rate = 0.))
+            
+        assert len(dilations) == len(self.branches)
         self.sg = SimpleGate()
         ffn_channel = FFN_Expand * c
         self.conv4 = nn.Conv2d(in_channels=c, out_channels=ffn_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True)
@@ -206,10 +209,11 @@ class NAFBlock_dilated(nn.Module):
 
     def forward(self, inp):
 
-        x_1 = self.branch_1(inp)
-        x_2 = self.branch_2(inp)
-
-        y = inp + x_1 / 2 +  x_2 / 2  # size [B, C, H, W]
+        branch_results = []
+        number_branches = len(self.branches)
+        y = inp
+        for branch in self.branches:
+            y += branch(inp)/number_branches
         
         x = self.conv4(self.norm2(y)) # size [B, 2*C, H, W]
         x = self.sg(x)  # size [B, C, H, W]
@@ -229,17 +233,15 @@ if __name__ == '__main__':
     middle_blk_num = 1
     dec_blks = [1, 1, 1, 1]
     
-    net = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
-                      enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
-
+    # net = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
+    #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
+    net  = NAFBlock_dilated_v2(c = img_channel, dilations = [1, 4, 9, 16])
 
     inp_shape = (3, 256, 256)
 
     from ptflops import get_model_complexity_info
 
-    macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
+    macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=True)
 
-    params = float(params[:-3])
-    macs = float(macs[:-4])
 
     print(macs, params)
