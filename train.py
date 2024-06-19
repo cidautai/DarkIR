@@ -92,8 +92,9 @@ elif network == 'Network_v2':
                     dec_blk_nums=opt['network']['dec_blk_nums'], 
                     residual_layers=opt['network']['residual_layers'],
                     enc_blk_nums_map=opt['network']['enc_blk_nums_map'],
-                    middle_blk_num_map=opt['network']['middle_blk_num_map'])
-    pass
+                    middle_blk_num_map=opt['network']['middle_blk_num_map'],
+                    spatial = opt['network']['spatial'],
+                    dilations = opt['network']['dilations'])
 
 else:
     raise NotImplementedError

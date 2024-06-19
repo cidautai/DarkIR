@@ -40,7 +40,7 @@ class IBlock(nn.Module):
 class Network(nn.Module):
     
     def __init__(self, img_channel=3, width=16, middle_blk_num=1, enc_blk_nums=[], dec_blk_nums=[], 
-                 enc_blk_nums_map = [], middle_blk_num_map = 3, residual_layers = 3, spatial = False):
+                 enc_blk_nums_map = [], middle_blk_num_map = 3, residual_layers = 3, spatial = False, dilations = [1, 4]):
         super(Network, self).__init__()
         
         assert len(enc_blk_nums) == len(enc_blk_nums_map), 'Not the same len for encoders in illumination map and image'
@@ -63,7 +63,7 @@ class Network(nn.Module):
         for num, num_map in zip(enc_blk_nums, enc_blk_nums_map):
             self.encoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan) for _ in range(num)]
+                    *[NAFBlock_dilated(chan, dilations=dilations) for _ in range(num)]
                 )
             )
             self.downs.append(
@@ -85,7 +85,7 @@ class Network(nn.Module):
             )
             
         self.middle_blks_map = nn.Sequential(*[IBlock(in_nc = chan, spatial = spatial) for _ in range(middle_blk_num_map)])
-        self.reconstruct_light = nn.Sequential(*[NAFBlock(c = chan) for _ in range(residual_layers)])
+        self.reconstruct_light = nn.Sequential(*[NAFBlock_dilated(c = chan, dilations = dilations) for _ in range(residual_layers)])
 
         for num in dec_blk_nums:
             self.ups.append(
@@ -97,7 +97,7 @@ class Network(nn.Module):
             chan = chan // 2
             self.decoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan) for _ in range(num)]
+                    *[NAFBlock_dilated(chan, dilations=dilations) for _ in range(num)]
                 )
             )
 
