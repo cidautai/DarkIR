@@ -187,7 +187,7 @@ class Branch(nn.Module):
         return x
 
 class NAFBlock_dilated(nn.Module):
-    def __init__(self, c, DW_Expand=2, FFN_Expand=2, drop_out_rate=0., dilations = [1, 4]):
+    def __init__(self, c, DW_Expand=2, FFN_Expand=2, drop_out_rate=0., dilations = [1]):
         super().__init__()
         dw_channel = c * DW_Expand
         #we define the 2 branches

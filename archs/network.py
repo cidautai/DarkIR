@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .nafnet_utils.arch_model import NAFBlock, SimpleGate, NAFNet
+from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet
 from .fourllie_archs.SFBlock import AmplitudeNet_skip
 from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 import kornia
@@ -43,7 +43,7 @@ class Network(nn.Module):
         for num in enc_blk_nums:
             self.encoders.append(
                 nn.Sequential(
-                    *[NAFBlock(chan) for _ in range(num)]
+                    *[NAFBlock_dilated(chan) for _ in range(num)]
                 )
             )
             self.downs.append(
@@ -53,7 +53,7 @@ class Network(nn.Module):
 
         self.middle_blks = \
             nn.Sequential(
-                *[NAFBlock(chan) for _ in range(middle_blk_num)]
+                *[NAFBlock_dilated(chan) for _ in range(middle_blk_num)]
             )
 
         for num in dec_blk_nums:
@@ -66,7 +66,7 @@ class Network(nn.Module):
             chan = chan // 2
             self.decoders.append(
                 nn.Sequential(
-                    *[NAFBlock(chan) for _ in range(num)]
+                    *[NAFBlock_dilated(chan) for _ in range(num)]
                 )
             )
 
