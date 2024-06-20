@@ -1,11 +1,15 @@
 #### general settings
-resume_training: False
+resume_training:
+  resume_training: True
+  resume: must
+  id: h2cq1d41
+
 
 #### datasets
 datasets:
   name: NBDN
   train:
-    train_path: /home/danfei/Python_workspace/Datasets/NBDN_dataset_50k/train
+    train_path: /mnt/valab-datasets/NBDN_dataset_50k/train
 
     n_workers: 4  # per GPU
     batch_size_train: 4
@@ -14,7 +18,7 @@ datasets:
     verbose: True
     crop_type: Random
   val:
-    test_path: /home/danfei/Python_workspace/Datasets/NBDN_dataset_50k/test
+    test_path: /mnt/valab-datasets/NBDN_dataset_50k/test
     cropsize: 256
     batch_size_test: 1
 

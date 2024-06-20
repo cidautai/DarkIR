@@ -23,7 +23,7 @@ from lpips import LPIPS
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.
-path_options = '/home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/options/train/NBDN.yml'
+path_options = '/home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/options/train/LOLBlur.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
 
@@ -41,7 +41,8 @@ BEST_PATH_MODEL = os.path.join(opt['save']['best'], os.path.basename(opt['save']
 #---------------------------------------------------------------
 
 wandb_log = opt['wandb']['init']  # flag if we want to output the results in wandb
-resume_training = opt['resume_training']  # flag if we want to resume training
+
+resume_training = opt['resume_training']['resume_training'] # flag if we want to resume training
 
 start_epochs = 0
 last_epochs = opt['train']['epochs']
@@ -131,6 +132,11 @@ if resume_training:
     optim.load_state_dict(checkpoints['optimizer_state_dict']),
     scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
     start_epochs = checkpoints['epoch']
+    resume = opt['resume_training']['resume']
+    id = opt['resume_training']['id']
+else:
+    resume = 'never'
+    id = None
 
 # log into wandb
 if wandb_log:
@@ -139,7 +145,9 @@ if wandb_log:
         # set the wandb project where this run will be logged
         project=opt['wandb']['project'], entity=opt['wandb']['entity'], 
         name=opt['wandb']['name'], save_code=opt['wandb']['save_code'],
-        config = opt
+        config = opt,
+        resume = resume,
+        id = id
     )
 
 
