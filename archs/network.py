@@ -25,7 +25,7 @@ class Attention_Light(nn.Module):
     
 class Network(nn.Module):
     
-    def __init__(self, img_channel=3, width=16, middle_blk_num=1, enc_blk_nums=[], dec_blk_nums=[], residual_layers = 3):
+    def __init__(self, img_channel=3, width=16, middle_blk_num=1, enc_blk_nums=[], dec_blk_nums=[], residual_layers = 3, dilations = [1]):
         super(Network, self).__init__()
         
         self.intro = nn.Conv2d(in_channels=img_channel, out_channels=width, kernel_size=3, padding=1, stride=1, groups=1,
@@ -43,7 +43,7 @@ class Network(nn.Module):
         for num in enc_blk_nums:
             self.encoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan) for _ in range(num)]
+                    *[NAFBlock_dilated(chan, dilations = dilations) for _ in range(num)]
                 )
             )
             self.downs.append(
@@ -53,7 +53,7 @@ class Network(nn.Module):
 
         self.middle_blks = \
             nn.Sequential(
-                *[NAFBlock_dilated(chan) for _ in range(middle_blk_num)]
+                *[NAFBlock_dilated(chan, dilations = dilations) for _ in range(middle_blk_num)]
             )
 
         for num in dec_blk_nums:

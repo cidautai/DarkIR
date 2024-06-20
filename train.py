@@ -23,7 +23,7 @@ from options.options import parse
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.
-path_options = '/home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/options/train/LOLBlur.yml'
+path_options = '/home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/options/train/LOLBlur.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
 
@@ -76,7 +76,8 @@ if network == 'Network':
                     middle_blk_num=opt['network']['middle_blk_num'], 
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'], 
-                    residual_layers=opt['network']['residual_layers'])
+                    residual_layers=opt['network']['residual_layers'],
+                    dilations=opt['network']['dilations'])
 elif network == 'NAFNet':
     model = NAFNet(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
