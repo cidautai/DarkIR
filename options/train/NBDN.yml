@@ -5,16 +5,16 @@ resume_training: False
 datasets:
   name: NBDN
   train:
-    train_path: /home/danfei/Python_Workspace/NBDN_dataset_50k/train
+    train_path: /home/danfei/Python_workspace/Datasets/NBDN_dataset_50k/train
 
     n_workers: 4  # per GPU
-    batch_size_train: 8
+    batch_size_train: 4
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
-    crop_type: Center
+    crop_type: Random
   val:
-    test_path: /home/danfei/Python_Workspace/NBDN_dataset_50k/test
+    test_path: /home/danfei/Python_workspace/Datasets/NBDN_dataset_50k/test
     cropsize: 256
     batch_size_test: 1
 
@@ -23,10 +23,14 @@ network:
   name: Network
   img_channels: 3
   width: 32
-  middle_blk_nums: 3
+  middle_blk_num: 3
   enc_blk_nums: [1, 2, 3]
   dec_blk_nums: [3, 1, 1]
-  residual_layers: 3
+  enc_blk_nums_map: [1, 2, 3]
+  middle_blk_num_map: 2
+  residual_layers: 1
+  dilations: [1, 4]
+  spatial: True
 
 
 #### training settings: learning rate scheme, loss
@@ -45,14 +49,14 @@ train:
 
 #### save model
 save:
-  path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/Network_base32_masks_changed2_3encoder_Char_cosine_NBDN50k.pt
-
+  path: /home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/Network_Dilated_base32_masks_3encoder_Char_cosine_NBDN50k.pt
+  best: /home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/bests/
 #### wandb:
 wandb:
   init: True
   project: motion-stabilization
   entity: cidautai
-  name: Network_base32_masks_changed2_3encoder_Char_cosine_NBDN50k
+  name: Network_Dilated_base32_masks_3encoder_Char_cosine_NBDN50k
   save_code: True
 
 
