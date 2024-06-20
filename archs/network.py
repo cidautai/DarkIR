@@ -72,7 +72,7 @@ class Network(nn.Module):
 
         self.padder_size = 2 ** len(self.encoders)        
         
-        #define the attention layers
+        #define the attention layers 
         
         self.attention1 = Attention_Light(img_channel, width)
         self.attention2 = Attention_Light(img_channel, width * 2)

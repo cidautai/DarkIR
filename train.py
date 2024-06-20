@@ -18,7 +18,7 @@ from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIMloss, SSIM
 from data.dataset_NBDN import main_dataset_nbdn
 from data.dataset_LOLBlur import main_dataset_lolblur
 from options.options import parse
-
+from lpips import LPIPS
 
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
@@ -154,6 +154,9 @@ else:
     raise NotImplementedError
 
 calc_SSIM = SSIM(data_range=1.)
+calc_LPIPS = LPIPS(net = 'vgg')
+
+
 best_valid_psnr = 0.
 
 for epoch in tqdm(range(start_epochs, last_epochs)):
@@ -169,6 +172,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         valid_loss = []
         valid_psnr = []
         valid_ssim = []
+        valid_lpips = []
     model.train()
     optim_loss = 0
 
@@ -225,9 +229,13 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
                 valid_psnr_batch = 20 * \
                     torch.log10(1. / torch.sqrt(valid_loss_batch))
                 valid_ssim_batch = calc_SSIM(enhanced_batch_valid, high_batch_valid)
+                valid_lpips_batch = calc_LPIPS(enhanced_batch_valid, high_batch_valid)
+                
+                
             valid_psnr.append(valid_psnr_batch.item())
             valid_ssim.append(valid_ssim_batch.item())
-
+            valid_lpips.append(torch.mean(valid_lpips_batch).item())
+            
     # We take the first image [0] from each batch
     high_img = high_batch_valid[0]
     low_img = low_batch_valid[0]
@@ -239,7 +247,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
     logger = {'train_loss': np.mean(train_loss), 'train_psnr': np.mean(train_psnr),
               'train_ssim': np.mean(train_ssim), 'train_og_psnr': np.mean(train_og_psnr), 
               'epoch': epoch,  'valid_psnr': np.mean(valid_psnr), 
-              'valid_ssim': np.mean(valid_ssim), 'examples': images}
+              'valid_ssim': np.mean(valid_ssim), 'valid_lpips': np.mean(valid_lpips),'examples': images}
 
     if wandb_log:
         wandb.log(logger)
