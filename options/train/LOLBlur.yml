@@ -5,7 +5,7 @@ resume_training: False
 datasets:
   name: LOLBlur
   train:
-    train_path: /mnt/valab-datasets/LOLBlur/train
+    train_path: /home/danfei/Python_workspace/Datasets/LOLBlur/train
 
     n_workers: 4  # per GPU
     batch_size_train: 3
@@ -14,7 +14,7 @@ datasets:
     verbose: True
     crop_type: Random
   val:
-    test_path: /mnt/valab-datasets/LOLBlur/test
+    test_path: /home/danfei/Python_workspace/Datasets/LOLBlur/test
     cropsize: 256
     batch_size_test: 1
 
@@ -49,8 +49,8 @@ train:
 
 #### save model
 save:
-  path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/Network_v2_Dilated_base32_3encoder_SpatialAdded_l1_Random_cosine_LOLBlur.pt
-  best: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/bests/
+  path: /home/danfei/Python_Workspace/deblur/Net-Low-Light-Deblurring/models/Network_v2_Dilated_base32_3encoder_SpatialAdded_l1_Random_cosine_LOLBlur.pt
+  best: /home/danfei/Python_Workspace/deblur/Net-Low-Light-Deblurring/models/bests/
 #### wandb:
 wandb:
   init: True
