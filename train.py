@@ -162,7 +162,7 @@ else:
     raise NotImplementedError
 
 calc_SSIM = SSIM(data_range=1.)
-calc_LPIPS = LPIPS(net = 'vgg')
+calc_LPIPS = LPIPS(net = 'vgg').to(device)
 
 
 best_valid_psnr = 0.
