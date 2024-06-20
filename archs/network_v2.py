@@ -24,7 +24,7 @@ class IBlock(nn.Module):
     def __init__(self, in_nc, spatial = True):
         super(IBlock,self).__init__()
         self.spatial = spatial
-        self.spatial_process = NAFBlock( c = in_nc) if spatial else nn.Identity()
+        self.spatial_process = NAFBlock_dilated( c = in_nc) if spatial else nn.Identity()
         self.frequency_process = FreBlock(nc = in_nc)
         self.cat = nn.Conv2d(2*in_nc,in_nc,1,1,0) if spatial else nn.Conv2d(in_nc,in_nc,1,1,0)
 
