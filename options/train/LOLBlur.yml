@@ -1,6 +1,6 @@
 #### general settings
 resume_training:
-  resume_training: True
+  resume_training: False
   resume: must
   id: waye95l7
 
@@ -12,7 +12,7 @@ datasets:
     train_path: /mnt/valab-datasets/LOLBlur/train
 
     n_workers: 4  # per GPU
-    batch_size_train: 4
+    batch_size_train: 3
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
@@ -24,12 +24,12 @@ datasets:
 
 #### network structures
 network:
-  name: NAFNet
+  name: Network_v3
   img_channels: 3
   width: 32
-  middle_blk_num: 1
-  enc_blk_nums: [2, 2, 4, 8]
-  dec_blk_nums: [2, 2, 2, 2]
+  middle_blk_num: 3
+  enc_blk_nums: [3, 1, 1]
+  dec_blk_nums: [1, 2, 3]
   enc_blk_nums_map: [1, 2, 3]
   middle_blk_num_map: 2
   residual_layers: 1
@@ -53,12 +53,12 @@ train:
 
 #### save model
 save:
-  path: /home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/NAFNet_base32_4encoder_l1_Random_cosine_LOLBlur.pt
+  path: /home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/Network_v3_base32_3encoder_l1_Random_cosine_LOLBlur.pt
   best: /home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/bests/
 #### wandb:
 wandb:
   init: True
-  project: motion-stabilization
+  project: LOLBlur
   entity: cidautai
-  name: NAFNet_base32_4encoder_l1_Random_cosine_LOLBlur
+  name: Network_v3_base32_3encoder_l1_Random_cosine_LOLBlur
   save_code: True
