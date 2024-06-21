@@ -14,6 +14,7 @@ from data.datapipeline import *
 from archs import Network
 from archs import NAFNet
 from archs.network_v2 import Network as Network_v2
+from archs.network_v3 import Network as Netowrk_v3
 from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIMloss, SSIM
 from data.dataset_NBDN import main_dataset_nbdn
 from data.dataset_LOLBlur import main_dataset_lolblur
@@ -97,6 +98,16 @@ elif network == 'Network_v2':
                     middle_blk_num_map=opt['network']['middle_blk_num_map'],
                     spatial = opt['network']['spatial'],
                     dilations = opt['network']['dilations'])
+
+if network == 'Network_v3':
+    model = Network(img_channel=opt['network']['img_channels'], 
+                    width=opt['network']['width'], 
+                    middle_blk_num=opt['network']['middle_blk_num'], 
+                    enc_blk_nums=opt['network']['enc_blk_nums'],
+                    dec_blk_nums=opt['network']['dec_blk_nums'], 
+                    residual_layers=opt['network']['residual_layers'],
+                    dilations=opt['network']['dilations'])
+
 
 else:
     raise NotImplementedError

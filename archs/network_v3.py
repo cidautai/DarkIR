@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet
-from .fourllie_archs.SFBlock import AmplitudeNet_skip
+from .fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
 from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 import kornia
 import functools
@@ -10,12 +10,15 @@ import functools
 
 class Attention_Light(nn.Module):
     
-    def __init__(self, img_channels = 3, width = 16):
+    def __init__(self, img_channels = 3, width = 16, spatial = False):
         super(Attention_Light, self).__init__()
         self.block = nn.Sequential(
                 nn.Conv2d(in_channels = img_channels, out_channels = width//2, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True),
+                ProcessBlock(in_nc = width //2, spatial = spatial),
                 nn.Conv2d(in_channels = width//2, out_channels = width, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True),
+                ProcessBlock(in_nc = width, spatial = spatial),
                 nn.Conv2d(in_channels = width, out_channels = width, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True),
+                ProcessBlock(in_nc=width, spatial = spatial),
                 nn.Sigmoid()
                     )
     def forward(self, input):
@@ -89,7 +92,7 @@ class Network(nn.Module):
         B, C, H, W = input.shape
         
         # we calculate the three sizes of our input image
-        h1 =  input#F.interpolate(input, size=(H, W), mode = 'area')
+        h1 =  input
         h2 = F.interpolate(h1, size=(H//2, W//2), mode = 'area')
         h3 = F.interpolate(h2, size=(H//4, W//4), mode = 'area')
         h4 = F.interpolate(h3, size=(H//8, W//8), mode = 'area')
