@@ -53,8 +53,8 @@ train:
 
 #### save model
 save:
-  path: /home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/NAFNet_base32_4encoder_l1_Random_cosine_LOLBlur.pt
-  best: /home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/bests/
+  path: ./models/NAFNet_base32_4encoder_l1_Random_cosine_LOLBlur.pt
+  best: ./models/bests/
 #### wandb:
 wandb:
   init: True

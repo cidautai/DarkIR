@@ -3,6 +3,7 @@
 *.png
 *.PNG
 *.jpg
-/models
+*.pth
+*.pt
 scheduler_test.py
 /archs/nafnet_utils/arch_model_dilated.py

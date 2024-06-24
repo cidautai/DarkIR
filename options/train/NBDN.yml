@@ -53,8 +53,8 @@ train:
 
 #### save model
 save:
-  path: /home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/Network_Dilated_base32_masks_3encoder_Char_cosine_NBDN50k.pt
-  best: /home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/bests/
+  path: ./models/Network_Dilated_base32_masks_3encoder_Char_cosine_NBDN50k.pt
+  best: ./models/bests/
 #### wandb:
 wandb:
   init: True
