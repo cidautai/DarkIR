@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import torchvision.transforms as transforms
 from ptflops import get_model_complexity_info
 
-from archs import Network, NAFNet
+from archs import Network, NAFNet, Network_v2, Network_v3
 from options.options import parse
 
 #define some auxiliary functions
@@ -46,8 +46,8 @@ device = torch.device('cuda')
 #selected network
 network = opt['network']['name']
 
-PATH_MODEL = opt['save']['path']
-
+# PATH_MODEL = opt['save']['best']
+print(network)
 # define the network
 if network == 'Network':
     model = Network(img_channel=opt['network']['img_channels'], 
@@ -63,10 +63,32 @@ elif network == 'NAFNet':
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'])
 
+elif network == 'Network_v2':
+    model = Network_v2(img_channel=opt['network']['img_channels'], 
+                    width=opt['network']['width'], 
+                    middle_blk_num=opt['network']['middle_blk_num'], 
+                    enc_blk_nums=opt['network']['enc_blk_nums'],
+                    dec_blk_nums=opt['network']['dec_blk_nums'], 
+                    residual_layers=opt['network']['residual_layers'],
+                    enc_blk_nums_map=opt['network']['enc_blk_nums_map'],
+                    middle_blk_num_map=opt['network']['middle_blk_num_map'],
+                    spatial = opt['network']['spatial'],
+                    dilations = opt['network']['dilations'])
+
+elif network == 'Network_v3':
+    model = Network_v3(img_channel=opt['network']['img_channels'], 
+                    width=opt['network']['width'], 
+                    middle_blk_num=opt['network']['middle_blk_num'], 
+                    enc_blk_nums=opt['network']['enc_blk_nums'],
+                    dec_blk_nums=opt['network']['dec_blk_nums'], 
+                    residual_layers=opt['network']['residual_layers'],
+                    dilations=opt['network']['dilations'])
+
 else:
     raise NotImplementedError
 
-checkpoints = torch.load(opt['save']['path'])
+print(opt['save']['best'])
+checkpoints = torch.load(opt['save']['best'])
 # print(checkpoints)
 model.load_state_dict(checkpoints['model_state_dict'])
 model = model.to(device)
