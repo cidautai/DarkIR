@@ -1,6 +1,6 @@
 #### general settings
 resume_training:
-  resume_training: False
+  resume_training: True
   resume: must
   id: waye95l7
 
@@ -24,12 +24,12 @@ datasets:
 
 #### network structures
 network:
-  name: Network_v3
+  name: NAFNet
   img_channels: 3
   width: 32
-  middle_blk_num: 3
-  enc_blk_nums: [3, 1, 1]
-  dec_blk_nums: [1, 2, 3]
+  middle_blk_num: 1
+  enc_blk_nums: [2, 2, 4, 8]
+  dec_blk_nums: [2, 2, 2, 2]
   enc_blk_nums_map: [1, 2, 3]
   middle_blk_num_map: 2
   residual_layers: 1
@@ -42,10 +42,10 @@ train:
   lr_initial: !!float 5e-4
   lr_scheme: CosineAnnealing
   betas: [0.9, 0.9]
-  epochs: 500
+  epochs: 700
   lr_gamma: 0.5
   weight_decay: !!float 1e-3
-  eta_min: !!float 1e-6
+  eta_min: !!float 1e-7
 
   pixel_criterion: l1
   pixel_weight: 1.0
@@ -53,12 +53,12 @@ train:
 
 #### save model
 save:
-  path: /home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/Network_v3_base32_3encoder_l1_Random_cosine_LOLBlur.pt
+  path: /home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/NAFNet_base32_4encoder_l1_Random_cosine_LOLBlur.pt
   best: /home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/bests/
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_v3_base32_3encoder_l1_Random_cosine_LOLBlur
+  name: NAFNet_base32_4encoder_l1_Random_cosine_LOLBlur
   save_code: True

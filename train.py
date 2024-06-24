@@ -27,7 +27,7 @@ from lpips import LPIPS
 path_options = '/home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/options/train/LOLBlur.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
-
+# print(opt)
 # define some parameters based on the run we want to make
 device = torch.device('cuda')
 
@@ -71,7 +71,6 @@ if opt['datasets']['name'] == 'LOLBlur':
                                                 num_workers=opt['datasets']['train']['n_workers'],
                                                 crop_type=opt['datasets']['train']['crop_type'])
 
-
 if network == 'Network':
     model = Network(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
@@ -99,7 +98,7 @@ elif network == 'Network_v2':
                     spatial = opt['network']['spatial'],
                     dilations = opt['network']['dilations'])
 
-if network == 'Network_v3':
+elif network == 'Network_v3':
     model = Network_v3(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
                     middle_blk_num=opt['network']['middle_blk_num'], 
