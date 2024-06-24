@@ -37,7 +37,7 @@ def save_tensor(tensor, path):
     img.save(path)
 
 #load the config file
-PATH_CONFIG = '/home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/options/test/LOLBlur.yml'
+PATH_CONFIG = './options/test/LOLBlur.yml'
 opt = parse(PATH_CONFIG)
 
 # define some parameters based on the run we want to make

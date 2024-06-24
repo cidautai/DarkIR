@@ -1,16 +1,20 @@
 #### network structures
 network:
-  name: Network
+  name: Network_v3
   img_channels: 3
   width: 32
-  middle_blk_nums: 3
-  enc_blk_nums: [1, 1, 3]
-  dec_blk_nums: [3, 2, 1]
+  middle_blk_num: 3
+  enc_blk_nums: [1, 2, 3]
+  dec_blk_nums: [3, 1, 1]
+  enc_blk_nums_map: [1, 2, 3]
+  middle_blk_num_map: 2
   residual_layers: 1
+  dilations: [1, 4]
+  spatial: True
 
 #### save model
 save:
-  path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/models/bests/Network_base32_3encoder_l1_cosine_LOLBlur.pt
-
-examples_path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/examples
-results_path: /home/danfei/Python_Workspace/deblur/NAFNet_Fourllie/results
+  best: ./models/bests/Network_v3_base32_3encoder_l1_Random_cosine_LOLBlur.pt
+  
+examples_path: /home/danfei/Python_Workspace/deblur/Net-Low-Light-Deblurring/examples
+results_path: /home/danfei/Python_Workspace/deblur/Net-Low-Light-Deblurring/results
