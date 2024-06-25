@@ -23,19 +23,85 @@ class Attention_Light(nn.Module):
 
 class UIB_Extra_DW(nn.Module):
     
-    def __init__(self, img_channels = 3, expand_ratio = 4):
+    def __init__(self, inp_channels = 3, expand_ratio = 4, kernel_size_dw = 3,
+                stride_dw = 1, padding_dw = 1, out_scale = 1, residue = True):
         super(UIB_Extra_DW, self).__init__()
-        expanded_channels = int(img_channels * expand_ratio)
+        expanded_channels = int(inp_channels * expand_ratio)
+        out_channels = int(inp_channels * out_scale)
         self.block = nn.Sequential(
-                    nn.Conv2d(in_channels = img_channels, out_channels = img_channels, kernel_size = 3, padding = 1, stride = 1, groups = img_channels, bias = True),
-                    nn.Conv2d(in_channels = img_channels, out_channels = expanded_channels, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True)  
+                    nn.Conv2d(in_channels = inp_channels, out_channels = inp_channels, kernel_size = kernel_size_dw, padding = 1, stride = 1, groups = inp_channels, bias = True),
+                    nn.BatchNorm2d(inp_channels),
+                    nn.Conv2d(in_channels = inp_channels, out_channels = expanded_channels, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True),
+                    nn.BatchNorm2d(expanded_channels),
+                    nn.ReLU(inplace= True),
+                    nn.Conv2d(in_channels = expanded_channels, out_channels = expanded_channels, kernel_size = kernel_size_dw, padding = padding_dw, stride = stride_dw, 
+                              groups = inp_channels, bias = True),
+                    nn.BatchNorm2d(expanded_channels),
+                    nn.ReLU(inplace= True),
+                    nn.Conv2d(in_channels = expanded_channels, out_channels = out_channels, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True),
+                    nn.BatchNorm2d(out_channels)
         )
-
-
+        self.residue = residue
     
+    def forward(self, input):
+
+        if self.residue:
+            return self.block(input) + input
+        else:
+            return self.block(input)
+
+
+class InvertedBottleneck(nn.Module):
+    
+    def __init__(self, inp_channels = 3, expand_ratio = 4, kernel_size_dw = 3, stride_dw = 1, padding_dw = 1, out_scale = 1, residue = True):
+        super(InvertedBottleneck, self).__init__()
+        expanded_channels = int(inp_channels * expand_ratio)
+        out_channels = int(inp_channels * out_scale)
+        self.block = nn.Sequential(
+                    nn.Conv2d(in_channels = inp_channels, out_channels = expanded_channels, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True),
+                    nn.BatchNorm2d(expanded_channels),
+                    nn.ReLU(inplace= True),
+                    nn.Conv2d(in_channels = expanded_channels, out_channels = expanded_channels, kernel_size = kernel_size_dw, padding = padding_dw, stride = stride_dw, 
+                              groups = inp_channels, bias = True),
+                    nn.BatchNorm2d(expanded_channels),
+                    nn.ReLU(inplace= True),
+                    nn.Conv2d(in_channels = expanded_channels, out_channels = out_channels, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True),
+                    nn.BatchNorm2d(out_channels)
+        )
+        self.residue = residue
+    def forward(self, input):
+        if self.residue:
+            return self.block(input) + input
+        else:
+            return self.block(input)
+
+class ConvNext(nn.Module):
+    
+    def __init__(self, inp_channels = 3, expand_ratio = 4, kernel_size_dw = 3, stride_dw = 1, padding_dw = 1, out_scale = 1, residue = True):
+        super(ConvNext, self).__init__()
+        expanded_channels = int(inp_channels * expand_ratio)
+        out_channels = int(inp_channels * out_scale)
+        self.block = nn.Sequential(
+                    nn.Conv2d(in_channels = inp_channels, out_channels = inp_channels, kernel_size = kernel_size_dw, padding = padding_dw, stride = stride_dw,
+                              groups = inp_channels, bias = True),
+                    nn.BatchNorm2d(inp_channels),
+                    nn.Conv2d(in_channels = inp_channels, out_channels = expanded_channels, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True),
+                    nn.BatchNorm2d(expanded_channels),
+                    nn.ReLU(inplace= True),
+                    nn.Conv2d(in_channels = expanded_channels, out_channels = out_channels, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True),
+                    nn.BatchNorm2d(out_channels)
+        )
+        self.residue = residue
+    def forward(self, input):
+        if self.residue:
+            return self.block(input) + input
+        else:
+            return self.block(input)
+
 class Network(nn.Module):
     
-    def __init__(self, img_channel=3, width=16, middle_blk_num=1, enc_blk_nums=[], dec_blk_nums=[], residual_layers = 3, dilations = [1]):
+    def __init__(self, img_channel=3, width=16, middle_blk_num=1, enc_blk_nums=[], dec_blk_nums=[], 
+                 residual_layers = 3, dilations = [1], expand_ratio = 4):
         super(Network, self).__init__()
         
         self.intro = nn.Conv2d(in_channels=img_channel, out_channels=width, kernel_size=3, padding=1, stride=1, groups=1,
@@ -53,30 +119,30 @@ class Network(nn.Module):
         for num in enc_blk_nums:
             self.encoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan, dilations = dilations) for _ in range(num)]
+                    *[UIB_Extra_DW(inp_channels=chan, expand_ratio=expand_ratio, kernel_size_dw=3) for _ in range(num)]
                 )
             )
             self.downs.append(
-                nn.Conv2d(chan, 2*chan, 2, 2)
+                UIB_Extra_DW(inp_channels=chan, expand_ratio=expand_ratio, kernel_size_dw=2, stride_dw=2, padding_dw=0, residue = False, out_scale=2)
             )
             chan = chan * 2
 
         self.middle_blks = \
             nn.Sequential(
-                *[NAFBlock_dilated(chan, dilations = dilations) for _ in range(middle_blk_num)]
+                *[UIB_Extra_DW(inp_channels=chan, expand_ratio=expand_ratio, kernel_size_dw=3) for _ in range(middle_blk_num)]
             )
 
         for num in dec_blk_nums:
             self.ups.append(
                 nn.Sequential(
-                    nn.Conv2d(chan, chan * 2, 1, bias=False),
+                    ConvNext(inp_channels=chan, expand_ratio=expand_ratio, kernel_size_dw=3, stride_dw=1, padding_dw=1, residue = False, out_scale=2),
                     nn.PixelShuffle(2)
                 )
             )
             chan = chan // 2
             self.decoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan) for _ in range(num)]
+                    *[ConvNext(inp_channels=chan, expand_ratio=expand_ratio, kernel_size_dw=3, out_scale=1) for _ in range(num)]
                 )
             )
 
@@ -116,13 +182,14 @@ class Network(nn.Module):
         x = self.intro(input)
         
         encs = []
-        # i = 0
+        i = 0
         for encoder, down, attention in zip(self.encoders, self.downs, attentions):
+            # print(x.shape)
             x = encoder(x) * attention
             # print(i, x.shape)
             encs.append(x)
             x = down(x)
-            # i += 1
+            i += 1
 
         x = self.middle_blks(x) * self.attention4(h4)
         # print('3', x.shape)
@@ -130,9 +197,10 @@ class Network(nn.Module):
         # x = x * mask
         
         x = self.recon_trunk_light(x)
-        
+        # print('4', x.shape)
         for decoder, up, enc_skip in zip(self.decoders, self.ups, encs[::-1]):
             x = up(x)
+            # print(x.shape, enc_skip.shape)
             x = x + enc_skip
             x = decoder(x)
 
@@ -145,18 +213,15 @@ class Network(nn.Module):
 if __name__ == '__main__':
     
     img_channel = 3
-    width = 16
+    width = 32
 
-    enc_blks = [2, 2, 4]
-    middle_blk_num = 1
-    dec_blks = [2, 2, 2]
+    enc_blks = [1, 2, 3]
+    middle_blk_num = 3
+    dec_blks = [3, 1, 1]
 
-    # enc_blks = [1, 1, 1, 28]
-    # middle_blk_num = 1
-    # dec_blks = [1, 1, 1, 1]
     
     net = Network(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
-                      enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
+                      enc_blk_nums=enc_blks, dec_blk_nums=dec_blks, expand_ratio=2, residual_layers=1)
 
     # NAF = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
     #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)

@@ -15,6 +15,7 @@ from archs import Network
 from archs import NAFNet
 from archs.network_v2 import Network as Network_v2
 from archs.network_v3 import Network as Network_v3
+from archs.network_MBNv4 import Network as Network_MBNv4
 from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIMloss, SSIM
 from data.dataset_NBDN import main_dataset_nbdn
 from data.dataset_LOLBlur import main_dataset_lolblur
@@ -24,7 +25,7 @@ from lpips import LPIPS
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.
-path_options = '/home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/options/train/LOLBlur.yml'
+path_options = '/home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/options/train/LOLBlur_MBNv4.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
 # print(opt)
@@ -107,6 +108,14 @@ elif network == 'Network_v3':
                     residual_layers=opt['network']['residual_layers'],
                     dilations=opt['network']['dilations'])
 
+if network == 'Network_MBNv4':
+    model = Network_MBNv4(img_channel=opt['network']['img_channels'], 
+                    width=opt['network']['width'], 
+                    middle_blk_num=opt['network']['middle_blk_num'], 
+                    enc_blk_nums=opt['network']['enc_blk_nums'],
+                    dec_blk_nums=opt['network']['dec_blk_nums'], 
+                    residual_layers=opt['network']['residual_layers'],
+                    expand_ratio=opt['network']['expand_ratio'])
 
 else:
     raise NotImplementedError
