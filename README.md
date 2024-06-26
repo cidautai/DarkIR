@@ -41,7 +41,6 @@ The datasets used in the paper, LOL-Blur and NBDN have the next properties:
 | :----------------------------------------------------------: | :----------------------------------------------------------: |
 | ![add](/examples/inputs/0010.png)                          |                          ![add](/examples/results/0010.png) |
 | ![add](/examples/inputs/0088.png)                          |                          ![add](/examples/results/0088.png) |
-| ![<img src="/examples/inputs/0087.png" height="250px"/>](https://imgsli.com/Mjc0NzIz) | ![<img src="/examples/inputs/0060.png" height="250px"/>](https://imgsli.com/Mjc0NzI0) |
 
 &nbsp;
 
