@@ -40,17 +40,15 @@ PATH_MODEL     = opt['save']['path']
 NEW_PATH_MODEL = opt['save']['path']
 BEST_PATH_MODEL = os.path.join(opt['save']['best'], os.path.basename(opt['save']['path']))
 
-#---------------------------------------------------------------
 
 wandb_log = opt['wandb']['init']  # flag if we want to output the results in wandb
-
 resume_training = opt['resume_training']['resume_training'] # flag if we want to resume training
 
 start_epochs = 0
 last_epochs = opt['train']['epochs']
 
-
-#load the dataloaders
+#---------------------------------------------------------------------------------------------------
+# LOAD THE DATALOADERS
 if opt['datasets']['name'] == 'NBDN':
     train_loader, test_loader = main_dataset_nbdn(train_path=opt['datasets']['train']['train_path'],
                                                 test_path = opt['datasets']['val']['test_path'],
@@ -71,6 +69,9 @@ if opt['datasets']['name'] == 'LOLBlur':
                                                 cropsize=opt['datasets']['train']['cropsize'],
                                                 num_workers=opt['datasets']['train']['n_workers'],
                                                 crop_type=opt['datasets']['train']['crop_type'])
+
+#---------------------------------------------------------------------------------------------------
+# DEFINE NETWORK, SCHEDULER AND OPTIMIZER
 
 if network == 'Network':
     model = Network(img_channel=opt['network']['img_channels'], 
@@ -136,13 +137,10 @@ optim = torch.optim.AdamW(model.parameters(), lr = opt['train']['lr_initial'],
                           betas = opt['train']['betas'])
 
 # Initialize the cosine annealing scheduler
-# we want the cycle of iterations to
-# T_max = len(train_loader) // opt['datasets']['train']['batch_size_train'] * last_epochs
-# be the same as the total number of iterations
 if opt['train']['lr_scheme'] == 'CosineAnnealing':
     scheduler = CosineAnnealingLR(optim, T_max=last_epochs, eta_min=opt['train']['eta_min'])
 else: 
-    raise NotImplementedError
+    raise NotImplementedError('scheduler not implemented')
 
 # if resume load the weights
 if resume_training:
@@ -157,7 +155,8 @@ else:
     resume = 'never'
     id = None
 
-# log into wandb
+#---------------------------------------------------------------------------------------------------
+# LOG INTO WANDB
 if wandb_log:
     wandb.login()
     wandb.init(
@@ -169,8 +168,10 @@ if wandb_log:
         id = id
     )
 
+#---------------------------------------------------------------------------------------------------
+# DEFINE LOSSES AND METRICS
 
-# we define the losses
+# first the pixel losses
 if opt['train']['pixel_criterion'] == 'l1':
     pixel_loss = L1Loss()
 elif opt['train']['pixel_criterion'] == 'l2':
@@ -202,7 +203,8 @@ else:
 calc_SSIM = SSIM(data_range=1.)
 calc_LPIPS = LPIPS(net = 'vgg').to(device)
 
-
+#---------------------------------------------------------------------------------------------------
+# START THE TRAINING
 best_valid_psnr = 0.
 
 for epoch in tqdm(range(start_epochs, last_epochs)):
