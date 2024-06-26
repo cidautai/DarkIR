@@ -181,7 +181,8 @@ else:
     raise NotImplementedError
 
 # now the perceptual loss
-if opt['train']['perceptual']:
+perceptual = opt['train']['perceptual']
+if perceptual:
     perceptual_loss = VGGLoss(loss_weight = opt['train']['perceptual_weight'],
                               criterion = opt['train']['perceptual_criterion'],
                               reduction = opt['train']['perceptual_reduction'])
@@ -189,7 +190,8 @@ else:
     perceptual_loss = None
 
 #finally the edge loss
-if opt['train']['edge']:
+edge = opt['train']['edge'] 
+if edge:
     edge_loss = EdgeLoss(loss_weight = opt['train']['edge_weight'],
                               criterion = opt['train']['edge_criterion'],
                               reduction = opt['train']['edge_reduction'])
@@ -232,6 +234,11 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
         # calculate loss function to optimize
         l_pixel = pixel_loss(enhanced_batch, high_batch)
+        if perceptual:
+            l_pixel += perceptual_loss(enhanced_batch, high_batch)
+        if edge:
+            l_pixel += edge_loss(enhanced_batch, high_batch)
+        
         optim_loss = l_pixel
 
         # Calculate loss function for the PSNR
