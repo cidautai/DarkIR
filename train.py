@@ -16,7 +16,7 @@ from archs import NAFNet
 from archs.network_v2 import Network as Network_v2
 from archs.network_v3 import Network as Network_v3
 from archs.network_MBNv4 import Network as Network_MBNv4
-from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIMloss, SSIM
+from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss
 from data.dataset_NBDN import main_dataset_nbdn
 from data.dataset_LOLBlur import main_dataset_lolblur
 from options.options import parse
@@ -179,6 +179,23 @@ elif opt['train']['pixel_criterion'] == 'Charbonnier':
     pixel_loss = CharbonnierLoss()
 else:
     raise NotImplementedError
+
+# now the perceptual loss
+if opt['train']['perceptual']:
+    perceptual_loss = VGGLoss(loss_weight = opt['train']['perceptual_weight'],
+                              criterion = opt['train']['perceptual_criterion'],
+                              reduction = opt['train']['perceptual_reduction'])
+else:
+    perceptual_loss = None
+
+#finally the edge loss
+if opt['train']['edge']:
+    perceptual_loss = EdgeLoss(loss_weight = opt['train']['edge_weight'],
+                              criterion = opt['train']['edge_criterion'],
+                              reduction = opt['train']['edge_reduction'])
+else:
+    perceptual_loss = None
+
 
 calc_SSIM = SSIM(data_range=1.)
 calc_LPIPS = LPIPS(net = 'vgg').to(device)

@@ -31,7 +31,7 @@ network:
   enc_blk_nums: [1, 2, 3]
   dec_blk_nums: [3, 1, 1]
   residual_layers: 1
-  expand_ratio: 2
+  expand_ratio: 4
 
 
 #### training settings: learning rate scheme, loss
@@ -47,15 +47,24 @@ train:
   pixel_criterion: l1
   pixel_weight: 1.0
 
+  perceptual: True
+  perceptual_criterion: l1
+  perceptual_weight: 0.01
+  perceptual_reduction: mean
+
+  edge: True 
+  edge_criterion: l2
+  edge_weight: 50.0
+  edge_reduction: mean
 
 #### save model
 save:
-  path: ./models/Network_MBNv4_base32_3encoder_l1_Random_cosine_LOLBlur.pt
+  path: ./models/Network_MBNv4_base32_3encoder_expand4_l1_Random_cosine_LOLBlur.pt
   best: ./models/bests/
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_MBNv4_base32_3encoder_l1_Random_cosine_LOLBlur
+  name: Network_MBNv4_base32_3encoder_expand4_l1_Random_cosine_LOLBlur
   save_code: True

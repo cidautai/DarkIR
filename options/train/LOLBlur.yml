@@ -50,6 +50,16 @@ train:
   pixel_criterion: l1
   pixel_weight: 1.0
 
+  perceptual: True
+  perceptual_criterion: l1
+  perceptual_weight: 0.01
+  perceptual_reduction: mean
+
+  edge: True 
+  edge_criterion: l2
+  edge_weight: 50.0
+  edge_reduction: mean
+
 
 #### save model
 save:
@@ -62,3 +72,5 @@ wandb:
   entity: cidautai
   name: NAFNet_base32_4encoder_l1_Random_cosine_LOLBlur
   save_code: True
+
+
