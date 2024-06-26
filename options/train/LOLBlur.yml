@@ -1,6 +1,6 @@
 #### general settings
 resume_training:
-  resume_training: True
+  resume_training: False
   resume: must
   id: waye95l7
 
@@ -12,7 +12,7 @@ datasets:
     train_path: /mnt/valab-datasets/LOLBlur/train
 
     n_workers: 4  # per GPU
-    batch_size_train: 3
+    batch_size_train: 4
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
@@ -24,17 +24,17 @@ datasets:
 
 #### network structures
 network:
-  name: NAFNet
+  name: Network_v3
   img_channels: 3
   width: 32
-  middle_blk_num: 1
-  enc_blk_nums: [2, 2, 4, 8]
-  dec_blk_nums: [2, 2, 2, 2]
-  enc_blk_nums_map: [1, 2, 3]
-  middle_blk_num_map: 2
-  residual_layers: 1
+  middle_blk_num: 3
+  enc_blk_nums: [1, 2, 3]
+  dec_blk_nums: [3, 1, 1]
+  enc_blk_nums_map: None
+  middle_blk_num_map: None
+  residual_layers: None
   dilations: [1, 4]
-  spatial: True
+  spatial: None
 
 
 #### training settings: learning rate scheme, loss
@@ -42,7 +42,7 @@ train:
   lr_initial: !!float 5e-4
   lr_scheme: CosineAnnealing
   betas: [0.9, 0.9]
-  epochs: 700
+  epochs: 500
   lr_gamma: 0.5
   weight_decay: !!float 1e-3
   eta_min: !!float 1e-6
@@ -63,14 +63,14 @@ train:
 
 #### save model
 save:
-  path: ./models/NAFNet_base32_4encoder_l1_Random_cosine_LOLBlur.pt
+  path: ./models/Network_v3_base32_3encoder_l1_perc_edge_Random_cosine_LOLBlur.pt
   best: ./models/bests/
 #### wandb:
 wandb:
-  init: True
+  init: False
   project: LOLBlur
   entity: cidautai
-  name: NAFNet_base32_4encoder_l1_Random_cosine_LOLBlur
+  name: Network_v3_base32_3encoder_l1_perc_edge_Random_cosine_LOLBlur
   save_code: True
 
 
