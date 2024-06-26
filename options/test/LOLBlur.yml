@@ -1,11 +1,11 @@
 #### network structures
 network:
-  name: Network_v3
+  name: Network
   img_channels: 3
   width: 32
   middle_blk_num: 3
-  enc_blk_nums: [3, 1, 1]
-  dec_blk_nums: [1, 2, 3]
+  enc_blk_nums: [1, 2, 3]
+  dec_blk_nums: [3, 1, 1]
   enc_blk_nums_map: [1, 2, 3]
   middle_blk_num_map: 2
   residual_layers: 1
@@ -14,7 +14,7 @@ network:
 
 #### save model
 save:
-  best: ./models/bests/Network_v3_base32_3encoder_l1_Random_cosine_LOLBlur.pt
+  best: ./models/bests/Network_Dilated_base32_3encoder_l1_Random_cosine_LOLBlur.pt
   
 examples_path: ./examples/inputs
 results_path: ./examples/results
