@@ -190,11 +190,11 @@ else:
 
 #finally the edge loss
 if opt['train']['edge']:
-    perceptual_loss = EdgeLoss(loss_weight = opt['train']['edge_weight'],
+    edge_loss = EdgeLoss(loss_weight = opt['train']['edge_weight'],
                               criterion = opt['train']['edge_criterion'],
                               reduction = opt['train']['edge_reduction'])
 else:
-    perceptual_loss = None
+    edge_loss = None
 
 
 calc_SSIM = SSIM(data_range=1.)
