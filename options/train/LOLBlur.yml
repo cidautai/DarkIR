@@ -32,7 +32,7 @@ network:
   dec_blk_nums: [3, 1, 1]
   enc_blk_nums_map: None
   middle_blk_num_map: None
-  residual_layers: None
+  residual_layers: 1
   dilations: [1, 4]
   spatial: None
 

@@ -25,7 +25,7 @@ from lpips import LPIPS
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.
-path_options = '/home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/options/train/LOLBlur_MBNv4.yml'
+path_options = '/home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/options/train/LOLBlur.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
 # print(opt)
@@ -109,7 +109,7 @@ elif network == 'Network_v3':
                     residual_layers=opt['network']['residual_layers'],
                     dilations=opt['network']['dilations'])
 
-if network == 'Network_MBNv4':
+elif network == 'Network_MBNv4':
     model = Network_MBNv4(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
                     middle_blk_num=opt['network']['middle_blk_num'], 
@@ -119,7 +119,7 @@ if network == 'Network_MBNv4':
                     expand_ratio=opt['network']['expand_ratio'])
 
 else:
-    raise NotImplementedError
+    raise NotImplementedError('This network isnt implemented')
 model = model.to(device)
 
 #calculate MACs and number of parameters
