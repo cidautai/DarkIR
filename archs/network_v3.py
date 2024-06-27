@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from .nafnet_utils.local_arch import Local_Base
 from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet
 from .fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
 from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
@@ -133,6 +134,20 @@ class Network(nn.Module):
         x = x + input
         
         return x[:, :, :H, :W]
+
+class NetworkLocal(Local_Base, Network):
+
+    def __init__(self, *args, train_size=(1, 3, 256, 256), fast_imp=False, **kwargs):
+        Local_Base.__init__(self)
+        Network.__init__(self, *args, **kwargs)
+
+        N, C, H, W = train_size
+        base_size = (int(H * 1.5), int(W * 1.5))
+
+        self.eval()
+        with torch.no_grad():
+            self.convert(base_size=base_size, train_size=train_size, fast_imp=fast_imp)
+  
 
 
 if __name__ == '__main__':

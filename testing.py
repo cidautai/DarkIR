@@ -22,10 +22,11 @@ from data.dataset_LOLBlur import main_dataset_lolblur
 from options.options import parse
 from lpips import LPIPS
 
+path_options = './options/train/LOLBlur.yml'
+
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.
-path_options = './options/train/LOLBlur.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
 # print(opt)
@@ -72,6 +73,7 @@ elif opt['datasets']['name'] == 'LOLBlur':
 else:
     name_loader = opt['datasets']['name']
     raise NotImplementedError(f'{name_loader} is not implemented')
+
 #---------------------------------------------------------------------------------------------------
 # DEFINE NETWORK, SCHEDULER AND OPTIMIZER
 
@@ -146,7 +148,7 @@ else:
 
 # if resume load the weights
 if resume_training:
-    checkpoints = torch.load(PATH_MODEL)
+    checkpoints = torch.load(BEST_PATH_MODEL)
     model.load_state_dict(checkpoints['model_state_dict'])
     optim.load_state_dict(checkpoints['optimizer_state_dict']),
     scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
@@ -157,187 +159,41 @@ else:
     resume = 'never'
     id = None
 
-#---------------------------------------------------------------------------------------------------
-# LOG INTO WANDB
-if wandb_log:
-    wandb.login()
-    wandb.init(
-        # set the wandb project where this run will be logged
-        project=opt['wandb']['project'], entity=opt['wandb']['entity'], 
-        name=opt['wandb']['name'], save_code=opt['wandb']['save_code'],
-        config = opt,
-        resume = resume,
-        id = id
-    )
 
 #---------------------------------------------------------------------------------------------------
-# DEFINE LOSSES AND METRICS
-
-# first the pixel losses
-if opt['train']['pixel_criterion'] == 'l1':
-    pixel_loss = L1Loss()
-elif opt['train']['pixel_criterion'] == 'l2':
-    pixel_loss = MSELoss()
-elif opt['train']['pixel_criterion'] == 'Charbonnier':
-    pixel_loss = CharbonnierLoss()
-else:
-    raise NotImplementedError
-
-# now the perceptual loss
-perceptual = opt['train']['perceptual']
-if perceptual:
-    perceptual_loss = VGGLoss(loss_weight = opt['train']['perceptual_weight'],
-                              criterion = opt['train']['perceptual_criterion'],
-                              reduction = opt['train']['perceptual_reduction'])
-else:
-    perceptual_loss = None
-
-#finally the edge loss
-edge = opt['train']['edge'] 
-if edge:
-    edge_loss = EdgeLoss(loss_weight = opt['train']['edge_weight'],
-                              criterion = opt['train']['edge_criterion'],
-                              reduction = opt['train']['edge_reduction'])
-else:
-    edge_loss = None
-
+# DEFINE METRICS
 
 calc_SSIM = SSIM(data_range=1.)
 calc_LPIPS = LPIPS(net = 'vgg').to(device)
 
-#---------------------------------------------------------------------------------------------------
-# START THE TRAINING
-best_valid_psnr = 0.
 
-for epoch in tqdm(range(start_epochs, last_epochs)):
+valid_psnr = []
+valid_ssim = []
+valid_lpips = []
 
-    start_time = time.time()
-    train_loss = []
-    train_psnr = []       # loss and PSNR of the enhanced-light image
-    train_og_loss = []
-    train_og_psnr = []  # loss and PSNR of the low-light image
-    train_ssim    = []
+model.eval()
+# Now we need to go over the test_loader and evaluate the results of the epoch
+for high_batch_valid, low_batch_valid in test_loader:
 
-    if test_loader:
-        valid_loss = []
-        valid_psnr = []
-        valid_ssim = []
-        valid_lpips = []
-    model.train()
-    optim_loss = 0
+    high_batch_valid = high_batch_valid.to(device)
+    low_batch_valid = low_batch_valid.to(device)
 
-    for high_batch, low_batch in train_loader:
-
-        # Move the data to the GPU
-        high_batch = high_batch.to(device)
-        low_batch = low_batch.to(device)
-
-        optim.zero_grad()
-        # Feed the data into the model
-        enhanced_batch = model(low_batch)
-
-        # calculate loss function to optimize
-        l_pixel = pixel_loss(enhanced_batch, high_batch)
-        if perceptual:
-            l_pixel += perceptual_loss(enhanced_batch, high_batch)
-        if edge:
-            l_pixel += edge_loss(enhanced_batch, high_batch)
+    with torch.no_grad():
+        enhanced_batch_valid = model(low_batch_valid)
+        # loss
+        valid_loss_batch = torch.mean(
+            (high_batch_valid - enhanced_batch_valid)**2)
+        # PSNR (dB) metric
+        valid_psnr_batch = 20 * \
+            torch.log10(1. / torch.sqrt(valid_loss_batch))
+        valid_ssim_batch = calc_SSIM(enhanced_batch_valid, high_batch_valid)
+        valid_lpips_batch = calc_LPIPS(enhanced_batch_valid, high_batch_valid)
         
-        optim_loss = l_pixel
-
-        # Calculate loss function for the PSNR
-        loss = torch.mean((high_batch - enhanced_batch)**2)
-        og_loss = torch.mean((high_batch - low_batch)**2)
-
-        # and PSNR (dB) metric
-        psnr = 20 * torch.log10(1. / torch.sqrt(loss))
-        og_psnr = 20 * torch.log10(1. / torch.sqrt(og_loss))
-
-        #calculate ssim metric
-        ssim = calc_SSIM(enhanced_batch, high_batch)
-
-        optim_loss.backward()
-        optim.step()
-
-        train_loss.append(optim_loss.item())
-        train_psnr.append(psnr.item())
-        train_og_psnr.append(og_psnr.item())
-        train_ssim.append(ssim.item())
-
-
         
-    # run this part if test loader is defined
-    if test_loader:
-        model.eval()
-        # Now we need to go over the test_loader and evaluate the results of the epoch
-        for high_batch_valid, low_batch_valid in test_loader:
+    valid_psnr.append(valid_psnr_batch.item())
+    valid_ssim.append(valid_ssim_batch.item())
+    valid_lpips.append(torch.mean(valid_lpips_batch).item())
 
-            high_batch_valid = high_batch_valid.to(device)
-            low_batch_valid = low_batch_valid.to(device)
-
-            with torch.no_grad():
-                enhanced_batch_valid = model(low_batch_valid)
-                # loss
-                valid_loss_batch = torch.mean(
-                    (high_batch_valid - enhanced_batch_valid)**2)
-                # PSNR (dB) metric
-                valid_psnr_batch = 20 * \
-                    torch.log10(1. / torch.sqrt(valid_loss_batch))
-                valid_ssim_batch = calc_SSIM(enhanced_batch_valid, high_batch_valid)
-                valid_lpips_batch = calc_LPIPS(enhanced_batch_valid, high_batch_valid)
-                
-                
-            valid_psnr.append(valid_psnr_batch.item())
-            valid_ssim.append(valid_ssim_batch.item())
-            valid_lpips.append(torch.mean(valid_lpips_batch).item())
-            
-    # We take the first image [0] from each batch
-    high_img = high_batch_valid[0]
-    low_img = low_batch_valid[0]
-    enhanced_img = enhanced_batch_valid[0]
-
-    caption = "1: Input, 2: Output, 3: Ground_Truth"
-    images_list = [low_img, enhanced_img, high_img]
-    images = log_images(images_list, caption)
-    logger = {'train_loss': np.mean(train_loss), 'train_psnr': np.mean(train_psnr),
-              'train_ssim': np.mean(train_ssim), 'train_og_psnr': np.mean(train_og_psnr), 
-              'epoch': epoch,  'valid_psnr': np.mean(valid_psnr), 
-              'valid_ssim': np.mean(valid_ssim), 'valid_lpips': np.mean(valid_lpips),'examples': images}
-
-    if wandb_log:
-        wandb.log(logger)
-
-
-    print(f"Epoch {epoch + 1} of {last_epochs} took {time.time() - start_time:.3f}s\t Loss:{np.mean(train_loss)}\t PSNR:{np.mean(valid_psnr)}\n")
-
-
-    # Save the model after every epoch
-    model_to_save = {
-        'epoch': epoch,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optim.state_dict(),
-        'loss': np.mean(train_loss),
-        'scheduler_state_dict': scheduler.state_dict()
-    }
-    torch.save(model_to_save, NEW_PATH_MODEL)
-
-    #save best model if new valid_psnr is higher than the best one
-    if np.mean(valid_psnr) >= best_valid_psnr:
-        
-        torch.save(model_to_save, BEST_PATH_MODEL)
-        
-        best_valid_psnr = np.mean(valid_psnr) # update best psnr
-
-    #update scheduler
-    scheduler.step()
-    print('Scheduler last learning rate: ', scheduler.get_last_lr())
-    
-    
-
-if wandb_log:
-    wandb.finish()
-
-
-
-
-
+print(f'PSNR validation value: {np.mean(valid_psnr)}')
+print(f'SSIM validation value: {np.mean(valid_ssim)}')
+print(f'LPIPS validation value: {np.mean(valid_lpips)}')
