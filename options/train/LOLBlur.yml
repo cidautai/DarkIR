@@ -67,7 +67,7 @@ save:
   best: ./models/bests/
 #### wandb:
 wandb:
-  init: False
+  init: True
   project: LOLBlur
   entity: cidautai
   name: Network_v3_base32_3encoder_l1_perc_edge_Random_cosine_LOLBlur
