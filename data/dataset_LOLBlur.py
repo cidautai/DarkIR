@@ -110,7 +110,7 @@ def main_dataset_lolblur(train_path='/mnt/valab-datasets/LOLBlur/train', test_pa
     # Load the datasets
     train_dataset = MyDataset_Crop(list_blur, list_sharp, cropsize=cropsize,
                                    tensor_transform=tensor_transform, flips=flip_transform, test=False, crop_type=crop_type)
-    test_dataset = MyDataset_Crop(list_blur_valid, list_sharp_valid, cropsize=cropsize,
+    test_dataset = MyDataset_Crop(list_blur_valid, list_sharp_valid, cropsize=None,
                                   tensor_transform=tensor_transform, test=True, crop_type=crop_type)
 
     # #Load the data loaders

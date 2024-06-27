@@ -1,6 +1,6 @@
 #### general settings
 resume_training:
-  resume_training: False
+  resume_training: True
   resume: must
   id: waye95l7
 

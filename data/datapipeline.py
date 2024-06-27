@@ -98,8 +98,6 @@ class MyDataset_Crop(Dataset):
                 
                 self.center_crop = transforms.CenterCrop(cropsize)  
                 self.random_crop = None
-        else:
-            self.rcrop = None 
 
     def __len__(self):
         return len(self.imgs_low)
