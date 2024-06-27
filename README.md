@@ -1,5 +1,5 @@
 # Low-Light Image Deblurring
-
+[![Hugging Face](https://img.shields.io/badge/Demo-%F0%9F%A4%97%20Hugging%20Face-blue)](https://huggingface.co/spaces/danifei/Low-Light-Deblurring) 
 ## Introduction
 The repository is structured in the next way:
 
@@ -26,8 +26,10 @@ train.py
 ```
 At this moment what can be done with this repo is train the net defined in /archs/network.py. To design the hyperparameters of the training you may change the /options/train/config.yaml file that you want to run, and when running train.py select the config.yaml desired.
 
+In addition testing.py is used to calculate the metrics of the net, isolating this process from the training one. Running predict.py lets you enhance the images that are in the folder [/examples/inputs](/examples/inputs), which will be restored to [/examples/results](/examples/results).
+
 ## Datasets
-The datasets used in the paper, LOL-Blur and NBDN have the next properties:
+The datasets used in the paper are:
 
 |Dataset     | Sets of images | URL  |
 | -----------| :---------------:|------|
