@@ -11,6 +11,7 @@ network:
   residual_layers: 1
   dilations: [1, 4]
   spatial: True
+  extra_depth_wise: True
 
 #### save model
 save:

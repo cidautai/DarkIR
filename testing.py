@@ -111,7 +111,8 @@ elif network == 'Network_v3':
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'], 
                     residual_layers=opt['network']['residual_layers'],
-                    dilations=opt['network']['dilations'])
+                    dilations=opt['network']['dilations'],
+                    extra_depth_wise=opt['network']['extra_depth_wise'])
 
 elif network == 'Network_MBNv4':
     model = Network_MBNv4(img_channel=opt['network']['img_channels'], 
