@@ -1,8 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .arch_util import LayerNorm2d
-from .local_arch import Local_Base
+
+try:
+    from .arch_util import LayerNorm2d
+    from .local_arch import Local_Base
+except:
+    from arch_util import LayerNorm2d
+    from local_arch import Local_Base
 
 
 class SimpleGate(nn.Module):
@@ -161,11 +166,12 @@ class NAFNetLocal(Local_Base, NAFNet):
             self.convert(base_size=base_size, train_size=train_size, fast_imp=fast_imp)
 
 class Branch(nn.Module):
-    def __init__(self, c, DW_Expand, FFN_Expand = 2, dilation = 1, drop_out_rate = 0.):
+    def __init__(self, c, DW_Expand, FFN_Expand = 2, dilation = 1, drop_out_rate = 0., extra_depth_wise = False):
         super().__init__()
         self.dw_channel = DW_Expand * c 
         self.step1 = nn.Sequential(
                        LayerNorm2d(c),
+                       nn.Conv2d(c, c, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity(), #optional extra dw
                        nn.Conv2d(in_channels=c, out_channels=self.dw_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1),
                        nn.Conv2d(in_channels=self.dw_channel, out_channels=self.dw_channel, kernel_size=3, padding=dilation, stride=1, groups=self.dw_channel,
                                             bias=True, dilation = dilation), # the dconv
@@ -187,14 +193,13 @@ class Branch(nn.Module):
         return x
 
 class NAFBlock_dilated(nn.Module):
-    def __init__(self, c, DW_Expand=2, FFN_Expand=2, drop_out_rate=0., dilations = [1]):
+    def __init__(self, c, DW_Expand=2, FFN_Expand=2, dilations = [1], extra_depth_wise = False):
         super().__init__()
-        dw_channel = c * DW_Expand
         #we define the 2 branches
         
         self.branches = nn.ModuleList()
         for dilation in dilations:
-            self.branches.append(Branch(c, DW_Expand, FFN_Expand = 2, dilation = dilation, drop_out_rate = 0.))
+            self.branches.append(Branch(c, DW_Expand, FFN_Expand = FFN_Expand, dilation = dilation, drop_out_rate = 0., extra_depth_wise=extra_depth_wise))
             
         assert len(dilations) == len(self.branches)
         self.sg = SimpleGate()
@@ -221,20 +226,21 @@ class NAFBlock_dilated(nn.Module):
         return y + x * self.gamma
 
 if __name__ == '__main__':
+    
     img_channel = 3
     width = 32
 
-    # enc_blks = [2, 2, 4, 8]
-    # middle_blk_num = 12
-    # dec_blks = [2, 2, 2, 2]
-
-    enc_blks = [1, 1, 1, 28]
-    middle_blk_num = 1
-    dec_blks = [1, 1, 1, 1]
+    enc_blks = [1, 2, 3]
+    middle_blk_num = 3
+    dec_blks = [3, 1, 1]
+    dilations = [1, 4]
+    extra_depth_wise = False
     
     # net = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
     #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
-    net  = NAFBlock_dilated_v2(c = img_channel, dilations = [1, 4, 9, 16])
+    net  = NAFBlock_dilated(c = img_channel, 
+                            dilations = dilations,
+                            extra_depth_wise=extra_depth_wise)
 
     inp_shape = (3, 256, 256)
 
