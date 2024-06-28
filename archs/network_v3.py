@@ -1,13 +1,19 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .nafnet_utils.local_arch import Local_Base
-from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet
-from .fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
-from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 import kornia
 import functools
 
+try:
+    from .nafnet_utils.local_arch import Local_Base
+    from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet
+    from .fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
+    from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
+except:
+    from nafnet_utils.local_arch import Local_Base
+    from nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet
+    from fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
+    from fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 
 class Attention_Light(nn.Module):
     
@@ -29,7 +35,14 @@ class Attention_Light(nn.Module):
     
 class Network(nn.Module):
     
-    def __init__(self, img_channel=3, width=16, middle_blk_num=1, enc_blk_nums=[], dec_blk_nums=[], residual_layers = 3, dilations = [1]):
+    def __init__(self, img_channel=3, 
+                 width=16, 
+                 middle_blk_num=1, 
+                 enc_blk_nums=[], 
+                 dec_blk_nums=[], 
+                 residual_layers = 3, 
+                 dilations = [1], 
+                 extra_depth_wise = False):
         super(Network, self).__init__()
         
         self.intro = nn.Conv2d(in_channels=img_channel, out_channels=width, kernel_size=3, padding=1, stride=1, groups=1,
@@ -47,7 +60,7 @@ class Network(nn.Module):
         for num in enc_blk_nums:
             self.encoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan, dilations = dilations) for _ in range(num)]
+                    *[NAFBlock_dilated(chan, dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(num)]
                 )
             )
             self.downs.append(
@@ -57,7 +70,7 @@ class Network(nn.Module):
 
         self.middle_blks = \
             nn.Sequential(
-                *[NAFBlock_dilated(chan, dilations = dilations) for _ in range(middle_blk_num)]
+                *[NAFBlock_dilated(chan, dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(middle_blk_num)]
             )
 
         for num in dec_blk_nums:
@@ -70,7 +83,7 @@ class Network(nn.Module):
             chan = chan // 2
             self.decoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan) for _ in range(num)]
+                    *[NAFBlock_dilated(chan, extra_depth_wise=extra_depth_wise) for _ in range(num)]
                 )
             )
 
@@ -153,21 +166,23 @@ class NetworkLocal(Local_Base, Network):
 if __name__ == '__main__':
     
     img_channel = 3
-    width = 16
+    width = 32
 
-    enc_blks = [2, 2, 4]
-    middle_blk_num = 1
-    dec_blks = [2, 2, 2]
+    enc_blks = [1, 2, 3]
+    middle_blk_num = 3
+    dec_blks = [3, 1, 1]
+    extra_depth_wise = True
+    residual_layers = 1
+    dilations = [1, 4]
 
-    # enc_blks = [1, 1, 1, 28]
-    # middle_blk_num = 1
-    # dec_blks = [1, 1, 1, 1]
-    
-    net = Network(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
-                      enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
-
-    # NAF = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
-    #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
+    net = Network(img_channel=img_channel, 
+                  width=width, 
+                  middle_blk_num=middle_blk_num,
+                  enc_blk_nums=enc_blks, 
+                  dec_blk_nums=dec_blks,
+                  extra_depth_wise=extra_depth_wise,
+                  dilations = dilations,
+                  residual_layers=residual_layers)
 
     inp_shape = (3, 256, 256)
 
@@ -175,16 +190,7 @@ if __name__ == '__main__':
 
     macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
 
-    # params = float(params[:-3])
-    # macs = float(macs[:-4])
-
-    # print('MACs and params of the network:')
     print(macs, params)    
-    
-    tensor = torch.rand((1, 3, 256, 256))
-    # print('Size of input tensor: ',tensor.shape)
-    
-    # output = net(tensor)
-    # print('Size of output tensor: ',output.shape)
+
     
     
