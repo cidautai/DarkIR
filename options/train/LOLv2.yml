@@ -1,15 +1,15 @@
 #### general settings
 resume_training:
-  resume_training: False
+  resume_training: True
   resume: must
   id: waye95l7
 
 
 #### datasets
 datasets:
-  name: LOLBlur
+  name: LOLv2
   train:
-    train_path: /mnt/valab-datasets/LOLBlur/train
+    train_path: /mnt/valab-datasets/LOL-v2/Real_captured/train
 
     n_workers: 4  # per GPU
     batch_size_train: 4
@@ -18,7 +18,7 @@ datasets:
     verbose: True
     crop_type: Random
   val:
-    test_path: /mnt/valab-datasets/LOLBlur/test
+    test_path: /mnt/valab-datasets/LOL-v2/Real_captured/test
     cropsize: 256
     batch_size_test: 1
 
@@ -35,7 +35,7 @@ network:
   residual_layers: 1
   dilations: [1, 4]
   spatial: None
-  extra_depth_wise: True
+  extra_depth_wise: False
 
 
 #### training settings: learning rate scheme, loss
@@ -64,7 +64,7 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_v3_interpolate_extraDW.pt
+  path: ./models/Network_v3_interpolate.pt
   best: ./models/bests/
 #### wandb:
 wandb:
@@ -73,5 +73,3 @@ wandb:
   entity: cidautai
   name: Network_v3_interpolate_extraDW_LOLBlur
   save_code: True
-
-

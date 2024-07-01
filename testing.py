@@ -19,10 +19,12 @@ from archs.network_MBNv4 import Network as Network_MBNv4
 from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss
 from data.dataset_NBDN import main_dataset_nbdn
 from data.dataset_LOLBlur import main_dataset_lolblur
+from data.dataset_LOL import main_dataset_lol
+from data.dataset_LOLv2 import main_dataset_lolv2
 from options.options import parse
 from lpips import LPIPS
 
-path_options = './options/train/LOLBlur.yml'
+path_options = './options/train/LOLv2.yml'
 
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
@@ -70,6 +72,27 @@ elif opt['datasets']['name'] == 'LOLBlur':
                                                 cropsize=opt['datasets']['train']['cropsize'],
                                                 num_workers=opt['datasets']['train']['n_workers'],
                                                 crop_type=opt['datasets']['train']['crop_type'])
+elif opt['datasets']['name'] == 'LOL':
+    train_loader, test_loader = main_dataset_lol(train_path=opt['datasets']['train']['train_path'],
+                                                test_path = opt['datasets']['val']['test_path'],
+                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
+                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
+                                                flips = opt['datasets']['train']['flips'],
+                                                verbose=opt['datasets']['train']['verbose'],
+                                                cropsize=opt['datasets']['train']['cropsize'],
+                                                num_workers=opt['datasets']['train']['n_workers'],
+                                                crop_type=opt['datasets']['train']['crop_type'])
+elif opt['datasets']['name'] == 'LOLv2':
+    train_loader, test_loader = main_dataset_lolv2(train_path=opt['datasets']['train']['train_path'],
+                                                test_path = opt['datasets']['val']['test_path'],
+                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
+                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
+                                                flips = opt['datasets']['train']['flips'],
+                                                verbose=opt['datasets']['train']['verbose'],
+                                                cropsize=opt['datasets']['train']['cropsize'],
+                                                num_workers=opt['datasets']['train']['n_workers'],
+                                                crop_type=opt['datasets']['train']['crop_type'])
+
 else:
     name_loader = opt['datasets']['name']
     raise NotImplementedError(f'{name_loader} is not implemented')
