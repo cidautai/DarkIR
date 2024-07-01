@@ -64,7 +64,7 @@ def main_dataset_lolblur(train_path='/mnt/valab-datasets/LOLBlur/train', test_pa
     paths_blur_valid = [os.path.join(PATH_VALID, 'low_blur_noise', path) for path in os.listdir(os.path.join(PATH_VALID, 'low_blur_noise'))]
     paths_sharp_valid = [os.path.join(PATH_VALID, 'high_sharp_scaled', path) for path in os.listdir(os.path.join(PATH_VALID, 'high_sharp_scaled'))]        
     
-    print(len(paths_blur), len(paths_blur_valid), len(paths_sharp), len(paths_sharp_valid))
+    # print(len(paths_blur), len(paths_blur_valid), len(paths_sharp), len(paths_sharp_valid))
     
     # extract the images from their corresponding folders, now we get a list of lists
     paths_blur = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur ]

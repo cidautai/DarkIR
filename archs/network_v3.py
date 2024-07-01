@@ -103,13 +103,8 @@ class Network(nn.Module):
     def forward(self, input):
 
         B, C, H, W = input.shape
-        
-        # we calculate the three sizes of our input image
+
         h1 =  input
-        # h2 = F.interpolate(h1, size=(H//2, W//2), mode = 'area')
-        # h3 = F.interpolate(h2, size=(H//4, W//4), mode = 'area')
-        # h4 = F.interpolate(h3, size=(H//8, W//8), mode = 'area')
-        
         # generate the different attention layers
         attention1 = self.attention1(input)
         attention2 = F.interpolate(self.upconv1(attention1), size = (H//2, W//2), mode = 'bilinear')
