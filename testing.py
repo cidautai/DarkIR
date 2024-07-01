@@ -20,7 +20,7 @@ from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLos
 from data.dataset_NBDN import main_dataset_nbdn
 from data.dataset_LOLBlur import main_dataset_lolblur
 from data.dataset_LOL import main_dataset_lol
-from data.dataset_LOLv2 import main_dataset_lolv2
+from data.dataset_LOLv2 import main_dataset_lolv2, main_dataset_lolv2_synth
 from options.options import parse
 from lpips import LPIPS
 
@@ -84,6 +84,16 @@ elif opt['datasets']['name'] == 'LOL':
                                                 crop_type=opt['datasets']['train']['crop_type'])
 elif opt['datasets']['name'] == 'LOLv2':
     train_loader, test_loader = main_dataset_lolv2(train_path=opt['datasets']['train']['train_path'],
+                                                test_path = opt['datasets']['val']['test_path'],
+                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
+                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
+                                                flips = opt['datasets']['train']['flips'],
+                                                verbose=opt['datasets']['train']['verbose'],
+                                                cropsize=opt['datasets']['train']['cropsize'],
+                                                num_workers=opt['datasets']['train']['n_workers'],
+                                                crop_type=opt['datasets']['train']['crop_type'])
+elif opt['datasets']['name'] == 'LOLv2_synth':
+    train_loader, test_loader = main_dataset_lolv2_synth(train_path=opt['datasets']['train']['train_path'],
                                                 test_path = opt['datasets']['val']['test_path'],
                                                 batch_size_train=opt['datasets']['train']['batch_size_train'],
                                                 batch_size_test=opt['datasets']['val']['batch_size_test'],
