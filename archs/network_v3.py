@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import kornia
 import functools
-
 try:
     from .nafnet_utils.local_arch import Local_Base
     from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet
@@ -32,7 +31,7 @@ class Attention_Light(nn.Module):
         return self.block(input)
 
 
-    
+
 class Network(nn.Module):
     
     def __init__(self, img_channel=3, 
@@ -92,9 +91,9 @@ class Network(nn.Module):
         #define the attention layers 
         
         self.attention1 = Attention_Light(img_channel, width)
-        self.attention2 = Attention_Light(img_channel, width * 2)
-        self.attention3 = Attention_Light(img_channel, width * 4)
-        self.attention4 = Attention_Light(img_channel, width * 8)
+        self.upconv1 = nn.Conv2d(width, width * 2, 1, 1)
+        self.upconv2 = nn.Conv2d(width * 2, width * 4, 1, 1)
+        self.upconv3 = nn.Conv2d(width * 4, width * 8, 1, 1)
         
         ResidualBlock_noBN_f = functools.partial(ResidualBlock_noBN, nf= chan * self.padder_size)
         self.recon_trunk_light = make_layer(ResidualBlock_noBN_f, residual_layers)
@@ -107,14 +106,15 @@ class Network(nn.Module):
         
         # we calculate the three sizes of our input image
         h1 =  input
-        h2 = F.interpolate(h1, size=(H//2, W//2), mode = 'area')
-        h3 = F.interpolate(h2, size=(H//4, W//4), mode = 'area')
-        h4 = F.interpolate(h3, size=(H//8, W//8), mode = 'area')
+        # h2 = F.interpolate(h1, size=(H//2, W//2), mode = 'area')
+        # h3 = F.interpolate(h2, size=(H//4, W//4), mode = 'area')
+        # h4 = F.interpolate(h3, size=(H//8, W//8), mode = 'area')
         
-        # print(h1.shape)
-        attention1 = self.attention1(h1)
-        attention2 = self.attention2(h2)
-        attention3 = self.attention3(h3)
+        # generate the different attention layers
+        attention1 = self.attention1(input)
+        attention2 = F.interpolate(self.upconv1(attention1), size = (H//2, W//2), mode = 'bilinear')
+        attention3 = F.interpolate(self.upconv2(attention2), size = (H//4, W//4), mode = 'bilinear')
+        attention4 = F.interpolate(self.upconv3(attention3), size= (H//8, W//8), mode ='bilinear')
         attentions = [attention1, attention2, attention3]
         # print('Attention1', attention1.shape)
         # print('Attention2', attention2.shape)
@@ -131,7 +131,7 @@ class Network(nn.Module):
             x = down(x)
             # i += 1
 
-        x = self.middle_blks(x) * self.attention4(h4)
+        x = self.middle_blks(x) * attention4
         # print('3', x.shape)
         # apply the mask
         # x = x * mask
@@ -171,18 +171,19 @@ if __name__ == '__main__':
     enc_blks = [1, 2, 3]
     middle_blk_num = 3
     dec_blks = [3, 1, 1]
-    extra_depth_wise = True
     residual_layers = 1
     dilations = [1, 4]
-
+    
     net = Network(img_channel=img_channel, 
                   width=width, 
                   middle_blk_num=middle_blk_num,
                   enc_blk_nums=enc_blks, 
                   dec_blk_nums=dec_blks,
-                  extra_depth_wise=extra_depth_wise,
-                  dilations = dilations,
-                  residual_layers=residual_layers)
+                  residual_layers=residual_layers,
+                  dilations = dilations)
+
+    # NAF = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
+    #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
 
     inp_shape = (3, 256, 256)
 

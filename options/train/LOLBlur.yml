@@ -64,14 +64,14 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_v3_extraDW_LOLBlur.pt
+  path: ./models/Network_v3_interpolate.pt
   best: ./models/bests/
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_v3_extraDW_LOLBlur
+  name: Network_v3_interpolate_LOLBlur
   save_code: True
 
 
