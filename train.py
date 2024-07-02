@@ -34,7 +34,8 @@ print(os.path.isfile(path_options))
 opt = parse(path_options)
 # print(opt)
 # define some parameters based on the run we want to make
-device = torch.device('cuda')
+os.environ["CUDA_VISIBLE_DEVICES"]=str(opt['device']['gpus'])
+device = torch.device('cuda') if opt['device']['cuda'] else torch.device('cpu')
 
 #selected network
 network = opt['network']['name']

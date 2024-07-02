@@ -4,12 +4,16 @@ resume_training:
   resume: must
   id: waye95l7
 
+#### training devices
+device:
+  cuda: True
+  gpus: 0
 
 #### datasets
 datasets:
   name: LOLBlur
   train:
-    train_path: /mnt/valab-datasets/LOLBlur/train
+    train_path: /home/leadergpu/Datasets/LOLBlur/train
 
     n_workers: 4  # per GPU
     batch_size_train: 4
@@ -18,7 +22,7 @@ datasets:
     verbose: True
     crop_type: Random
   val:
-    test_path: /mnt/valab-datasets/LOLBlur/test
+    test_path: /home/leadergpu/Datasets/LOLBlur/test
     cropsize: 256
     batch_size_test: 1
 

@@ -192,6 +192,32 @@ class Branch(nn.Module):
         
         return x
 
+class Branch_v2(nn.Module):
+    def __init__(self, c, DW_Expand, FFN_Expand = 2, dilation = 1, drop_out_rate = 0., extra_depth_wise = False):
+        super().__init__()
+        self.dw_channel = DW_Expand * c 
+        self.step1 = nn.Sequential(
+                    #    nn.Conv2d(c, c, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity(), #optional extra dw
+                       nn.Conv2d(in_channels=c, out_channels=self.dw_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1),
+                       nn.Conv2d(in_channels=self.dw_channel, out_channels=self.dw_channel, kernel_size=3, padding=dilation, stride=1, groups=self.dw_channel,
+                                            bias=True, dilation = dilation), # the dconv
+                       SimpleGate() 
+        )
+        self.sca = nn.Sequential(
+                       nn.AdaptiveAvgPool2d(1),
+                       nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=self.dw_channel // 2, kernel_size=1, padding=0, stride=1,
+                       groups=1, bias=True, dilation = 1),  
+        )
+        self.conv = nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1) 
+    def forward(self, input):
+        
+        x = self.step1(input)
+        z = self.sca(x)
+        x = x* z
+        x = self.conv(x)
+        
+        return x
+
 class NAFBlock_dilated(nn.Module):
     def __init__(self, c, DW_Expand=2, FFN_Expand=2, dilations = [1], extra_depth_wise = False):
         super().__init__()
@@ -216,8 +242,9 @@ class NAFBlock_dilated(nn.Module):
 
         number_branches = len(self.branches)
         y = inp
+        x = self.norm1(inp)
         for branch in self.branches:
-            y += branch(inp)/number_branches
+            y += branch(x)/number_branches
         
         x = self.conv4(self.norm2(y)) # size [B, 2*C, H, W]
         x = self.sg(x)  # size [B, C, H, W]
