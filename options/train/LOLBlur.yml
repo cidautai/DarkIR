@@ -13,7 +13,7 @@ device:
 datasets:
   name: LOLBlur
   train:
-    train_path: /home/leadergpu/Datasets/LOLBlur/train
+    train_path: /home/leadergpu/Datasets/LOLBlur_temp/train
 
     n_workers: 4  # per GPU
     batch_size_train: 4
@@ -22,7 +22,7 @@ datasets:
     verbose: True
     crop_type: Random
   val:
-    test_path: /home/leadergpu/Datasets/LOLBlur/test
+    test_path: /home/leadergpu/Datasets/LOLBlur_temp/test
     cropsize: 256
     batch_size_test: 1
 
@@ -30,7 +30,7 @@ datasets:
 network:
   name: Network_v3
   img_channels: 3
-  width: 32
+  width: 48
   middle_blk_num: 3
   enc_blk_nums: [1, 2, 3]
   dec_blk_nums: [3, 1, 1]
@@ -68,14 +68,14 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_v3_interpolate_extraDW.pt
+  path: ./models/Network_v3_48_extraDW_LOLBLur.pt
   best: ./models/bests/
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_v3_interpolate_extraDW_LOLBlur
+  name: Network_v3_48_extraDW_LOLBLur
   save_code: True
 
 

@@ -7,6 +7,7 @@ from tqdm import tqdm
 # PyTorch library
 import torch
 import torch.optim
+import torch.nn as nn
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from ptflops import get_model_complexity_info
 
@@ -34,8 +35,8 @@ print(os.path.isfile(path_options))
 opt = parse(path_options)
 # print(opt)
 # define some parameters based on the run we want to make
-os.environ["CUDA_VISIBLE_DEVICES"]=str(opt['device']['gpus'])
-device = torch.device('cuda') if opt['device']['cuda'] else torch.device('cpu')
+# os.environ["CUDA_VISIBLE_DEVICES"]= '0, 1'
+device = torch.device('cuda:0') if opt['device']['cuda'] else torch.device('cpu')
 
 #selected network
 network = opt['network']['name']
@@ -159,6 +160,10 @@ elif network == 'Network_MBNv4':
 else:
     raise NotImplementedError('This network isnt implemented')
 model = model.to(device)
+
+if torch.cuda.device_count() > 1:
+    print("Usando", torch.cuda.device_count(), "GPUs!")
+    model = nn.DataParallel(model)
 
 #calculate MACs and number of parameters
 macs, params = get_model_complexity_info(model, (3, 256, 256), print_per_layer_stat = False)

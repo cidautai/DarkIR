@@ -225,7 +225,7 @@ class NAFBlock_dilated(nn.Module):
         
         self.branches = nn.ModuleList()
         for dilation in dilations:
-            self.branches.append(Branch(c, DW_Expand, FFN_Expand = FFN_Expand, dilation = dilation, drop_out_rate = 0., extra_depth_wise=extra_depth_wise))
+            self.branches.append(Branch_v2(c, DW_Expand, FFN_Expand = FFN_Expand, dilation = dilation, drop_out_rate = 0., extra_depth_wise=extra_depth_wise))
             
         assert len(dilations) == len(self.branches)
         self.sg = SimpleGate()
