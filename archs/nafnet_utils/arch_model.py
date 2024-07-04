@@ -171,7 +171,7 @@ class Branch(nn.Module):
         self.dw_channel = DW_Expand * c 
         self.step1 = nn.Sequential(
                        LayerNorm2d(c),
-                    #    nn.Conv2d(c, c, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity(), #optional extra dw
+                       nn.Conv2d(c, c, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity(), #optional extra dw
                        nn.Conv2d(in_channels=c, out_channels=self.dw_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1),
                        nn.Conv2d(in_channels=self.dw_channel, out_channels=self.dw_channel, kernel_size=3, padding=dilation, stride=1, groups=self.dw_channel,
                                             bias=True, dilation = dilation), # the dconv
@@ -197,7 +197,7 @@ class Branch_v2(nn.Module):
         super().__init__()
         self.dw_channel = DW_Expand * c 
         self.step1 = nn.Sequential(
-                    #    nn.Conv2d(c, c, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity(), #optional extra dw
+                       nn.Conv2d(c, c, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity(), #optional extra dw
                        nn.Conv2d(in_channels=c, out_channels=self.dw_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1),
                        nn.Conv2d(in_channels=self.dw_channel, out_channels=self.dw_channel, kernel_size=3, padding=dilation, stride=1, groups=self.dw_channel,
                                             bias=True, dilation = dilation), # the dconv
@@ -249,6 +249,96 @@ class NAFBlock_dilated(nn.Module):
         x = self.conv4(self.norm2(y)) # size [B, 2*C, H, W]
         x = self.sg(x)  # size [B, C, H, W]
         x = self.conv5(x) # size [B, C, H, W]
+
+        return y + x * self.gamma
+
+class FreBlock(nn.Module):
+    def __init__(self, nc):
+        super(FreBlock, self).__init__()
+        self.fpre = nn.Conv2d(nc, nc, 1, 1, 0)
+        self.process1 = nn.Sequential(
+            nn.Conv2d(nc, nc, 1, 1, 0),
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Conv2d(nc, nc, 1, 1, 0))
+        self.process2 = nn.Sequential(
+            nn.Conv2d(nc, nc, 1, 1, 0),
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Conv2d(nc, nc, 1, 1, 0))
+
+    def forward(self, x):
+        _, _, H, W = x.shape
+        x_freq = torch.fft.rfft2(self.fpre(x), norm='backward')
+        mag = torch.abs(x_freq)
+        pha = torch.angle(x_freq)
+        mag = self.process1(mag)
+        pha = self.process2(pha)
+        real = mag * torch.cos(pha)
+        imag = mag * torch.sin(pha)
+        x_out = torch.complex(real, imag)
+        x_out = torch.fft.irfft2(x_out, s=(H, W), norm='backward')
+
+        return x_out+x
+
+class FPA(nn.Module):
+    
+    def __init__(self,nc):
+        super(FPA, self).__init__()
+        self.process_mag = nn.Sequential(
+            nn.Conv2d(nc, nc, 1, 1, 0),
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Conv2d(nc, nc, 1, 1, 0),
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Conv2d(nc, nc, 1, 1, 0))
+        self.process_pha = nn.Sequential(
+            nn.Conv2d(nc, nc, 1, 1, 0),
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Conv2d(nc, nc, 1, 1, 0),
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Conv2d(nc, nc, 1, 1, 0))
+        
+    def forward(self, input):
+        _, _, H, W = input.shape
+        x_freq = torch.fft.rfft2(self.fpre(input), norm='backward')
+        mag = torch.abs(x_freq)
+        pha = torch.angle(x_freq)
+        mag += self.process_mag(mag)
+        pha += self.process_pha(pha)
+        real = mag * torch.cos(pha)
+        imag = mag * torch.sin(pha)
+        x_out = torch.complex(real, imag)
+        x_out = torch.fft.irfft2(x_out, s=(H, W), norm='backward')
+        return input * x_out
+        
+
+class FBlock(nn.Module):
+    
+    def __init__(self, c, DW_Expand=2, FFN_Expand=2, dilations = [1], extra_depth_wise = False):
+        super(FBlock, self).__init__()
+        
+        self.branches = nn.ModuleList()
+        for dilation in dilations:
+            self.branches.append(Branch_v2(c, DW_Expand, FFN_Expand = FFN_Expand, dilation = dilation, drop_out_rate = 0., extra_depth_wise=extra_depth_wise))
+
+        assert len(dilations) == len(self.branches)
+        
+        ffn_channel = FFN_Expand * c
+        self.fpa = FPA(nc = ffn_channel)
+
+        self.norm1 = LayerNorm2d(c)
+        self.norm2 = LayerNorm2d(c)
+
+        self.gamma = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
+
+    def forward(self, inp):
+
+        number_branches = len(self.branches)
+        y = inp
+        x = self.norm1(inp)
+        for branch in self.branches:
+            y += branch(x)/number_branches
+        
+        x = self.conv4(self.norm2(y)) # size [B, 2*C, H, W]
+        x = self.fpa(x)  # size [B, C, H, W]
 
         return y + x * self.gamma
 

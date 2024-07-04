@@ -5,12 +5,12 @@ import kornia
 import functools
 try:
     from .nafnet_utils.local_arch import Local_Base
-    from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet
+    from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet, FPA, Branch_v2
     from .fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
     from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 except:
     from nafnet_utils.local_arch import Local_Base
-    from nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet
+    from nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet, FPA
     from fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
     from fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 
@@ -30,6 +30,8 @@ class Attention_Light(nn.Module):
     def forward(self, input):
         return self.block(input)
 
+
+            
 
 
 class Network(nn.Module):

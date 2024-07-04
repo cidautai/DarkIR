@@ -161,9 +161,9 @@ else:
     raise NotImplementedError('This network isnt implemented')
 model = model.to(device)
 
-if torch.cuda.device_count() > 1:
-    print("Usando", torch.cuda.device_count(), "GPUs!")
-    model = nn.DataParallel(model)
+# if torch.cuda.device_count() > 1:
+#     print("Usando", torch.cuda.device_count(), "GPUs!")
+#     model = nn.DataParallel(model)
 
 #calculate MACs and number of parameters
 macs, params = get_model_complexity_info(model, (3, 256, 256), print_per_layer_stat = False)
@@ -188,12 +188,16 @@ else:
 # if resume load the weights
 if resume_training:
     checkpoints = torch.load(PATH_MODEL)
-    model.load_state_dict(checkpoints['model_state_dict'])
+    weights = checkpoints['model_state_dict']
+    remove_prefix = 'module.' # this is needed because the keys now get a module. key that doesn't match with the network one
+    weights = {k[len(remove_prefix):] if k.startswith(remove_prefix) else k: v for k, v in weights.items()}
+    model.load_state_dict(weights)
     optim.load_state_dict(checkpoints['optimizer_state_dict']),
     scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
     start_epochs = checkpoints['epoch']
     resume = opt['resume_training']['resume']
     id = opt['resume_training']['id']
+    print('Loaded weights')
 else:
     resume = 'never'
     id = None

@@ -9,6 +9,7 @@ import sys
 import argparse
 import numpy as np
 import torch
+import torch.nn as nn
 from timm.utils import AverageMeter
 from torchvision import datasets, transforms
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
@@ -18,7 +19,7 @@ sys.path.append("/home/leadergpu/Python_workspace_Dani/Net-Low-Light-Deblurring"
 from archs.nafnet_utils.arch_model import NAFNet
 from archs.network_v3 import Network
 from torch import optim as optim
-from data.dataset_NBDN import main_dataset_nbdn
+from data.dataset_LOLBlur import main_dataset_lolblur
 
 def parse_args():
     parser = argparse.ArgumentParser('Script for visualizing the ERF', add_help=False)
@@ -45,8 +46,8 @@ def get_input_grad(model, samples):
 
 def main(args):
     #   ================================= transform: resize to 1024x1024
-    _, data_loader_val = main_dataset_nbdn(train_path='/home/leadergpu/Datasets/NBDN_dataset_50k/train',
-                                        test_path = '/home/leadergpu/Datasets/NBDN_dataset_50k/test',
+    _, data_loader_val = main_dataset_lolblur(train_path='/home/leadergpu/Datasets/LOLBlur/train',
+                                        test_path = '/home/leadergpu/Datasets/LOLBlur/test',
                                         batch_size_train=8,
                                         batch_size_test=1,
                                         flips = True,
@@ -78,11 +79,15 @@ def main(args):
         print('load weights')
         # print(args.weights)
         weights = torch.load(args.weights)
-        # model.load_state_dict(weights['model_state_dict'])
+        model.load_state_dict(weights['model_state_dict'])
         print('loaded')
 
     model.cuda()
-    model.eval()    #   fix BN and droppath
+    
+    if torch.cuda.device_count() > 1:
+        print("Usando", torch.cuda.device_count(), "GPUs!")
+        model = nn.DataParallel(model) 
+        model.eval()    #   fix BN and droppath
 
     optimizer = optim.SGD(model.parameters(), lr=0, weight_decay=0)
 
@@ -93,7 +98,7 @@ def main(args):
 
         if meter.count == args.num_images:
             np.save(args.save_path, meter.avg)
-            exit()
+            break
 
         samples = samples.cuda(non_blocking=True)
         samples.requires_grad = True
@@ -112,5 +117,9 @@ def main(args):
 if __name__ == '__main__':
     args = parse_args()
     erf = main(args)
-    img = Image.fromarray(erf)
-    img.save('./erfs/Network_v3.png', img)
+    # print(erf.shape, np.max(erf), np.min(erf))
+    # erf = (erf * 255).astype(np.uint8)
+    # img = Image.fromarray(erf)
+    # img = img.convert('L')
+    # print(img)
+    # img.save('./erfs/Network_v3.png')
