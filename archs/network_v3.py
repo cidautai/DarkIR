@@ -5,12 +5,12 @@ import kornia
 import functools
 try:
     from .nafnet_utils.local_arch import Local_Base
-    from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet, FPA, Branch_v2
+    from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet, FBlock
     from .fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
     from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 except:
     from nafnet_utils.local_arch import Local_Base
-    from nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet, FPA
+    from nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet, FBlock
     from fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
     from fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 
@@ -29,9 +29,6 @@ class Attention_Light(nn.Module):
                     )
     def forward(self, input):
         return self.block(input)
-
-
-            
 
 
 class Network(nn.Module):
@@ -97,8 +94,13 @@ class Network(nn.Module):
         self.upconv2 = nn.Conv2d(width * 2, width * 4, 1, 1)
         self.upconv3 = nn.Conv2d(width * 4, width * 8, 1, 1)
         
-        ResidualBlock_noBN_f = functools.partial(ResidualBlock_noBN, nf= chan * self.padder_size)
-        self.recon_trunk_light = make_layer(ResidualBlock_noBN_f, residual_layers)
+        self.recon_trunk_light = nn.Sequential(*[FBlock(c = chan * self.padder_size,
+                                                DW_Expand=2, FFN_Expand=2, dilations = dilations, 
+                                                extra_depth_wise = False) for i in range(residual_layers)])
+
+        # ResidualBlock_noBN_f = functools.partial(FBlock, c = chan * self.padder_size,
+        #                                         DW_Expand=2, FFN_Expand=2, dilations = dilations, extra_depth_wise = False)
+        # self.recon_trunk_light = make_layer(ResidualBlock_noBN_f, residual_layers)
         
    
         
@@ -113,9 +115,9 @@ class Network(nn.Module):
         attention3 = F.interpolate(self.upconv2(attention2), size = (H//4, W//4), mode = 'bilinear')
         attention4 = F.interpolate(self.upconv3(attention3), size= (H//8, W//8), mode ='bilinear')
         attentions = [attention1, attention2, attention3]
-        # print('Attention1', attention1.shape)
-        # print('Attention2', attention2.shape)
-        # print('Attention3', attention3.shape)
+        print('Attention1', attention1.shape)
+        print('Attention2', attention2.shape)
+        print('Attention3', attention3.shape)
         
         x = self.intro(input)
         
@@ -129,7 +131,7 @@ class Network(nn.Module):
             # i += 1
 
         x = self.middle_blks(x) * attention4
-        # print('3', x.shape)
+        print('3', x.shape)
         # apply the mask
         # x = x * mask
         
@@ -168,7 +170,7 @@ if __name__ == '__main__':
     enc_blks = [1, 2, 3]
     middle_blk_num = 3
     dec_blks = [3, 1, 1]
-    residual_layers = 1
+    residual_layers = 2
     dilations = [1, 4]
     
     net = Network(img_channel=img_channel, 

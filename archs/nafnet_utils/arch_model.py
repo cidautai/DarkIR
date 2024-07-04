@@ -298,7 +298,7 @@ class FPA(nn.Module):
         
     def forward(self, input):
         _, _, H, W = input.shape
-        x_freq = torch.fft.rfft2(self.fpre(input), norm='backward')
+        x_freq = torch.fft.rfft2(input, norm='backward')
         mag = torch.abs(x_freq)
         pha = torch.angle(x_freq)
         mag += self.process_mag(mag)
@@ -322,7 +322,7 @@ class FBlock(nn.Module):
         assert len(dilations) == len(self.branches)
         
         ffn_channel = FFN_Expand * c
-        self.fpa = FPA(nc = ffn_channel)
+        self.fpa = FPA(nc = c)
 
         self.norm1 = LayerNorm2d(c)
         self.norm2 = LayerNorm2d(c)
@@ -337,7 +337,7 @@ class FBlock(nn.Module):
         for branch in self.branches:
             y += branch(x)/number_branches
         
-        x = self.conv4(self.norm2(y)) # size [B, 2*C, H, W]
+        x = self.norm2(y) # size [B, 2*C, H, W]
         x = self.fpa(x)  # size [B, C, H, W]
 
         return y + x * self.gamma
