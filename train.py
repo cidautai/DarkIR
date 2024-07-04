@@ -26,7 +26,7 @@ from data.dataset_LOLv2 import main_dataset_lolv2, main_dataset_lolv2_synth
 
 from options.options import parse
 from lpips import LPIPS
-
+torch.autograd.set_detect_anomaly(True)
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.

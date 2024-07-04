@@ -1,8 +1,8 @@
 #### general settings
 resume_training:
-  resume_training: False
+  resume_training: True
   resume: must
-  id: jlgpxikv
+  id: km4cpwv1
 
 #### training devices
 device:
@@ -16,7 +16,7 @@ datasets:
     train_path: /home/leadergpu/Datasets/LOLBlur_temp/train
 
     n_workers: 4  # per GPU
-    batch_size_train: 6
+    batch_size_train: 12
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
@@ -28,18 +28,18 @@ datasets:
 
 #### network structures
 network:
-  name: Network_v3
+  name: NAFNet
   img_channels: 3
   width: 32
-  middle_blk_num: 3
-  enc_blk_nums: [1, 2, 3]
-  dec_blk_nums: [3, 1, 1]
+  middle_blk_num: 12
+  enc_blk_nums: [2, 2, 4, 8]
+  dec_blk_nums: [2, 2, 2, 2]
   enc_blk_nums_map: None
   middle_blk_num_map: None
-  residual_layers: 2
-  dilations: [1, 4]
+  residual_layers: None
+  dilations: None
   spatial: None
-  extra_depth_wise: True
+  extra_depth_wise: False
 
 
 #### training settings: learning rate scheme, loss
@@ -68,14 +68,14 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_v3_interpolate_ExtraDW_FPA_LOLBlur.pt
+  path: ./models/NAFNet_32_36blocks_LOLBlur.pt
   best: ./models/bests/
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_v3_interpolate_ExtraDW_FPA_LOLBlur
+  name: NAFNet_32_36blocks_LOLBlur
   save_code: True
 
 

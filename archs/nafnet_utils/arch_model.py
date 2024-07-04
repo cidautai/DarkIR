@@ -301,8 +301,8 @@ class FPA(nn.Module):
         x_freq = torch.fft.rfft2(input, norm='backward')
         mag = torch.abs(x_freq)
         pha = torch.angle(x_freq)
-        mag += self.process_mag(mag)
-        pha += self.process_pha(pha)
+        mag = mag + self.process_mag(mag)
+        pha = pha + self.process_pha(pha)
         real = mag * torch.cos(pha)
         imag = mag * torch.sin(pha)
         x_out = torch.complex(real, imag)
@@ -337,7 +337,7 @@ class FBlock(nn.Module):
         for branch in self.branches:
             y += branch(x)/number_branches
         
-        x = self.norm2(y) # size [B, 2*C, H, W]
+        x = self.norm2(y) # size [B, C, H, W]
         x = self.fpa(x)  # size [B, C, H, W]
 
         return y + x * self.gamma

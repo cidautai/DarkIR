@@ -115,9 +115,9 @@ class Network(nn.Module):
         attention3 = F.interpolate(self.upconv2(attention2), size = (H//4, W//4), mode = 'bilinear')
         attention4 = F.interpolate(self.upconv3(attention3), size= (H//8, W//8), mode ='bilinear')
         attentions = [attention1, attention2, attention3]
-        print('Attention1', attention1.shape)
-        print('Attention2', attention2.shape)
-        print('Attention3', attention3.shape)
+        # print('Attention1', attention1.shape)
+        # print('Attention2', attention2.shape)
+        # print('Attention3', attention3.shape)
         
         x = self.intro(input)
         
@@ -131,7 +131,7 @@ class Network(nn.Module):
             # i += 1
 
         x = self.middle_blks(x) * attention4
-        print('3', x.shape)
+        # print('3', x.shape)
         # apply the mask
         # x = x * mask
         
@@ -191,6 +191,7 @@ if __name__ == '__main__':
     macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
 
     print(macs, params)    
-
+    inp = torch.randn(1, 3, 256, 256)
+    out = net(inp)
     
     
