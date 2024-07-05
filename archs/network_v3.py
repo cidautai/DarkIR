@@ -5,12 +5,12 @@ import kornia
 import functools
 try:
     from .nafnet_utils.local_arch import Local_Base
-    from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet, FPA, Branch_v2
+    from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet, FBlock
     from .fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
     from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 except:
     from nafnet_utils.local_arch import Local_Base
-    from nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet, FPA
+    from nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet, FBlock
     from fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
     from fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 
@@ -29,9 +29,6 @@ class Attention_Light(nn.Module):
                     )
     def forward(self, input):
         return self.block(input)
-
-
-            
 
 
 class Network(nn.Module):
@@ -97,8 +94,13 @@ class Network(nn.Module):
         self.upconv2 = nn.Conv2d(width * 2, width * 4, 1, 1)
         self.upconv3 = nn.Conv2d(width * 4, width * 8, 1, 1)
         
-        ResidualBlock_noBN_f = functools.partial(ResidualBlock_noBN, nf= chan * self.padder_size)
-        self.recon_trunk_light = make_layer(ResidualBlock_noBN_f, residual_layers)
+        self.recon_trunk_light = nn.Sequential(*[FBlock(c = chan * self.padder_size,
+                                                DW_Expand=2, FFN_Expand=2, dilations = dilations, 
+                                                extra_depth_wise = False) for i in range(residual_layers)])
+
+        # ResidualBlock_noBN_f = functools.partial(FBlock, c = chan * self.padder_size,
+        #                                         DW_Expand=2, FFN_Expand=2, dilations = dilations, extra_depth_wise = False)
+        # self.recon_trunk_light = make_layer(ResidualBlock_noBN_f, residual_layers)
         
    
         
@@ -168,7 +170,7 @@ if __name__ == '__main__':
     enc_blks = [1, 2, 3]
     middle_blk_num = 3
     dec_blks = [3, 1, 1]
-    residual_layers = 1
+    residual_layers = 2
     dilations = [1, 4]
     
     net = Network(img_channel=img_channel, 
@@ -189,6 +191,7 @@ if __name__ == '__main__':
     macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
 
     print(macs, params)    
-
+    inp = torch.randn(1, 3, 256, 256)
+    out = net(inp)
     
     
