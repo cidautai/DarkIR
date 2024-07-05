@@ -170,7 +170,6 @@ class Branch(nn.Module):
         super().__init__()
         self.dw_channel = DW_Expand * c 
         self.step1 = nn.Sequential(
-                       LayerNorm2d(c),
                        nn.Conv2d(c, c, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity(), #optional extra dw
                        nn.Conv2d(in_channels=c, out_channels=self.dw_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1),
                        nn.Conv2d(in_channels=self.dw_channel, out_channels=self.dw_channel, kernel_size=3, padding=dilation, stride=1, groups=self.dw_channel,
@@ -225,7 +224,7 @@ class NAFBlock_dilated(nn.Module):
         
         self.branches = nn.ModuleList()
         for dilation in dilations:
-            self.branches.append(Branch_v2(c, DW_Expand, FFN_Expand = FFN_Expand, dilation = dilation, drop_out_rate = 0., extra_depth_wise=extra_depth_wise))
+            self.branches.append(Branch(c, DW_Expand, FFN_Expand = FFN_Expand, dilation = dilation, drop_out_rate = 0., extra_depth_wise=extra_depth_wise))
             
         assert len(dilations) == len(self.branches)
         self.sg = SimpleGate()
