@@ -5,12 +5,12 @@ import kornia
 import functools
 try:
     from .nafnet_utils.local_arch import Local_Base
-    from .nafnet_utils.arch_model import EBlock, SimpleGate, NAFNet, FBlock
+    from .nafnet_utils.arch_model import EBlock_v2 as EBlock, SimpleGate, NAFNet, FBlock 
     from .fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
     from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 except:
     from nafnet_utils.local_arch import Local_Base
-    from nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet, FBlock
+    from nafnet_utils.arch_model import EBlock_v2 as EBlock, SimpleGate, NAFNet, FBlock
     from fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
     from fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 
@@ -58,7 +58,7 @@ class Network(nn.Module):
         for num in enc_blk_nums:
             self.encoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan, dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(num)]
+                    *[EBlock(chan, dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(num)]
                 )
             )
             self.downs.append(
@@ -68,7 +68,7 @@ class Network(nn.Module):
 
         self.middle_blks = \
             nn.Sequential(
-                *[NAFBlock_dilated(chan, dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(middle_blk_num)]
+                *[EBlock(chan, dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(middle_blk_num)]
             )
 
         for num in dec_blk_nums:
@@ -81,7 +81,7 @@ class Network(nn.Module):
             chan = chan // 2
             self.decoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan, extra_depth_wise=extra_depth_wise) for _ in range(num)]
+                    *[EBlock(chan, extra_depth_wise=extra_depth_wise) for _ in range(num)]
                 )
             )
 

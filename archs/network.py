@@ -43,7 +43,7 @@ class Network(nn.Module):
         for num in enc_blk_nums:
             self.encoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan, dilations = dilations) for _ in range(num)]
+                    *[EBlock(chan, dilations = dilations) for _ in range(num)]
                 )
             )
             self.downs.append(
@@ -53,7 +53,7 @@ class Network(nn.Module):
 
         self.middle_blks = \
             nn.Sequential(
-                *[NAFBlock_dilated(chan, dilations = dilations) for _ in range(middle_blk_num)]
+                *[EBlock(chan, dilations = dilations) for _ in range(middle_blk_num)]
             )
 
         for num in dec_blk_nums:
@@ -66,7 +66,7 @@ class Network(nn.Module):
             chan = chan // 2
             self.decoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan) for _ in range(num)]
+                    *[EBlock(chan) for _ in range(num)]
                 )
             )
 

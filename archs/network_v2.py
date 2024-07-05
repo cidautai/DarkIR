@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .nafnet_utils.arch_model import SimpleGate, NAFBlock_dilated
+from .nafnet_utils.arch_model import SimpleGate, EBlock
 from .fourllie_archs.SFBlock import AmplitudeNet_skip, FreBlock
 from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 import kornia
@@ -24,7 +24,7 @@ class IBlock(nn.Module):
     def __init__(self, in_nc, spatial = True):
         super(IBlock,self).__init__()
         self.spatial = spatial
-        self.spatial_process = NAFBlock_dilated( c = in_nc) if spatial else nn.Identity()
+        self.spatial_process = EBlock( c = in_nc) if spatial else nn.Identity()
         self.frequency_process = FreBlock(nc = in_nc)
         self.cat = nn.Conv2d(2*in_nc,in_nc,1,1,0) if spatial else nn.Conv2d(in_nc,in_nc,1,1,0)
 
@@ -63,7 +63,7 @@ class Network(nn.Module):
         for num, num_map in zip(enc_blk_nums, enc_blk_nums_map):
             self.encoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan, dilations=dilations) for _ in range(num)]
+                    *[EBlock(chan, dilations=dilations) for _ in range(num)]
                 )
             )
             self.downs.append(
@@ -81,11 +81,11 @@ class Network(nn.Module):
 
         self.middle_blks = \
             nn.Sequential(
-                *[NAFBlock_dilated(chan) for _ in range(middle_blk_num)]
+                *[EBlock(chan) for _ in range(middle_blk_num)]
             )
             
         self.middle_blks_map = nn.Sequential(*[IBlock(in_nc = chan, spatial = spatial) for _ in range(middle_blk_num_map)])
-        self.reconstruct_light = nn.Sequential(*[NAFBlock_dilated(c = chan, dilations = dilations) for _ in range(residual_layers)])
+        self.reconstruct_light = nn.Sequential(*[EBlock(c = chan, dilations = dilations) for _ in range(residual_layers)])
 
         for num in dec_blk_nums:
             self.ups.append(
@@ -97,7 +97,7 @@ class Network(nn.Module):
             chan = chan // 2
             self.decoders.append(
                 nn.Sequential(
-                    *[NAFBlock_dilated(chan, dilations=dilations) for _ in range(num)]
+                    *[EBlock(chan, dilations=dilations) for _ in range(num)]
                 )
             )
 

@@ -348,7 +348,7 @@ class FPA(nn.Module):
         imag = mag * torch.sin(pha)
         x_out = torch.complex(real, imag)
         x_out = torch.fft.irfft2(x_out, s=(H, W), norm='backward')
-        return input * x_out
+        return x_out
         
 
 class FBlock(nn.Module):
@@ -362,24 +362,43 @@ class FBlock(nn.Module):
 
         assert len(dilations) == len(self.branches)
         
-        ffn_channel = FFN_Expand * c
-        self.fpa = FPA(nc = c)
+        self.sca = nn.Sequential(
+                       nn.AdaptiveAvgPool2d(1),
+                       nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=self.dw_channel // 2, kernel_size=1, padding=0, stride=1,
+                       groups=1, bias=True, dilation = 1),  
+        )
+        self.sg1 = SimpleGate()
+        self.conv3 = nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
+
+
 
         self.norm1 = LayerNorm2d(c)
         self.norm2 = LayerNorm2d(c)
-
+        
+        ffn_channel = FFN_Expand * c
+        self.conv_fpr_intro = nn.Conv2d(in_channels=c, out_channels=ffn_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
+        self.fpa = FPA(nc = ffn_channel)
+        self.conv_fpr_out = nn.Conv2d(in_channels=ffn_channel, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
+        
         self.gamma = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
+        self.beta = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
 
     def forward(self, inp):
 
-        number_branches = len(self.branches)
         y = inp
         x = self.norm1(inp)
+        z=0
         for branch in self.branches:
-            y += branch(x)/number_branches
+            z += branch(x)
         
-        x = self.norm2(y) # size [B, C, H, W]
+        z = self.sg1(z)
+        x = self.sca(z) * z
+        x = self.conv3(x)
+        y = inp + self.beta * x
+        #Frequency pixel residue
+        x = self.conv_fpr_intro(self.norm2(y)) # size [B, C, H, W]
         x = self.fpa(x)  # size [B, C, H, W]
+        x = self.conv_fpr_out(x)
 
         return y + x * self.gamma
 
