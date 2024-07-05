@@ -10,6 +10,7 @@ import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
 from torchvision.utils import make_grid
 import torch.nn.functional as F
+import torch.nn as nn
 
 def crop_center(img, cropx=224, cropy=256):
     """
@@ -32,7 +33,7 @@ def log_images(images, caption):
 
 class CropTo4(nn.Module):
     def __init__(self):
-        super(self, CropTo4).__init__()
+        super(CropTo4, self).__init__()
         
 
     def forward(self, img1, img2):

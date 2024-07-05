@@ -1,6 +1,6 @@
 #### general settings
 resume_training:
-  resume_training: True
+  resume_training: False
   resume: must
   id: pdvz4dbt
 
@@ -35,7 +35,7 @@ network:
   dec_blk_nums: [3, 1, 1]
   enc_blk_nums_map: None
   middle_blk_num_map: None
-  residual_layers: 1
+  residual_layers: 2
   dilations: [1, 4]
   spatial: None
   extra_depth_wise: True
@@ -67,14 +67,14 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_v3_ln_interpolate_extraDW_LOLBlur.pt
+  path: ./models/Network_v3_new_network_LOLBlur.pt
   best: ./models/bests/
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_v3_interpolate_ln_extraDW_LOLBlur
+  name: Network_v3_new_network_LOLBlur
   save_code: True
 
 
