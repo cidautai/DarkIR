@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .nafnet_utils.arch_model import NAFBlock_dilated, SimpleGate, NAFNet
+from .nafnet_utils.arch_model import EBlock, SimpleGate, NAFNet
 from .fourllie_archs.SFBlock import AmplitudeNet_skip
 from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 import kornia

@@ -166,7 +166,7 @@ class NAFNetLocal(Local_Base, NAFNet):
             self.convert(base_size=base_size, train_size=train_size, fast_imp=fast_imp)
 
 class Branch(nn.Module):
-    def __init__(self, c, DW_Expand, FFN_Expand = 2, dilation = 1, drop_out_rate = 0., extra_depth_wise = False):
+    def __init__(self, c, DW_Expand, dilation = 1, extra_depth_wise = False):
         super().__init__()
         self.dw_channel = DW_Expand * c 
         self.step1 = nn.Sequential(
@@ -192,32 +192,22 @@ class Branch(nn.Module):
         return x
 
 class Branch_v2(nn.Module):
-    def __init__(self, c, DW_Expand, FFN_Expand = 2, dilation = 1, drop_out_rate = 0., extra_depth_wise = False):
+    '''
+    Branch that lasts lonly the dilated convolutions
+    '''
+    def __init__(self, c, DW_Expand, dilation = 1, extra_depth_wise = False):
         super().__init__()
         self.dw_channel = DW_Expand * c 
-        self.step1 = nn.Sequential(
+        self.branch = nn.Sequential(
                        nn.Conv2d(c, c, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity(), #optional extra dw
                        nn.Conv2d(in_channels=c, out_channels=self.dw_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1),
                        nn.Conv2d(in_channels=self.dw_channel, out_channels=self.dw_channel, kernel_size=3, padding=dilation, stride=1, groups=self.dw_channel,
-                                            bias=True, dilation = dilation), # the dconv
-                       SimpleGate() 
+                                            bias=True, dilation = dilation) # the dconv
         )
-        self.sca = nn.Sequential(
-                       nn.AdaptiveAvgPool2d(1),
-                       nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=self.dw_channel // 2, kernel_size=1, padding=0, stride=1,
-                       groups=1, bias=True, dilation = 1),  
-        )
-        self.conv = nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1) 
     def forward(self, input):
-        
-        x = self.step1(input)
-        z = self.sca(x)
-        x = x* z
-        x = self.conv(x)
-        
-        return x
+        return self.branch(input)
 
-class NAFBlock_dilated(nn.Module):
+class EBlock(nn.Module):
     def __init__(self, c, DW_Expand=2, FFN_Expand=2, dilations = [1], extra_depth_wise = False):
         super().__init__()
         #we define the 2 branches
@@ -247,6 +237,58 @@ class NAFBlock_dilated(nn.Module):
         
         x = self.conv4(self.norm2(y)) # size [B, 2*C, H, W]
         x = self.sg(x)  # size [B, C, H, W]
+        x = self.conv5(x) # size [B, C, H, W]
+
+        return y + x * self.gamma
+
+class EBlock_v2(nn.Module):
+    '''
+    Change this block using Branch_v2
+    '''
+    
+    def __init__(self, c, DW_Expand=2, FFN_Expand=2, dilations = [1], extra_depth_wise = False):
+        super().__init__()
+        #we define the 2 branches
+        
+        self.branches = nn.ModuleList()
+        for dilation in dilations:
+            self.branches.append(Branch_v2(c, DW_Expand, dilation = dilation, extra_depth_wise=extra_depth_wise))
+            
+        assert len(dilations) == len(self.branches)
+        
+        self.sca = nn.Sequential(
+                       nn.AdaptiveAvgPool2d(1),
+                       nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=self.dw_channel // 2, kernel_size=1, padding=0, stride=1,
+                       groups=1, bias=True, dilation = 1),  
+        )
+        self.sg1 = SimpleGate()
+        self.sg2 = SimpleGate()
+        self.conv3 = nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
+        ffn_channel = FFN_Expand * c
+        self.conv4 = nn.Conv2d(in_channels=c, out_channels=ffn_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True)
+        self.conv5 = nn.Conv2d(in_channels=ffn_channel // 2, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True)
+
+        self.norm1 = LayerNorm2d(c)
+        self.norm2 = LayerNorm2d(c)
+
+        self.gamma = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
+        self.beta = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
+
+    def forward(self, inp):
+
+        y = inp
+        x = self.norm1(inp)
+        z = 0
+        for branch in self.branches:
+            z += branch(x)
+        
+        z = self.sg1(z)
+        x = self.sca(z) * z
+        x = self.conv3(x)
+        y = inp + self.beta * x
+        #second step
+        x = self.conv4(self.norm2(y)) # size [B, 2*C, H, W]
+        x = self.sg2(x)  # size [B, C, H, W]
         x = self.conv5(x) # size [B, C, H, W]
 
         return y + x * self.gamma
