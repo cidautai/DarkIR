@@ -3,6 +3,7 @@ import os
 import time
 import wandb
 from tqdm import tqdm
+import subprocess
 
 # PyTorch library
 import torch
@@ -212,7 +213,8 @@ if wandb_log:
         name=opt['wandb']['name'], save_code=opt['wandb']['save_code'],
         config = opt,
         resume = resume,
-        id = id
+        id = id,
+        notes= subprocess.check_output(["git", "log", "-1", "--pretty=%B"]).decode("utf-8").strip() #latest github commit 
     )
 
 #---------------------------------------------------------------------------------------------------
