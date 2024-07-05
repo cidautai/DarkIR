@@ -250,6 +250,11 @@ else:
 calc_SSIM = SSIM(data_range=1.)
 calc_LPIPS = LPIPS(net = 'vgg').to(device)
 
+if opt['datasets']['train']['batch_size_train']>=8:
+    largest_capable_size = opt['datasets']['train']['cropsize'] * opt['datasets']['train']['batch_size_train']
+else: largest_capable_size = 1500
+
+crop_to_4= CropTo4()
 #---------------------------------------------------------------------------------------------------
 # START THE TRAINING
 best_valid_psnr = 0.
@@ -317,6 +322,10 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         # Now we need to go over the test_loader and evaluate the results of the epoch
         for high_batch_valid, low_batch_valid in test_loader:
 
+            _, _, H, W = high_batch_valid.shape
+            if H >= largest_capable_size or W>=largest_capable_size:
+                high_batch_valid, low_batch_valid = crop_to_4(high_batch_valid, low_batch_valid)
+            
             high_batch_valid = high_batch_valid.to(device)
             low_batch_valid = low_batch_valid.to(device)
 

@@ -23,7 +23,6 @@ datasets:
     crop_type: Random
   val:
     test_path: /home/leadergpu/Datasets/LOLBlur_temp/test
-    cropsize: 256
     batch_size_test: 1
 
 #### network structures

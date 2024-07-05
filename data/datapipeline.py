@@ -30,6 +30,33 @@ def log_images(images, caption):
     
     return images
 
+class CropTo4(nn.Module):
+    def __init__(self):
+        super(self, CropTo4).__init__()
+        
+
+    def forward(self, img1, img2):
+        
+        #pad the images with zeros if their size is lower than the cropsize
+        img1 = self.pad(img1)
+        img2 = self.pad(img2)
+        _,_, h, w = img1.shape
+        crops1 = [TF.crop(img1, 0, 0, h//2, w//2), TF.crop(img1, 0, w//2, h//2, w),
+                  TF.crop(img1, h//2, 0, h, w//2),TF.crop(img1, h//2, w//2, h, w)]
+        crops2 = [TF.crop(img2, 0, 0, h//2, w//2), TF.crop(img2, 0, w//2, h//2, w),
+                  TF.crop(img2, h//2, 0, h, w//2),TF.crop(img2, h//2, w//2, h, w)]
+
+            
+        return torch.cat(crops1, dim=0), torch.cat(crops2, dim=0)
+
+    def pad(self, img):
+        _,_, h, w = img.shape
+        mod_pad_h = (h - h//2) % 2
+        mod_pad_w = (w - w//2) % 2
+        img = F.pad(img, (0, mod_pad_w, 0, mod_pad_h), mode = 'constant', value = '0')
+        
+        return img
+
 class RandomCropSame:
     def __init__(self, size):
         if isinstance(size, int):
