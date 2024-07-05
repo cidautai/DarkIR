@@ -255,7 +255,7 @@ class EBlock_v2(nn.Module):
             self.branches.append(Branch_v2(c, DW_Expand, dilation = dilation, extra_depth_wise=extra_depth_wise))
             
         assert len(dilations) == len(self.branches)
-        
+        self.dw_channel = DW_Expand * c 
         self.sca = nn.Sequential(
                        nn.AdaptiveAvgPool2d(1),
                        nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=self.dw_channel // 2, kernel_size=1, padding=0, stride=1,
@@ -358,10 +358,10 @@ class FBlock(nn.Module):
         
         self.branches = nn.ModuleList()
         for dilation in dilations:
-            self.branches.append(Branch_v2(c, DW_Expand, FFN_Expand = FFN_Expand, dilation = dilation, drop_out_rate = 0., extra_depth_wise=extra_depth_wise))
+            self.branches.append(Branch_v2(c, DW_Expand, dilation = dilation, extra_depth_wise=extra_depth_wise))
 
         assert len(dilations) == len(self.branches)
-        
+        self.dw_channel = DW_Expand * c 
         self.sca = nn.Sequential(
                        nn.AdaptiveAvgPool2d(1),
                        nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=self.dw_channel // 2, kernel_size=1, padding=0, stride=1,
@@ -410,12 +410,12 @@ if __name__ == '__main__':
     enc_blks = [1, 2, 3]
     middle_blk_num = 3
     dec_blks = [3, 1, 1]
-    dilations = [1, 4]
+    dilations = [1, 4, 9]
     extra_depth_wise = False
     
     # net = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
     #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
-    net  = NAFBlock_dilated(c = img_channel, 
+    net  = FBlock(c = img_channel, 
                             dilations = dilations,
                             extra_depth_wise=extra_depth_wise)
 
