@@ -5,12 +5,12 @@ import kornia
 import functools
 try:
     from .nafnet_utils.local_arch import Local_Base
-    from .nafnet_utils.arch_model import EBlock_v2 as EBlock, SimpleGate, NAFNet, FBlock 
+    from .nafnet_utils.arch_model import EBlock_v3 as EBlock, SimpleGate, NAFNet, FBlock 
     from .fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
     from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 except:
     from nafnet_utils.local_arch import Local_Base
-    from nafnet_utils.arch_model import EBlock_v2 as EBlock, SimpleGate, NAFNet, FBlock
+    from nafnet_utils.arch_model import EBlock_v3 as EBlock, SimpleGate, NAFNet, FBlock
     from fourllie_archs.SFBlock import AmplitudeNet_skip, ProcessBlock
     from fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
 
@@ -101,13 +101,12 @@ class Network(nn.Module):
         self.upconv3 = nn.Sequential(nn.Conv2d(width*4, width*8, 1, 1),
                                      nn.Conv2d(width*8, width*8, kernel_size=3, stride=2, padding=1, groups=width*8, bias = True))
         
-        self.recon_trunk_light = nn.Sequential(*[FBlock(c = chan * self.padder_size,
-                                                DW_Expand=2, FFN_Expand=2, dilations = dilations, 
-                                                extra_depth_wise = False) for i in range(residual_layers)])
+        # self.recon_trunk_light = nn.Sequential(*[FBlock(c = chan * self.padder_size,
+        #                                         DW_Expand=2, FFN_Expand=2, dilations = dilations, 
+        #                                         extra_depth_wise = False) for i in range(residual_layers)])
 
-        # ResidualBlock_noBN_f = functools.partial(FBlock, c = chan * self.padder_size,
-        #                                         DW_Expand=2, FFN_Expand=2, dilations = dilations, extra_depth_wise = False)
-        # self.recon_trunk_light = make_layer(ResidualBlock_noBN_f, residual_layers)
+        ResidualBlock_noBN_f = functools.partial(ResidualBlock_noBN, nf = width * self.padder_size)
+        self.recon_trunk_light = make_layer(ResidualBlock_noBN_f, residual_layers)
         
    
         
@@ -180,7 +179,7 @@ if __name__ == '__main__':
     enc_blks = [1, 2, 3]
     middle_blk_num = 3
     dec_blks = [3, 1, 1]
-    residual_layers = 1
+    residual_layers = 2
     dilations = [1, 4]
     
     net = Network(img_channel=img_channel, 

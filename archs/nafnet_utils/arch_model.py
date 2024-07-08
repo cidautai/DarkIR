@@ -241,7 +241,65 @@ class EBlock(nn.Module):
 
         return y + x * self.gamma
 
-class EBlock_v2(nn.Module):
+# class EBlock_v2(nn.Module):
+#     '''
+#     Change this block using Branch_v2. It adds concatenation of the branches instead of element addition. After the concat,
+#     we apply a 1x1conv to fuse the information of the different branches before passing them through the SimpleGate and SCA.
+#     '''
+    
+#     def __init__(self, c, DW_Expand=2, FFN_Expand=2, dilations = [1], extra_depth_wise = False):
+#         super().__init__()
+#         #we define the 2 branches
+        
+#         self.branches = nn.ModuleList()
+#         for dilation in dilations:
+#             self.branches.append(Branch_v2(c, DW_Expand, dilation = dilation, extra_depth_wise=extra_depth_wise))
+            
+#         assert len(dilations) == len(self.branches)
+#         self.dw_channel = DW_Expand * c 
+#         self.sca = nn.Sequential(
+#                        nn.AdaptiveAvgPool2d(1),
+#                        nn.Conv2d(in_channels=self.dw_channel // 2 * len(dilations), out_channels=self.dw_channel // 2 * len(dilations), 
+#                                  kernel_size=1, padding=0, stride=1,
+#                                  groups=1, bias=True, dilation = 1),  
+#         )
+#         self.sg1 = SimpleGate()
+#         self.conv_fuse= nn.Conv2d(in_channels=self.dw_channel * len(dilations), out_channels=self.dw_channel * len(dilations), 
+#                                   kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
+        
+#         self.sg2 = SimpleGate()
+#         self.conv3 = nn.Conv2d(in_channels=self.dw_channel // 2 * len(dilations), out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
+#         ffn_channel = FFN_Expand * c
+#         self.conv4 = nn.Conv2d(in_channels=c, out_channels=ffn_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True)
+#         self.conv5 = nn.Conv2d(in_channels=ffn_channel // 2, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True)
+
+#         self.norm1 = LayerNorm2d(c)
+#         self.norm2 = LayerNorm2d(c)
+
+#         self.gamma = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
+#         self.beta = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
+
+#     def forward(self, inp):
+
+#         y = inp
+#         x = self.norm1(inp)
+#         z = self.branches[0](x)
+#         for branch in self.branches[1:]:
+#             z = torch.cat([z, branch(x)], dim = 1)
+        
+#         z = self.conv_fuse(z) #[d * 2 * C, H, W]
+#         z = self.sg1(z) #[d * C, H, W]
+#         x = self.sca(z) * z
+#         x = self.conv3(x)
+#         y = inp + self.beta * x
+#         #second step
+#         x = self.conv4(self.norm2(y)) # size [B, 2*C, H, W]
+#         x = self.sg2(x)  # size [B, C, H, W]
+#         x = self.conv5(x) # size [B, C, H, W]
+
+#         return y + x * self.gamma
+    
+class EBlock_v3(nn.Module):
     '''
     Change this block using Branch_v2
     '''
@@ -415,7 +473,7 @@ if __name__ == '__main__':
     
     # net = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
     #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
-    net  = FBlock(c = img_channel, 
+    net  = EBlock_v2(c = img_channel, 
                             dilations = dilations,
                             extra_depth_wise=extra_depth_wise)
 
