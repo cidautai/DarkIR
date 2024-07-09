@@ -3,11 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import functools
 try:
-    from .nafnet_utils.arch_model import EBlock_v3 as EBlock
-    from .arch_utils import ProcessBlock, make_layer, ResidualBlock_noBN
+    from .arch_util import EBlock, ProcessBlock, make_layer, ResidualBlock_noBN
 except:
-    from nafnet_utils.arch_model import EBlock_v3 as EBlock
-    from arch_utils import ProcessBlock, make_layer, ResidualBlock_noBN
+    from arch_util import EBlock, ProcessBlock, make_layer, ResidualBlock_noBN
 
 class Attention_Light(nn.Module):
     
@@ -151,18 +149,18 @@ class Network(nn.Module):
         
         return x[:, :, :H, :W]
 
-class NetworkLocal(Local_Base, Network):
+# class NetworkLocal(Local_Base, Network):
 
-    def __init__(self, *args, train_size=(1, 3, 256, 256), fast_imp=False, **kwargs):
-        Local_Base.__init__(self)
-        Network.__init__(self, *args, **kwargs)
+#     def __init__(self, *args, train_size=(1, 3, 256, 256), fast_imp=False, **kwargs):
+#         Local_Base.__init__(self)
+#         Network.__init__(self, *args, **kwargs)
 
-        N, C, H, W = train_size
-        base_size = (int(H * 1.5), int(W * 1.5))
+#         N, C, H, W = train_size
+#         base_size = (int(H * 1.5), int(W * 1.5))
 
-        self.eval()
-        with torch.no_grad():
-            self.convert(base_size=base_size, train_size=train_size, fast_imp=fast_imp)
+#         self.eval()
+#         with torch.no_grad():
+#             self.convert(base_size=base_size, train_size=train_size, fast_imp=fast_imp)
   
 
 
