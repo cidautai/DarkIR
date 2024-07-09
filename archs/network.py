@@ -1,31 +1,41 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .nafnet_utils.arch_model import EBlock, SimpleGate, NAFNet
-from .fourllie_archs.SFBlock import AmplitudeNet_skip
-from .fourllie_archs.arch_util import make_layer, ResidualBlock_noBN
-import kornia
 import functools
-
+try:
+    from .nafnet_utils.arch_model import EBlock_v3 as EBlock
+    from .arch_utils import ProcessBlock, make_layer, ResidualBlock_noBN
+except:
+    from nafnet_utils.arch_model import EBlock_v3 as EBlock
+    from arch_utils import ProcessBlock, make_layer, ResidualBlock_noBN
 
 class Attention_Light(nn.Module):
     
-    def __init__(self, img_channels = 3, width = 16):
+    def __init__(self, img_channels = 3, width = 16, spatial = False):
         super(Attention_Light, self).__init__()
         self.block = nn.Sequential(
                 nn.Conv2d(in_channels = img_channels, out_channels = width//2, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True),
+                ProcessBlock(in_nc = width //2, spatial = spatial),
                 nn.Conv2d(in_channels = width//2, out_channels = width, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True),
+                ProcessBlock(in_nc = width, spatial = spatial),
                 nn.Conv2d(in_channels = width, out_channels = width, kernel_size = 1, padding = 0, stride = 1, groups = 1, bias = True),
+                ProcessBlock(in_nc=width, spatial = spatial),
                 nn.Sigmoid()
                     )
     def forward(self, input):
         return self.block(input)
 
 
-    
 class Network(nn.Module):
     
-    def __init__(self, img_channel=3, width=16, middle_blk_num=1, enc_blk_nums=[], dec_blk_nums=[], residual_layers = 3, dilations = [1]):
+    def __init__(self, img_channel=3, 
+                 width=16, 
+                 middle_blk_num=1, 
+                 enc_blk_nums=[], 
+                 dec_blk_nums=[], 
+                 residual_layers = 3, 
+                 dilations = [1], 
+                 extra_depth_wise = False):
         super(Network, self).__init__()
         
         self.intro = nn.Conv2d(in_channels=img_channel, out_channels=width, kernel_size=3, padding=1, stride=1, groups=1,
@@ -43,7 +53,7 @@ class Network(nn.Module):
         for num in enc_blk_nums:
             self.encoders.append(
                 nn.Sequential(
-                    *[EBlock(chan, dilations = dilations) for _ in range(num)]
+                    *[EBlock(chan, dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(num)]
                 )
             )
             self.downs.append(
@@ -53,7 +63,7 @@ class Network(nn.Module):
 
         self.middle_blks = \
             nn.Sequential(
-                *[EBlock(chan, dilations = dilations) for _ in range(middle_blk_num)]
+                *[EBlock(chan, dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(middle_blk_num)]
             )
 
         for num in dec_blk_nums:
@@ -66,7 +76,7 @@ class Network(nn.Module):
             chan = chan // 2
             self.decoders.append(
                 nn.Sequential(
-                    *[EBlock(chan) for _ in range(num)]
+                    *[EBlock(chan, extra_depth_wise=extra_depth_wise) for _ in range(num)]
                 )
             )
 
@@ -75,11 +85,22 @@ class Network(nn.Module):
         #define the attention layers 
         
         self.attention1 = Attention_Light(img_channel, width)
-        self.attention2 = Attention_Light(img_channel, width * 2)
-        self.attention3 = Attention_Light(img_channel, width * 4)
-        self.attention4 = Attention_Light(img_channel, width * 8)
+        # self.upconv1 = nn.Conv2d(width, width * 2, 1, 1)
+        # self.upconv2 = nn.Conv2d(width * 2, width * 4, 1, 1)
+        # self.upconv3 = nn.Conv2d(width * 4, width * 8, 1, 1)
         
-        ResidualBlock_noBN_f = functools.partial(ResidualBlock_noBN, nf= chan * self.padder_size)
+        self.upconv1 = nn.Sequential(nn.Conv2d(width, width*2, 1, 1),
+                                     nn.Conv2d(width*2, width*2, kernel_size=3, stride=2, padding=1, groups=width*2, bias = True))
+        self.upconv2 = nn.Sequential(nn.Conv2d(width*2, width*4, 1, 1),
+                                     nn.Conv2d(width*4, width*4, kernel_size=3, stride=2, padding=1, groups = width*4, bias = True))
+        self.upconv3 = nn.Sequential(nn.Conv2d(width*4, width*8, 1, 1),
+                                     nn.Conv2d(width*8, width*8, kernel_size=3, stride=2, padding=1, groups=width*8, bias = True))
+        
+        # self.recon_trunk_light = nn.Sequential(*[FBlock(c = chan * self.padder_size,
+        #                                         DW_Expand=2, FFN_Expand=2, dilations = dilations, 
+        #                                         extra_depth_wise = False) for i in range(residual_layers)])
+
+        ResidualBlock_noBN_f = functools.partial(ResidualBlock_noBN, nf = width * self.padder_size)
         self.recon_trunk_light = make_layer(ResidualBlock_noBN_f, residual_layers)
         
    
@@ -87,17 +108,16 @@ class Network(nn.Module):
     def forward(self, input):
 
         B, C, H, W = input.shape
-        
-        # we calculate the three sizes of our input image
-        h1 =  input#F.interpolate(input, size=(H, W), mode = 'area')
-        h2 = F.interpolate(h1, size=(H//2, W//2), mode = 'area')
-        h3 = F.interpolate(h2, size=(H//4, W//4), mode = 'area')
-        h4 = F.interpolate(h3, size=(H//8, W//8), mode = 'area')
-        
-        # print(h1.shape)
-        attention1 = self.attention1(h1)
-        attention2 = self.attention2(h2)
-        attention3 = self.attention3(h3)
+
+        h1 =  input
+        # generate the different attention layers
+        attention1 = self.attention1(input)
+        # attention2 = F.interpolate(self.upconv1(attention1), size = (H//2, W//2), mode = 'bilinear')
+        # attention3 = F.interpolate(self.upconv2(attention2), size = (H//4, W//4), mode = 'bilinear')
+        # attention4 = F.interpolate(self.upconv3(attention3), size= (H//8, W//8), mode ='bilinear')
+        attention2 = self.upconv1(attention1)
+        attention3 = self.upconv2(attention2)
+        attention4 = self.upconv3(attention3)
         attentions = [attention1, attention2, attention3]
         # print('Attention1', attention1.shape)
         # print('Attention2', attention2.shape)
@@ -114,7 +134,7 @@ class Network(nn.Module):
             x = down(x)
             # i += 1
 
-        x = self.middle_blks(x) * self.attention4(h4)
+        x = self.middle_blks(x) * attention4
         # print('3', x.shape)
         # apply the mask
         # x = x * mask
@@ -131,6 +151,20 @@ class Network(nn.Module):
         
         return x[:, :, :H, :W]
 
+class NetworkLocal(Local_Base, Network):
+
+    def __init__(self, *args, train_size=(1, 3, 256, 256), fast_imp=False, **kwargs):
+        Local_Base.__init__(self)
+        Network.__init__(self, *args, **kwargs)
+
+        N, C, H, W = train_size
+        base_size = (int(H * 1.5), int(W * 1.5))
+
+        self.eval()
+        with torch.no_grad():
+            self.convert(base_size=base_size, train_size=train_size, fast_imp=fast_imp)
+  
+
 
 if __name__ == '__main__':
     
@@ -140,13 +174,16 @@ if __name__ == '__main__':
     enc_blks = [1, 2, 3]
     middle_blk_num = 3
     dec_blks = [3, 1, 1]
-
-    # enc_blks = [1, 1, 1, 28]
-    # middle_blk_num = 1
-    # dec_blks = [1, 1, 1, 1]
+    residual_layers = 2
+    dilations = [1, 4]
     
-    net = Network(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
-                      enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
+    net = Network(img_channel=img_channel, 
+                  width=width, 
+                  middle_blk_num=middle_blk_num,
+                  enc_blk_nums=enc_blks, 
+                  dec_blk_nums=dec_blks,
+                  residual_layers=residual_layers,
+                  dilations = dilations)
 
     # NAF = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
     #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
@@ -157,16 +194,8 @@ if __name__ == '__main__':
 
     macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
 
-    # params = float(params[:-3])
-    # macs = float(macs[:-4])
-
-    # print('MACs and params of the network:')
     print(macs, params)    
-    
-    tensor = torch.rand((1, 3, 256, 256))
-    # print('Size of input tensor: ',tensor.shape)
-    
-    # output = net(tensor)
-    # print('Size of output tensor: ',output.shape)
+    inp = torch.randn(1, 3, 256, 256)
+    out = net(inp)
     
     
