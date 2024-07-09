@@ -1,6 +1,6 @@
 #### general settings
 resume_training:
-  resume_training: True
+  resume_training: False
   resume: must
   id: waye95l7
 
@@ -9,22 +9,22 @@ resume_training:
 datasets:
   name: LOL
   train:
-    train_path: /mnt/valab-datasets/LOL/train
+    train_path: /home/danfei/Python_workspace/Datasets/LOL/train
 
     n_workers: 4  # per GPU
-    batch_size_train: 4
+    batch_size_train: 6
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
     crop_type: Random
   val:
-    test_path: /mnt/valab-datasets/LOL/test
+    test_path: /home/danfei/Python_workspace/Datasets/LOL/test
     cropsize: 256
     batch_size_test: 1
 
 #### network structures
 network:
-  name: Network_v3
+  name: Network
   img_channels: 3
   width: 32
   middle_blk_num: 3
@@ -32,10 +32,10 @@ network:
   dec_blk_nums: [3, 1, 1]
   enc_blk_nums_map: None
   middle_blk_num_map: None
-  residual_layers: 1
+  residual_layers: 2
   dilations: [1, 4]
   spatial: None
-  extra_depth_wise: False
+  extra_depth_wise: True
 
 
 #### training settings: learning rate scheme, loss
@@ -64,12 +64,12 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_v3_interpolate.pt
+  path: ./models/Network_default_LOL.pt
   best: ./models/bests/
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_v3_interpolate_extraDW_LOLBlur
+  name: Network_default_LOL
   save_code: True
