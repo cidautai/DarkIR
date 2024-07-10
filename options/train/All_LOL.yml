@@ -1,0 +1,78 @@
+#### general settings
+resume_training:
+  resume_training: False
+  resume: must
+  id: jlgpxikv
+
+#### training devices
+device:
+  cuda: True
+  gpus: 0
+
+#### datasets
+datasets:
+  name: All_LOL
+  train:
+    train_path: /home/leadergpu/Datasets
+
+    n_workers: 4  # per GPU
+    batch_size_train: 12
+    cropsize: 256   # size you want to crop out as input sample.
+    flips: True
+    verbose: True
+    crop_type: Random
+  val:
+    test_path: /home/leadergpu/Datasets
+    batch_size_test: 1
+
+#### network structures
+network:
+  name: Network
+  img_channels: 3
+  width: 32
+  middle_blk_num: 3
+  enc_blk_nums: [1, 2, 3]
+  dec_blk_nums: [3, 1, 1]
+  enc_blk_nums_map: None
+  middle_blk_num_map: None
+  residual_layers: 2
+  dilations: [1, 4, 9]
+  spatial: None
+  extra_depth_wise: True
+
+
+#### training settings: learning rate scheme, loss
+train:
+  lr_initial: !!float 5e-4
+  lr_scheme: CosineAnnealing
+  betas: [0.9, 0.9]
+  epochs: 500
+  lr_gamma: 0.5
+  weight_decay: !!float 1e-3
+  eta_min: !!float 1e-6
+
+  pixel_criterion: l1
+  pixel_weight: 1.0
+
+  perceptual: True
+  perceptual_criterion: l1
+  perceptual_weight: 0.01
+  perceptual_reduction: mean
+
+  edge: True 
+  edge_criterion: l2
+  edge_weight: 50.0
+  edge_reduction: mean
+
+
+#### save model
+save:
+  path: ./models/Network_all_LOL.pt
+  best: ./models/bests/
+#### wandb:
+wandb:
+  init: True
+  project: LOLBlur
+  entity: cidautai
+  name: Network_all_LOL
+  save_code: True

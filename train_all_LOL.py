@@ -18,8 +18,8 @@ from archs import NAFNet
 from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss
 
 from data import *
-from options.options import parse
 
+from options.options import parse
 from lpips import LPIPS
 torch.autograd.set_detect_anomaly(True)
 
@@ -50,8 +50,8 @@ last_epochs = opt['train']['epochs']
 
 #---------------------------------------------------------------------------------------------------
 # LOAD THE DATALOADERS
-if opt['datasets']['name'] == 'NBDN':
-    train_loader, test_loader = main_dataset_nbdn(train_path=opt['datasets']['train']['train_path'],
+if opt['datasets']['name'] == 'All_LOL':
+    train_loader, test_loader_real, test_loader_synth = main_dataset_all_lol(train_path=opt['datasets']['train']['train_path'],
                                                 test_path = opt['datasets']['val']['test_path'],
                                                 batch_size_train=opt['datasets']['train']['batch_size_train'],
                                                 batch_size_test=opt['datasets']['val']['batch_size_test'],
@@ -60,46 +60,7 @@ if opt['datasets']['name'] == 'NBDN':
                                                 cropsize=opt['datasets']['train']['cropsize'],
                                                 num_workers=opt['datasets']['train']['n_workers'],
                                                 crop_type=opt['datasets']['train']['crop_type'])
-elif opt['datasets']['name'] == 'LOLBlur':
-    train_loader, test_loader = main_dataset_lolblur(train_path=opt['datasets']['train']['train_path'],
-                                                test_path = opt['datasets']['val']['test_path'],
-                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
-                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
-                                                flips = opt['datasets']['train']['flips'],
-                                                verbose=opt['datasets']['train']['verbose'],
-                                                cropsize=opt['datasets']['train']['cropsize'],
-                                                num_workers=opt['datasets']['train']['n_workers'],
-                                                crop_type=opt['datasets']['train']['crop_type'])
-elif opt['datasets']['name'] == 'LOL':
-    train_loader, test_loader = main_dataset_lol(train_path=opt['datasets']['train']['train_path'],
-                                                test_path = opt['datasets']['val']['test_path'],
-                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
-                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
-                                                flips = opt['datasets']['train']['flips'],
-                                                verbose=opt['datasets']['train']['verbose'],
-                                                cropsize=opt['datasets']['train']['cropsize'],
-                                                num_workers=opt['datasets']['train']['n_workers'],
-                                                crop_type=opt['datasets']['train']['crop_type'])
-elif opt['datasets']['name'] == 'LOLv2':
-    train_loader, test_loader = main_dataset_lolv2(train_path=opt['datasets']['train']['train_path'],
-                                                test_path = opt['datasets']['val']['test_path'],
-                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
-                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
-                                                flips = opt['datasets']['train']['flips'],
-                                                verbose=opt['datasets']['train']['verbose'],
-                                                cropsize=opt['datasets']['train']['cropsize'],
-                                                num_workers=opt['datasets']['train']['n_workers'],
-                                                crop_type=opt['datasets']['train']['crop_type'])    
-elif opt['datasets']['name'] == 'LOLv2_synth':
-    train_loader, test_loader = main_dataset_lolv2_synth(train_path=opt['datasets']['train']['train_path'],
-                                                test_path = opt['datasets']['val']['test_path'],
-                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
-                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
-                                                flips = opt['datasets']['train']['flips'],
-                                                verbose=opt['datasets']['train']['verbose'],
-                                                cropsize=opt['datasets']['train']['cropsize'],
-                                                num_workers=opt['datasets']['train']['n_workers'],
-                                                crop_type=opt['datasets']['train']['crop_type'])
+
 else:
     name_loader = opt['datasets']['name']
     raise NotImplementedError(f'{name_loader} is not implemented')
@@ -214,7 +175,7 @@ else:
 
 
 calc_SSIM = SSIM(data_range=1.)
-calc_LPIPS = LPIPS(net = 'vgg').to(device)
+calc_LPIPS = LPIPS(net = 'alex').to(device)
 
 if opt['datasets']['train']['batch_size_train']>=8:
     largest_capable_size = opt['datasets']['train']['cropsize'] * opt['datasets']['train']['batch_size_train']
@@ -234,11 +195,16 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
     train_og_psnr = []  # loss and PSNR of the low-light image
     train_ssim    = []
 
-    if test_loader:
-        valid_loss = []
-        valid_psnr = []
-        valid_ssim = []
-        valid_lpips = []
+    if test_loader_real:
+        valid_loss_real = []
+        valid_psnr_real = []
+        valid_ssim_real = []
+        valid_lpips_real = []
+    if test_loader_synth:
+        valid_loss_synth = []
+        valid_psnr_synth = []
+        valid_ssim_synth = []
+        valid_lpips_synth = []
     model.train()
     optim_loss = 0
 
@@ -283,10 +249,10 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
         
     # run this part if test loader is defined
-    if test_loader:
+    if test_loader_real:
         model.eval()
         # Now we need to go over the test_loader and evaluate the results of the epoch
-        for high_batch_valid, low_batch_valid in test_loader:
+        for high_batch_valid, low_batch_valid in test_loader_real:
 
             _, _, H, W = high_batch_valid.shape
             if H >= largest_capable_size or W>=largest_capable_size:
@@ -307,10 +273,39 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
                 valid_lpips_batch = calc_LPIPS(enhanced_batch_valid, high_batch_valid)
                 
                 
-            valid_psnr.append(valid_psnr_batch.item())
-            valid_ssim.append(valid_ssim_batch.item())
-            valid_lpips.append(torch.mean(valid_lpips_batch).item())
+            valid_psnr_real.append(valid_psnr_batch.item())
+            valid_ssim_real.append(valid_ssim_batch.item())
+            valid_lpips_real.append(torch.mean(valid_lpips_batch).item())
+
+    # run this part if test loader is defined
+    if test_loader_synth:
+        model.eval()
+        # Now we need to go over the test_loader and evaluate the results of the epoch
+        for high_batch_valid, low_batch_valid in test_loader_synth:
+
+            _, _, H, W = high_batch_valid.shape
+            if H >= largest_capable_size or W>=largest_capable_size:
+                high_batch_valid, low_batch_valid = crop_to_4(high_batch_valid, low_batch_valid)
             
+            high_batch_valid = high_batch_valid.to(device)
+            low_batch_valid = low_batch_valid.to(device)
+
+            with torch.no_grad():
+                enhanced_batch_valid = model(low_batch_valid)
+                # loss
+                valid_loss_batch = torch.mean(
+                    (high_batch_valid - enhanced_batch_valid)**2)
+                # PSNR (dB) metric
+                valid_psnr_batch = 20 * \
+                    torch.log10(1. / torch.sqrt(valid_loss_batch))
+                valid_ssim_batch = calc_SSIM(enhanced_batch_valid, high_batch_valid)
+                valid_lpips_batch = calc_LPIPS(enhanced_batch_valid, high_batch_valid)
+                
+                
+            valid_psnr_synth.append(valid_psnr_batch.item())
+            valid_ssim_synth.append(valid_ssim_batch.item())
+            valid_lpips_synth.append(torch.mean(valid_lpips_batch).item())
+          
     # We take the first image [0] from each batch
     high_img = high_batch_valid[0]
     low_img = low_batch_valid[0]
@@ -321,14 +316,16 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
     images = log_images(images_list, caption)
     logger = {'train_loss': np.mean(train_loss), 'train_psnr': np.mean(train_psnr),
               'train_ssim': np.mean(train_ssim), 'train_og_psnr': np.mean(train_og_psnr), 
-              'epoch': epoch,  'valid_psnr': np.mean(valid_psnr), 
-              'valid_ssim': np.mean(valid_ssim), 'valid_lpips': np.mean(valid_lpips),'examples': images}
+              'epoch': epoch,  'valid_psnr_real': np.mean(valid_psnr_real), 
+              'valid_ssim_real': np.mean(valid_ssim_real), 'valid_lpips_real': np.mean(valid_lpips_real),
+              'valid_psnr_synth': np.mean(valid_psnr_synth), 'valid_ssim_synth': np.mean(valid_ssim_synth), 
+              'valid_lpips_synth': np.mean(valid_lpips_synth),'examples': images}
 
     if wandb_log:
         wandb.log(logger)
 
 
-    print(f"Epoch {epoch + 1} of {last_epochs} took {time.time() - start_time:.3f}s\t Loss:{np.mean(train_loss)}\t PSNR:{np.mean(valid_psnr)}\n")
+    print(f"Epoch {epoch + 1} of {last_epochs} took {time.time() - start_time:.3f}s\t Loss:{np.mean(train_loss)}\t PSNR:{np.mean(valid_psnr_real)}\t PSNR:{np.mean(valid_psnr_synth)}\n")
 
 
     # Save the model after every epoch
@@ -342,11 +339,11 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
     torch.save(model_to_save, NEW_PATH_MODEL)
 
     #save best model if new valid_psnr is higher than the best one
-    if np.mean(valid_psnr) >= best_valid_psnr:
+    if np.mean(valid_psnr_real) >= best_valid_psnr:
         
         torch.save(model_to_save, BEST_PATH_MODEL)
         
-        best_valid_psnr = np.mean(valid_psnr) # update best psnr
+        best_valid_psnr = np.mean(valid_psnr_real) # update best psnr
 
     #update scheduler
     scheduler.step()
@@ -356,8 +353,3 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
 if wandb_log:
     wandb.finish()
-
-
-
-
-
