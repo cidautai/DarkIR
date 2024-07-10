@@ -27,16 +27,16 @@ datasets:
 
 #### network structures
 network:
-  name: Network_v3
+  name: NAFNet
   img_channels: 3
   width: 32
-  middle_blk_num: 3
-  enc_blk_nums: [1, 2, 3]
-  dec_blk_nums: [3, 1, 1]
+  middle_blk_num: 1
+  enc_blk_nums: [2, 2, 4, 8]
+  dec_blk_nums: [2, 2, 2, 2]
   enc_blk_nums_map: None
   middle_blk_num_map: None
-  residual_layers: 2
-  dilations: [1, 4, 9]
+  residual_layers: None
+  dilations: [1]
   spatial: None
   extra_depth_wise: True
 
@@ -67,14 +67,14 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_v3_new_network_dilations149LOLBlur.pt
+  path: ./models/NAFNet_32_25blocks.pt
   best: ./models/bests/
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_v3_new_network_dilations149LOLBlur
+  name: NAFNet_32_25blocks
   save_code: True
 
 
