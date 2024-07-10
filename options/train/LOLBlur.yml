@@ -16,7 +16,7 @@ datasets:
     train_path: /home/leadergpu/Datasets/LOLBlur_temp/train
 
     n_workers: 4  # per GPU
-    batch_size_train: 12
+    batch_size_train: 2
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
@@ -64,14 +64,17 @@ train:
   edge_weight: 50.0
   edge_reduction: mean
 
+  frequency: True
+  frequency_weight: 0.01
+  frequency_reduction: mean
 
 #### save model
 save:
-  path: ./models/NAFNet_32_25blocks.pt
+  path: ./models/NAFNet_32_25blocks_.pt
   best: ./models/bests/
 #### wandb:
 wandb:
-  init: True
+  init: False
   project: LOLBlur
   entity: cidautai
   name: NAFNet_32_25blocks

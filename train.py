@@ -15,7 +15,7 @@ from ptflops import get_model_complexity_info
 from data.datapipeline import *
 from archs import Network
 from archs import NAFNet
-from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss
+from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss, FrequencyLoss
 
 from data import *
 from options.options import parse
@@ -203,7 +203,7 @@ if perceptual:
 else:
     perceptual_loss = None
 
-#finally the edge loss
+# the edge loss
 edge = opt['train']['edge'] 
 if edge:
     edge_loss = EdgeLoss(loss_weight = opt['train']['edge_weight'],
@@ -211,6 +211,12 @@ if edge:
                               reduction = opt['train']['edge_reduction'])
 else:
     edge_loss = None
+
+# the frequency loss
+frequency = opt['train']['frequency']
+if frequency:
+    frequency_loss = FrequencyLoss(loss_weight = opt['train']['edge_weight'],
+                              reduction = opt['train']['edge_reduction'])
 
 
 calc_SSIM = SSIM(data_range=1.)
@@ -258,7 +264,8 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
             l_pixel += perceptual_loss(enhanced_batch, high_batch)
         if edge:
             l_pixel += edge_loss(enhanced_batch, high_batch)
-        
+        if frequency:
+            l_pixel += frequency_loss(enhanced_batch, high_batch)
         optim_loss = l_pixel
 
         # Calculate loss function for the PSNR
