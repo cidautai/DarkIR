@@ -38,8 +38,12 @@ network = opt['network']['name']
 
 #parameters for saving model
 PATH_MODEL     = opt['save']['path']
-NEW_PATH_MODEL = opt['save']['path']
-BEST_PATH_MODEL = os.path.join(opt['save']['best'], os.path.basename(opt['save']['path']))
+if opt['save']['new']:
+    NEW_PATH_MODEL = opt['save']['new']
+else: 
+    NEW_PATH_MODEL = opt['save']['path']
+    
+BEST_PATH_MODEL = os.path.join(opt['save']['best'], os.path.basename(NEW_PATH_MODEL))
 
 
 wandb_log = opt['wandb']['init']  # flag if we want to output the results in wandb
@@ -154,6 +158,7 @@ else:
 if resume_training:
     checkpoints = torch.load(PATH_MODEL)
     weights = checkpoints['model_state_dict']
+    # print(weights.keys())
     remove_prefix = 'module.' # this is needed because the keys now get a module. key that doesn't match with the network one
     weights = {k[len(remove_prefix):] if k.startswith(remove_prefix) else k: v for k, v in weights.items()}
     model.load_state_dict(weights)
