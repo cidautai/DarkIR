@@ -216,7 +216,8 @@ else:
 frequency = opt['train']['frequency']
 if frequency:
     frequency_loss = FrequencyLoss(loss_weight = opt['train']['edge_weight'],
-                              reduction = opt['train']['edge_reduction'])
+                              reduction = opt['train']['edge_reduction'],
+                              criterion = opt['train']['frequency_criterion'])
 
 
 calc_SSIM = SSIM(data_range=1.)
