@@ -1,0 +1,25 @@
+#### network structures
+network:
+  name: Network
+  img_channels: 3
+  width: 32
+  middle_blk_num: 3
+  enc_blk_nums: [1, 2, 3]
+  dec_blk_nums: [3, 1, 1]
+  enc_blk_nums_map: None
+  middle_blk_num_map: None
+  residual_layers: 2
+  dilations: [1, 4]
+  spatial: False
+  extra_depth_wise: True
+
+#### save model
+save:
+  best: ./models/bests/Network_v3_new_network_noFPA_LOLBlur_v2.pt
+
+LOLBlur:
+  inputs_path: ./inputs/synthetic
+  results_path: ./results/synthetic
+RealBlur:
+  inputs_path: ./inputs/real
+  results_path: ./results/real

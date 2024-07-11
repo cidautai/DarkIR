@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import torchvision.transforms as transforms
 from ptflops import get_model_complexity_info
 
-from archs import Network, NAFNet, Network_v2, Network_v3
+from archs import Network, NAFNet
 from options.options import parse
 
 #define some auxiliary functions
@@ -36,8 +36,18 @@ def save_tensor(tensor, path):
     img = tensor_to_pil(tensor)
     img.save(path)
 
+def pad_tensor(tensor, multiple = 8):
+    '''pad the tensor to be multiple of some number'''
+    multiple = multiple
+    _, _, H, W = tensor.shape
+    pad_h = (multiple - H % multiple) % multiple
+    pad_w = (multiple - W % multiple) % multiple
+    tensor = F.pad(tensor, (0, pad_w, 0, pad_h), value = 0)
+    
+    return tensor
+
 #load the config file
-PATH_CONFIG = './options/test/LOLBlur.yml'
+PATH_CONFIG = './options/predict/LOLBlur.yml'
 opt = parse(PATH_CONFIG)
 
 # define some parameters based on the run we want to make
@@ -56,36 +66,14 @@ if network == 'Network':
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'], 
                     residual_layers=opt['network']['residual_layers'],
-                    dilations = opt['network']['dilations'])
+                    dilations=opt['network']['dilations'],
+                    extra_depth_wise = opt['network']['dilations'])
 elif network == 'NAFNet':
     model = NAFNet(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
                     middle_blk_num=opt['network']['middle_blk_nums'], 
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'])
-
-elif network == 'Network_v2':
-    model = Network_v2(img_channel=opt['network']['img_channels'], 
-                    width=opt['network']['width'], 
-                    middle_blk_num=opt['network']['middle_blk_num'], 
-                    enc_blk_nums=opt['network']['enc_blk_nums'],
-                    dec_blk_nums=opt['network']['dec_blk_nums'], 
-                    residual_layers=opt['network']['residual_layers'],
-                    enc_blk_nums_map=opt['network']['enc_blk_nums_map'],
-                    middle_blk_num_map=opt['network']['middle_blk_num_map'],
-                    spatial = opt['network']['spatial'],
-                    dilations = opt['network']['dilations'])
-
-elif network == 'Network_v3':
-    model = Network_v3(img_channel=opt['network']['img_channels'], 
-                    width=opt['network']['width'], 
-                    middle_blk_num=opt['network']['middle_blk_num'], 
-                    enc_blk_nums=opt['network']['enc_blk_nums'],
-                    dec_blk_nums=opt['network']['dec_blk_nums'], 
-                    residual_layers=opt['network']['residual_layers'],
-                    dilations=opt['network']['dilations'],
-                    extra_depth_wise = opt['network']['dilations'])
-
 else:
     raise NotImplementedError
 
@@ -101,22 +89,40 @@ print('Computational complexity: ', macs)
 print('Number of parameters: ', params)
 
 #load the images and transform to torch
-PATH_IMAGES = opt['examples_path']
-PATH_RESULTS = opt['results_path']
+PATH_IMAGES_LOLBLUR = opt['LOLBlur']['inputs_path']
+PATH_RESULTS_LOLBLUR = opt['LOLBlur']['results_path']
 
-path_images = [os.path.join(PATH_IMAGES, path) for path in os.listdir(PATH_IMAGES)]
+PATH_IMAGES_REALBLUR = opt['RealBlur']['inputs_path']
+PATH_RESULTS_REALBLUR = opt['RealBlur']['results_path']
+
+not os.path.isdir('./results') and os.mkdir('./results')
+not os.path.isdir(PATH_RESULTS_LOLBLUR) and os.mkdir(PATH_RESULTS_LOLBLUR)
+not os.path.isdir(PATH_RESULTS_REALBLUR) and os.mkdir(PATH_RESULTS_REALBLUR)
+
+path_images_lolblur = [os.path.join(PATH_IMAGES_LOLBLUR, path) for path in os.listdir(PATH_IMAGES_LOLBLUR)]
+path_images_realblur = [os.path.join(PATH_IMAGES_REALBLUR, path) for path in os.listdir(PATH_IMAGES_REALBLUR)]
 
 model.eval()
 
 with torch.no_grad():
     
-    for path in path_images:
+    for path in path_images_lolblur:
         tensor = path_to_tensor(path).to(device)
-        
+        _, _, H, W = tensor.shape
+        tensor = pad_tensor(tensor)
         output = torch.clamp(model(tensor), 0., 1.)
+        output = output[:,:, :H, :W]
         print(output.shape, output.dtype, torch.max(output), torch.min(output))
-        save_tensor(output, os.path.join(PATH_RESULTS, os.path.basename(path)))
-        
+        save_tensor(output, os.path.join(PATH_RESULTS_LOLBLUR, os.path.basename(path)))
+    
+    for path in path_images_realblur:
+        tensor = path_to_tensor(path).to(device)
+        _, _, H, W = tensor.shape
+        tensor = pad_tensor(tensor)
+        output = torch.clamp(model(tensor), 0., 1.)
+        output = output[:,:, :H, :W]
+        print(output.shape, output.dtype, torch.max(output), torch.min(output))
+        save_tensor(output, os.path.join(PATH_RESULTS_REALBLUR, os.path.basename(path)))
 print('Finished predictions.')
 
 
