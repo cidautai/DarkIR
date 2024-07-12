@@ -54,7 +54,7 @@ class CropTo4(nn.Module):
         _,_, h, w = img.shape
         mod_pad_h = (h - h//2) % 2
         mod_pad_w = (w - w//2) % 2
-        img = F.pad(img, (0, mod_pad_w, 0, mod_pad_h), mode = 'constant', value = '0')
+        img = F.pad(img, (0, mod_pad_w, 0, mod_pad_h), mode = 'constant', value = 0)
         
         return img
 
