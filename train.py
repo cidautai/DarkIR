@@ -328,6 +328,8 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
                 low_batch_valid = low_crop
                 
             else: # then we process the image normally
+                high_batch_valid = high_batch_valid.to(device)
+                low_batch_valid = low_batch_valid.to(device)
                 enhanced_batch_valid = model(low_batch_valid)
                 # loss
                 valid_loss_batch = torch.mean((high_batch_valid - enhanced_batch_valid)**2)
