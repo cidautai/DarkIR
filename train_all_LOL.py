@@ -51,7 +51,7 @@ last_epochs = opt['train']['epochs']
 #---------------------------------------------------------------------------------------------------
 # LOAD THE DATALOADERS
 if opt['datasets']['name'] == 'All_LOL':
-    train_loader, test_loader_real, test_loader_synth = main_dataset_all_lol(train_path=opt['datasets']['train']['train_path'],
+    train_loader, test_loader_real, test_loader_synth, test_loader_lolblur = main_dataset_all_lol(train_path=opt['datasets']['train']['train_path'],
                                                 test_path = opt['datasets']['val']['test_path'],
                                                 batch_size_train=opt['datasets']['train']['batch_size_train'],
                                                 batch_size_test=opt['datasets']['val']['batch_size_test'],
@@ -211,6 +211,11 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         valid_psnr_synth = []
         valid_ssim_synth = []
         valid_lpips_synth = []
+    if test_loader_lolblur:
+        valid_loss_lolblur = []
+        valid_psnr_lolblur = []
+        valid_ssim_lolblur = []
+        valid_lpips_lolblur = []
     model.train()
     optim_loss = 0
 
@@ -324,18 +329,57 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
     low_img_synth = low_batch_valid_synth[0]
     enhanced_img_synth = enhanced_batch_valid_synth[0]
 
+    # run this part if test loader is defined
+    if test_loader_lolblur:
+        model.eval()
+        # Now we need to go over the test_loader and evaluate the results of the epoch
+        for high_batch_valid_lolblur, low_batch_valid_lolblur in test_loader_lolblur:
+
+            _, _, H, W = high_batch_valid_lolblur.shape
+            if H >= largest_capable_size or W>=largest_capable_size:
+                high_batch_valid_lolblur, low_batch_valid_lolblur = crop_to_4(high_batch_valid_lolblur, low_batch_valid_lolblur)
+            
+            high_batch_valid_lolblur = high_batch_valid_lolblur.to(device)
+            low_batch_valid_lolblur = low_batch_valid_lolblur.to(device)
+
+            with torch.no_grad():
+                enhanced_batch_valid_lolblur = model(low_batch_valid_lolblur)
+                # loss
+                valid_loss_batch_lolblur = torch.mean(
+                    (high_batch_valid_lolblur - enhanced_batch_valid_lolblur)**2)
+                # PSNR (dB) metric
+                valid_psnr_batch_lolblur = 20 * \
+                    torch.log10(1. / torch.sqrt(valid_loss_batch_lolblur))
+                valid_ssim_batch_lolblur = calc_SSIM(enhanced_batch_valid_lolblur, high_batch_valid_lolblur)
+                valid_lpips_batch_lolblur = calc_LPIPS(enhanced_batch_valid_lolblur, high_batch_valid_lolblur)
+                
+                
+            valid_psnr_lolblur.append(valid_psnr_batch_lolblur.item())
+            valid_ssim_lolblur.append(valid_ssim_batch_lolblur.item())
+            valid_lpips_lolblur.append(torch.mean(valid_lpips_batch_lolblur).item())
+          
+    # We take the first image [0] from each batch synth
+    high_img_lolblur = high_batch_valid_lolblur[0]
+    low_img_lolblur = low_batch_valid_lolblur[0]
+    enhanced_img_lolblur = enhanced_batch_valid_lolblur[0]
+
     caption = "1: Input, 2: Output, 3: Ground_Truth"
     images_list_synth = [low_img_synth, enhanced_img_synth, high_img_synth]
     images_list_real = [low_img_real, enhanced_img_real, high_img_real]
+    images_list_lolblur = [low_img_lolblur, enhanced_img_lolblur, high_img_lolblur]
+    
     images_synth = log_images(images_list_synth, caption)
     images_real = log_images(images_list_real, caption)
+    images_lolblur = log_images(images_list_lolblur, caption)
     
     logger = {'train_loss': np.mean(train_loss), 'train_psnr': np.mean(train_psnr),
               'train_ssim': np.mean(train_ssim), 'train_og_psnr': np.mean(train_og_psnr), 
               'epoch': epoch,  'valid_psnr_real': np.mean(valid_psnr_real), 
               'valid_ssim_real': np.mean(valid_ssim_real), 'valid_lpips_real': np.mean(valid_lpips_real),
               'valid_psnr_synth': np.mean(valid_psnr_synth), 'valid_ssim_synth': np.mean(valid_ssim_synth), 
-              'valid_lpips_synth': np.mean(valid_lpips_synth),'synth': images_synth, 'real': images_real}
+              'valid_lpips_synth': np.mean(valid_lpips_synth),'valid_psnr_lolblur': np.mean(valid_psnr_lolblur), 
+              'valid_ssim_lolblur': np.mean(valid_ssim_lolblur), 'valid_lpips_lolblur': np.mean(valid_lpips_lolblur),
+              'synth': images_synth, 'real': images_real, 'lolblur': images_lolblur}
 
     if wandb_log:
         wandb.log(logger)

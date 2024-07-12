@@ -250,6 +250,9 @@ def main_dataset_all_lol(train_path='/home/leadergpu/Datasets', test_path='/home
 
     test_dataset_lolv2_synth = MyDataset_Crop(list_blur_valid_LOLv2_synth, list_sharp_valid_LOLv2_synth, cropsize=None,
                                   tensor_transform=tensor_transform, test=True, crop_type=crop_type)
+    
+    test_dataset_lolblur = MyDataset_Crop(list_blur_valid_lolblur, list_sharp_valid_lolblur, cropsize=None,
+                                  tensor_transform=tensor_transform, test=True, crop_type=crop_type)
     # print(list_blur_valid_LOLv2_real[:10], '\n',list_blur_valid_LOLv2_synth[:10])
     # #Load the data loaders
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=True,
@@ -258,14 +261,17 @@ def main_dataset_all_lol(train_path='/home/leadergpu/Datasets', test_path='/home
                              num_workers=num_workers, pin_memory=True, drop_last=False)
     test_loader_lolv2_synth = DataLoader(dataset=test_dataset_lolv2_synth, batch_size=batch_size_test, shuffle=True,
                              num_workers=num_workers, pin_memory=True, drop_last=False)
+    test_loader_lolblur = DataLoader(dataset=test_dataset_lolblur, batch_size=batch_size_test, shuffle=True,
+                             num_workers=num_workers, pin_memory=True, drop_last=False)
+  
     # #test_loader = None
 
-    return train_loader, test_loader_lolv2, test_loader_lolv2_synth
+    return train_loader, test_loader_lolv2, test_loader_lolv2_synth, test_loader_lolblur
 
 if __name__ == '__main__':
     
-    train_loader, test_loader_real, test_loader_synth = main_dataset_all_lol(verbose = True, crop_type='Random', cropsize=256)
-    print(len(train_loader), len(test_loader_real), len(test_loader_synth))
+    train_loader, test_loader_real, test_loader_synth, test_loader_lolblur = main_dataset_all_lol(verbose = True, crop_type='Random', cropsize=256)
+    print(len(train_loader), len(test_loader_real), len(test_loader_synth), len(test_loader_lolblur))
     
     # for high, low in train_loader:
     #     # pass
