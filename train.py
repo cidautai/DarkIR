@@ -303,7 +303,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
             _, _, H, W = high_batch_valid.shape
             if H >= largest_capable_size or W>=largest_capable_size:
-                high_batch_valid, low_batch_valid = crop_to_4(high_batch_valid, low_batch_valid)
+                high_batch_valid, low_batch_valid = crop_to_4(high_batch_valid, low_batch_valid) # this returns a list of crops of size [1, 3, H//2, W//2]
             
             high_batch_valid = high_batch_valid.to(device)
             low_batch_valid = low_batch_valid.to(device)

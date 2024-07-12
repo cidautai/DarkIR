@@ -40,18 +40,19 @@ class CropTo4(nn.Module):
         
         #pad the images with zeros if their size is lower than the cropsize
         img1 = self.pad(img1)
+        # print(img1.shape)
         img2 = self.pad(img2)
-        _,_, h, w = img1.shape
-        crops1 = [TF.crop(img1, 0, 0, h//2, w//2), TF.crop(img1, 0, w//2, h//2, w),
-                  TF.crop(img1, h//2, 0, h, w//2),TF.crop(img1, h//2, w//2, h, w)]
-        crops2 = [TF.crop(img2, 0, 0, h//2, w//2), TF.crop(img2, 0, w//2, h//2, w),
-                  TF.crop(img2, h//2, 0, h, w//2),TF.crop(img2, h//2, w//2, h, w)]
-
+        _, _, h, w = img1.shape
+        crops1 = [TF.crop(img1, 0, 0, h//2, w//2), TF.crop(img1, 0, w//2, h//2, w//2),
+                  TF.crop(img1, h//2, 0, h//2, w//2),TF.crop(img1, h//2, w//2, h//2, w//2)]
+        crops2 = [TF.crop(img2, 0, 0, h//2, w//2), TF.crop(img2, 0, w//2, h//2, w//2),
+                  TF.crop(img2, h//2, 0, h//2, w//2),TF.crop(img2, h//2, w//2, h//2, w//2)]
             
-        return torch.cat(crops1, dim=0), torch.cat(crops2, dim=0)
+        return crops1, crops2
+        # return torch.cat(crops1), torch.cat(crops2)
 
     def pad(self, img):
-        _,_, h, w = img.shape
+        _, _, h, w = img.shape
         mod_pad_h = (h - h//2) % 2
         mod_pad_w = (w - w//2) % 2
         img = F.pad(img, (0, mod_pad_w, 0, mod_pad_h), mode = 'constant', value = 0)
@@ -161,3 +162,14 @@ class MyDataset_Crop(Dataset):
                 rgb_high, rgb_low = self.center_crop(rgb_high), self.center_crop(rgb_low)
     
         return rgb_high, rgb_low
+
+if __name__== '__main__':
+    tensor = torch.rand([1, 3, 1000, 1000])
+    
+    crop_to_4 = CropTo4()
+    crops1, crops2 = crop_to_4(tensor, tensor)
+    # print(crops1.shape)
+    # print(crops2.shape)
+    
+    for crop in crops1:
+        print(crop.shape)
