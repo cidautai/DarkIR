@@ -25,7 +25,7 @@ torch.autograd.set_detect_anomaly(True)
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.
-path_options = './options/train/LOLBlur.yml'
+path_options = './options/train/NBDN.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
 # print(opt)

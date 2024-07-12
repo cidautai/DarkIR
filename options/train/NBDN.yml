@@ -1,41 +1,45 @@
 #### general settings
 resume_training:
-  resume_training: True
+  resume_training: False
   resume: must
   id: h2cq1d41
 
+#### training devices
+device:
+  cuda: True
+  gpus: 0
 
 #### datasets
 datasets:
   name: NBDN
   train:
-    train_path: /mnt/valab-datasets/NBDN_dataset_50k/train
+    train_path: /home/leadergpu/Datasets/NBDN_dataset_50k/train
 
     n_workers: 4  # per GPU
-    batch_size_train: 4
+    batch_size_train: 12
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
     crop_type: Random
   val:
-    test_path: /mnt/valab-datasets/NBDN_dataset_50k/test
+    test_path: /home/leadergpu/Datasets/NBDN_dataset_50k/test
     cropsize: 256
     batch_size_test: 1
 
 #### network structures
 network:
-  name: Network
+  name: NAFNet
   img_channels: 3
   width: 32
-  middle_blk_num: 3
-  enc_blk_nums: [1, 2, 3]
-  dec_blk_nums: [3, 1, 1]
-  enc_blk_nums_map: [1, 2, 3]
-  middle_blk_num_map: 2
-  residual_layers: 1
-  dilations: [1, 4]
-  spatial: True
-  extra_depth_wise: True
+  middle_blk_num: 1
+  enc_blk_nums: [2, 2, 4, 8]
+  dec_blk_nums: [2, 2, 2, 2]
+  enc_blk_nums_map: None
+  middle_blk_num_map: None
+  residual_layers: None
+  dilations: [1]
+  spatial: None
+  extra_depth_wise: None
 
 #### training settings: learning rate scheme, loss
 train:
@@ -60,21 +64,23 @@ train:
   edge_weight: 50.0
   edge_reduction: mean
 
-  frequency: True
+  frequency: False
   frequency_criterion: l2
   frequency_weight: 0.01
   frequency_reduction: mean
 
 #### save model
 save:
-  path: ./models/Network_Dilated_base32_masks_3encoder_Char_cosine_NBDN50k.pt
+  path: ./models/NAFNet_NBDN50k.pt
   best: ./models/bests/
+  new: None
 #### wandb:
 wandb:
   init: True
   project: motion-stabilization
   entity: cidautai
-  name: Network_Dilated_base32_masks_3encoder_Char_cosine_NBDN50k
+  name: NAFNet_NBDN50k
   save_code: True
+
 
 

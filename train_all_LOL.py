@@ -15,7 +15,7 @@ from ptflops import get_model_complexity_info
 from data.datapipeline import *
 from archs import Network
 from archs import NAFNet
-from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss
+from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss, FrequencyLoss
 
 from data import *
 
@@ -25,7 +25,7 @@ torch.autograd.set_detect_anomaly(True)
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.
-path_options = './options/train/LOLBlur.yml'
+path_options = './options/train/All_LOL.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
 # print(opt)
@@ -173,6 +173,12 @@ if edge:
 else:
     edge_loss = None
 
+# the frequency loss
+frequency = opt['train']['frequency']
+if frequency:
+    frequency_loss = FrequencyLoss(loss_weight = opt['train']['edge_weight'],
+                              reduction = opt['train']['edge_reduction'],
+                              criterion = opt['train']['frequency_criterion'])
 
 calc_SSIM = SSIM(data_range=1.)
 calc_LPIPS = LPIPS(net = 'alex').to(device)
@@ -224,6 +230,8 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
             l_pixel += perceptual_loss(enhanced_batch, high_batch)
         if edge:
             l_pixel += edge_loss(enhanced_batch, high_batch)
+        if frequency:
+            l_pixel += frequency_loss(enhanced_batch, high_batch)
         
         optim_loss = l_pixel
 
@@ -252,74 +260,82 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
     if test_loader_real:
         model.eval()
         # Now we need to go over the test_loader and evaluate the results of the epoch
-        for high_batch_valid, low_batch_valid in test_loader_real:
+        for high_batch_valid_real, low_batch_valid_real in test_loader_real:
 
-            _, _, H, W = high_batch_valid.shape
+            _, _, H, W = high_batch_valid_real.shape
             if H >= largest_capable_size or W>=largest_capable_size:
-                high_batch_valid, low_batch_valid = crop_to_4(high_batch_valid, low_batch_valid)
+                high_batch_valid_real, low_batch_valid_real = crop_to_4(high_batch_valid_real, low_batch_valid_real)
             
-            high_batch_valid = high_batch_valid.to(device)
-            low_batch_valid = low_batch_valid.to(device)
+            high_batch_valid_real = high_batch_valid_real.to(device)
+            low_batch_valid_real = low_batch_valid_real.to(device)
 
             with torch.no_grad():
-                enhanced_batch_valid = model(low_batch_valid)
+                enhanced_batch_valid_real = model(low_batch_valid_real)
                 # loss
-                valid_loss_batch = torch.mean(
-                    (high_batch_valid - enhanced_batch_valid)**2)
+                valid_loss_batch_real = torch.mean(
+                    (high_batch_valid_real - enhanced_batch_valid_real)**2)
                 # PSNR (dB) metric
-                valid_psnr_batch = 20 * \
-                    torch.log10(1. / torch.sqrt(valid_loss_batch))
-                valid_ssim_batch = calc_SSIM(enhanced_batch_valid, high_batch_valid)
-                valid_lpips_batch = calc_LPIPS(enhanced_batch_valid, high_batch_valid)
+                valid_psnr_batch_real = 20 * \
+                    torch.log10(1. / torch.sqrt(valid_loss_batch_real))
+                valid_ssim_batch_real = calc_SSIM(enhanced_batch_valid_real, high_batch_valid_real)
+                valid_lpips_batch_real = calc_LPIPS(enhanced_batch_valid_real, high_batch_valid_real)
                 
                 
-            valid_psnr_real.append(valid_psnr_batch.item())
-            valid_ssim_real.append(valid_ssim_batch.item())
-            valid_lpips_real.append(torch.mean(valid_lpips_batch).item())
+            valid_psnr_real.append(valid_psnr_batch_real.item())
+            valid_ssim_real.append(valid_ssim_batch_real.item())
+            valid_lpips_real.append(torch.mean(valid_lpips_batch_real).item())
+
+    # We take the first image [0] from each batch real
+    high_img_real = high_batch_valid_real[0]
+    low_img_real = low_batch_valid_real[0]
+    enhanced_img_real = enhanced_batch_valid_real[0]
 
     # run this part if test loader is defined
     if test_loader_synth:
         model.eval()
         # Now we need to go over the test_loader and evaluate the results of the epoch
-        for high_batch_valid, low_batch_valid in test_loader_synth:
+        for high_batch_valid_synth, low_batch_valid_synth in test_loader_synth:
 
-            _, _, H, W = high_batch_valid.shape
+            _, _, H, W = high_batch_valid_synth.shape
             if H >= largest_capable_size or W>=largest_capable_size:
-                high_batch_valid, low_batch_valid = crop_to_4(high_batch_valid, low_batch_valid)
+                high_batch_valid_synth, low_batch_valid_synth = crop_to_4(high_batch_valid_synth, low_batch_valid_synth)
             
-            high_batch_valid = high_batch_valid.to(device)
-            low_batch_valid = low_batch_valid.to(device)
+            high_batch_valid_synth = high_batch_valid_synth.to(device)
+            low_batch_valid_synth = low_batch_valid_synth.to(device)
 
             with torch.no_grad():
-                enhanced_batch_valid = model(low_batch_valid)
+                enhanced_batch_valid_synth = model(low_batch_valid_synth)
                 # loss
-                valid_loss_batch = torch.mean(
-                    (high_batch_valid - enhanced_batch_valid)**2)
+                valid_loss_batch_synth = torch.mean(
+                    (high_batch_valid_synth - enhanced_batch_valid_synth)**2)
                 # PSNR (dB) metric
-                valid_psnr_batch = 20 * \
-                    torch.log10(1. / torch.sqrt(valid_loss_batch))
-                valid_ssim_batch = calc_SSIM(enhanced_batch_valid, high_batch_valid)
-                valid_lpips_batch = calc_LPIPS(enhanced_batch_valid, high_batch_valid)
+                valid_psnr_batch_synth = 20 * \
+                    torch.log10(1. / torch.sqrt(valid_loss_batch_synth))
+                valid_ssim_batch_synth = calc_SSIM(enhanced_batch_valid_synth, high_batch_valid_synth)
+                valid_lpips_batch_synth = calc_LPIPS(enhanced_batch_valid_synth, high_batch_valid_synth)
                 
                 
-            valid_psnr_synth.append(valid_psnr_batch.item())
-            valid_ssim_synth.append(valid_ssim_batch.item())
-            valid_lpips_synth.append(torch.mean(valid_lpips_batch).item())
+            valid_psnr_synth.append(valid_psnr_batch_synth.item())
+            valid_ssim_synth.append(valid_ssim_batch_synth.item())
+            valid_lpips_synth.append(torch.mean(valid_lpips_batch_synth).item())
           
-    # We take the first image [0] from each batch
-    high_img = high_batch_valid[0]
-    low_img = low_batch_valid[0]
-    enhanced_img = enhanced_batch_valid[0]
+    # We take the first image [0] from each batch synth
+    high_img_synth = high_batch_valid_synth[0]
+    low_img_synth = low_batch_valid_synth[0]
+    enhanced_img_synth = enhanced_batch_valid_synth[0]
 
     caption = "1: Input, 2: Output, 3: Ground_Truth"
-    images_list = [low_img, enhanced_img, high_img]
-    images = log_images(images_list, caption)
+    images_list_synth = [low_img_synth, enhanced_img_synth, high_img_synth]
+    images_list_real = [low_img_real, enhanced_img_real, high_img_real]
+    images_synth = log_images(images_list_synth, caption)
+    images_real = log_images(images_list_real, caption)
+    
     logger = {'train_loss': np.mean(train_loss), 'train_psnr': np.mean(train_psnr),
               'train_ssim': np.mean(train_ssim), 'train_og_psnr': np.mean(train_og_psnr), 
               'epoch': epoch,  'valid_psnr_real': np.mean(valid_psnr_real), 
               'valid_ssim_real': np.mean(valid_ssim_real), 'valid_lpips_real': np.mean(valid_lpips_real),
               'valid_psnr_synth': np.mean(valid_psnr_synth), 'valid_ssim_synth': np.mean(valid_ssim_synth), 
-              'valid_lpips_synth': np.mean(valid_lpips_synth),'examples': images}
+              'valid_lpips_synth': np.mean(valid_lpips_synth),'synth': images_synth, 'real': images_real}
 
     if wandb_log:
         wandb.log(logger)

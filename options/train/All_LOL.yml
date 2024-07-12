@@ -1,8 +1,8 @@
 #### general settings
 resume_training:
-  resume_training: False
+  resume_training: True
   resume: must
-  id: jlgpxikv
+  id: 2oceqxkt
 
 #### training devices
 device:

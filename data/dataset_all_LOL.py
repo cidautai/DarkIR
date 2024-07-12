@@ -93,7 +93,7 @@ def main_dataset_all_lol(train_path='/home/leadergpu/Datasets', test_path='/home
         print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur_LOL))
         print("    -Images in the PATH_HIGH_TRAINING folder: ", len(list_sharp_LOL))
         print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid_LOL))
-        print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_LOL))
+        print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_LOL), '\n')
 
     #------------------------------------------------------------------------
     # now load the LOLv2_real dataset
@@ -128,7 +128,7 @@ def main_dataset_all_lol(train_path='/home/leadergpu/Datasets', test_path='/home
         print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur_LOLv2_real))
         print("    -Images in the PATH_HIGH_TRAINING folder: ", len(list_sharp_LOLv2_real))
         print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid_LOLv2_real))
-        print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_LOLv2_real))
+        print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_LOLv2_real), '\n')
 
     #------------------------------------------------------------------------
     # now load the LOLv2_synth dataset    
@@ -163,7 +163,7 @@ def main_dataset_all_lol(train_path='/home/leadergpu/Datasets', test_path='/home
         print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur_LOLv2_synth))
         print("    -Images in the PATH_HIGH_TRAINING folder: ", len(list_sharp_LOLv2_synth))
         print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid_LOLv2_synth))
-        print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_LOLv2_synth))    
+        print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_LOLv2_synth), '\n')    
 
     #------------------------------------------------------------------------  
     # finally the LOLBlur dataset
@@ -204,7 +204,7 @@ def main_dataset_all_lol(train_path='/home/leadergpu/Datasets', test_path='/home
         print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur_lolblur))
         print("    -Images in the PATH_HIGH_TRAINING folder: ", len(list_sharp_lolblur))
         print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid_lolblur))
-        print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_lolblur))
+        print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_lolblur), '\n')
 
     #------------------------------------------------------------------------  
     # now add all the regular lol datasets  
@@ -219,12 +219,18 @@ def main_dataset_all_lol(train_path='/home/leadergpu/Datasets', test_path='/home
         print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur_lol * 5))
         print("    -Images in the PATH_HIGH_TRAINING folder: ", len(list_sharp_lol * 5))
         print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid_lol))
-        print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_lol))
+        print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_lol), '\n')
 
     #------------------------------------------------------------------------  
     # finally add the lol and lolblur, augmenting the lol datasets to a ratio 1:1 with lolblur
     list_blur = list_blur_lol * 5 + list_blur_lolblur
     list_sharp = list_sharp_lol * 5 + list_sharp_lolblur
+
+    if verbose:
+        print('Total images for training in the subsets!: \n')
+        print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur))
+        print("    -Images in the PATH_HIGH_TRAINING folder: ", len(list_sharp))
+
 
     tensor_transform = transforms.ToTensor()
     if flips:
@@ -244,7 +250,7 @@ def main_dataset_all_lol(train_path='/home/leadergpu/Datasets', test_path='/home
 
     test_dataset_lolv2_synth = MyDataset_Crop(list_blur_valid_LOLv2_synth, list_sharp_valid_LOLv2_synth, cropsize=None,
                                   tensor_transform=tensor_transform, test=True, crop_type=crop_type)
-
+    # print(list_blur_valid_LOLv2_real[:10], '\n',list_blur_valid_LOLv2_synth[:10])
     # #Load the data loaders
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=True,
                               num_workers=num_workers, pin_memory=True, drop_last=True)
@@ -261,6 +267,6 @@ if __name__ == '__main__':
     train_loader, test_loader_real, test_loader_synth = main_dataset_all_lol(verbose = True, crop_type='Random', cropsize=256)
     print(len(train_loader), len(test_loader_real), len(test_loader_synth))
     
-    for high, low in train_loader:
-        # pass
-        print(high.shape)
+    # for high, low in train_loader:
+    #     # pass
+    #     print(high.shape)
