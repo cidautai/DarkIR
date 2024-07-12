@@ -338,9 +338,9 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
                 
             valid_psnr_batch = 20 * torch.log10(1. / torch.sqrt(valid_loss_batch))        
     
-        valid_psnr.append(valid_psnr_batch.item())
-        valid_ssim.append(valid_ssim_batch.item())
-        valid_lpips.append(torch.mean(valid_lpips_batch).item())
+            valid_psnr.append(valid_psnr_batch.item())
+            valid_ssim.append(valid_ssim_batch.item())
+            valid_lpips.append(torch.mean(valid_lpips_batch).item())
             
     # We take the first image [0] from each batch
     high_img = high_batch_valid[0]

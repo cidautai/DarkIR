@@ -73,7 +73,7 @@ train:
 save:
   path: ./models/NAFNet_NBDN50k.pt
   best: ./models/bests/
-  new: None
+  new: ./models/NAFNet_NBDN50k.pt
 #### wandb:
 wandb:
   init: True
