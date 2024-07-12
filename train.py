@@ -296,33 +296,49 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
         
     # run this part if test loader is defined
-    if test_loader:
-        model.eval()
+
+    model.eval()
+    with torch.no_grad():
         # Now we need to go over the test_loader and evaluate the results of the epoch
         for high_batch_valid, low_batch_valid in test_loader:
 
             _, _, H, W = high_batch_valid.shape
-            if H >= largest_capable_size or W>=largest_capable_size:
-                high_batch_valid, low_batch_valid = crop_to_4(high_batch_valid, low_batch_valid) # this returns a list of crops of size [1, 3, H//2, W//2]
             
-            high_batch_valid = high_batch_valid.to(device)
-            low_batch_valid = low_batch_valid.to(device)
+            if H >= largest_capable_size or W>=largest_capable_size: # we need to make crops
+                high_batch_valid_crop, low_batch_valid_crop = crop_to_4(high_batch_valid, low_batch_valid) # this returns a list of crops of size [1, 3, H//2, W//2]
 
-            with torch.no_grad():
+                valid_loss_batch = 0
+                valid_ssim_batch = 0
+                valid_lpips_batch = 0              
+                for high_crop, low_crop in zip(high_batch_valid_crop, low_batch_valid_crop):
+                    high_crop = high_crop.to(device)
+                    low_crop = low_crop.to(device)
+
+                    enhanced_crop = model(low_crop)
+                    # loss
+                    valid_loss_batch += torch.mean((high_crop - enhanced_crop)**2)
+                    valid_ssim_batch += calc_SSIM(enhanced_crop, high_crop)
+                    valid_lpips_batch += calc_LPIPS(enhanced_crop, high_crop)
+                
+                #the final value of lpips and ssim will be the mean of all the crops
+                valid_ssim_batch  = valid_ssim_batch / 4
+                valid_lpips_batch = valid_lpips_batch / 4
+                enhanced_batch_valid = enhanced_crop
+                high_batch_valid = high_crop
+                low_batch_valid = low_crop
+                
+            else: # then we process the image normally
                 enhanced_batch_valid = model(low_batch_valid)
                 # loss
-                valid_loss_batch = torch.mean(
-                    (high_batch_valid - enhanced_batch_valid)**2)
-                # PSNR (dB) metric
-                valid_psnr_batch = 20 * \
-                    torch.log10(1. / torch.sqrt(valid_loss_batch))
+                valid_loss_batch = torch.mean((high_batch_valid - enhanced_batch_valid)**2)
                 valid_ssim_batch = calc_SSIM(enhanced_batch_valid, high_batch_valid)
                 valid_lpips_batch = calc_LPIPS(enhanced_batch_valid, high_batch_valid)
                 
-                
-            valid_psnr.append(valid_psnr_batch.item())
-            valid_ssim.append(valid_ssim_batch.item())
-            valid_lpips.append(torch.mean(valid_lpips_batch).item())
+            valid_psnr_batch = 20 * torch.log10(1. / torch.sqrt(valid_loss_batch))        
+    
+        valid_psnr.append(valid_psnr_batch.item())
+        valid_ssim.append(valid_ssim_batch.item())
+        valid_lpips.append(torch.mean(valid_lpips_batch).item())
             
     # We take the first image [0] from each batch
     high_img = high_batch_valid[0]
