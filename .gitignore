@@ -5,5 +5,7 @@
 *.jpg
 *.pth
 *.pt
+*.npy
 scheduler_test.py
 /archs/nafnet_utils/arch_model_dilated.py
+/utils/erfs
