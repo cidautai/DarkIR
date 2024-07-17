@@ -80,6 +80,7 @@ class Network(nn.Module):
 
         _, _, H, W = input.shape
 
+        input = self.check_image_size(input)
         x = self.intro(input)
         
         encs = []
@@ -108,6 +109,12 @@ class Network(nn.Module):
         
         return x[:, :, :H, :W]
 
+    def check_image_size(self, x):
+        _, _, h, w = x.size()
+        mod_pad_h = (self.padder_size - h % self.padder_size) % self.padder_size
+        mod_pad_w = (self.padder_size - w % self.padder_size) % self.padder_size
+        x = F.pad(x, (0, mod_pad_w, 0, mod_pad_h), value = 0)
+        return x
 
 if __name__ == '__main__':
     
