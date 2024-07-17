@@ -65,7 +65,6 @@ if network == 'Network':
                     middle_blk_num=opt['network']['middle_blk_num'], 
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'], 
-                    residual_layers=opt['network']['residual_layers'],
                     dilations=opt['network']['dilations'],
                     extra_depth_wise = opt['network']['dilations'])
 elif network == 'NAFNet':
