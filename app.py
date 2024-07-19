@@ -9,13 +9,13 @@ import numpy as np
 import yaml
 from huggingface_hub import hf_hub_download
 
-from archs import Network_v3
+from archs import Network
 from options.options import parse
 
-path_opt = './options/test/LOLBlur.yml'
+path_opt = './options/predict/LOLBlur.yml'
 
 opt = parse(path_opt)
-
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 #define some auxiliary functions
 pil_to_tensor = transforms.ToTensor()
     
@@ -25,20 +25,18 @@ network = opt['network']['name']
 
 PATH_MODEL = opt['save']['path']
 
-model = Network_v3(img_channel=opt['network']['img_channels'], 
+model = Network(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
                     middle_blk_num=opt['network']['middle_blk_num'], 
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'], 
-                    residual_layers=opt['network']['residual_layers'],
-                    dilations=opt['network']['dilations'])
+                    dilations=opt['network']['dilations'],
+                    extra_depth_wise=opt['network']['extra_depth_wise'])
 
-checkpoints = torch.load(opt['save']['best'])
+checkpoints = torch.load(opt['save']['best'], map_location=device)
 # print(checkpoints)
 model.load_state_dict(checkpoints['model_state_dict'])
 
-
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 model = model.to(device)
 
 def load_img (filename):

@@ -192,68 +192,68 @@ class FreBlock(nn.Module):
 
         return x_out+x
 
-class FPA(nn.Module):
+# class FPA(nn.Module):
     
-    def __init__(self,nc):
-        super(FPA, self).__init__()
-        self.process_mag = nn.Sequential(
-            nn.Conv2d(nc, nc, 1, 1, 0),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(nc, nc, 1, 1, 0),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(nc, nc, 1, 1, 0))
-        self.process_pha = nn.Sequential(
-            nn.Conv2d(nc, nc, 1, 1, 0),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(nc, nc, 1, 1, 0),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(nc, nc, 1, 1, 0))
+#     def __init__(self,nc):
+#         super(FPA, self).__init__()
+#         self.process_mag = nn.Sequential(
+#             nn.Conv2d(nc, nc, 1, 1, 0),
+#             nn.LeakyReLU(0.1, inplace=True),
+#             nn.Conv2d(nc, nc, 1, 1, 0),
+#             nn.LeakyReLU(0.1, inplace=True),
+#             nn.Conv2d(nc, nc, 1, 1, 0))
+#         self.process_pha = nn.Sequential(
+#             nn.Conv2d(nc, nc, 1, 1, 0),
+#             nn.LeakyReLU(0.1, inplace=True),
+#             nn.Conv2d(nc, nc, 1, 1, 0),
+#             nn.LeakyReLU(0.1, inplace=True),
+#             nn.Conv2d(nc, nc, 1, 1, 0))
         
-    def forward(self, input):
-        _, _, H, W = input.shape
-        x_freq = torch.fft.rfft2(input, norm='backward')
-        mag = torch.abs(x_freq)
-        pha = torch.angle(x_freq)
-        mag = mag + self.process_mag(mag)
-        pha = pha + self.process_pha(pha)
-        real = mag * torch.cos(pha)
-        imag = mag * torch.sin(pha)
-        x_out = torch.complex(real, imag)
-        x_out = torch.fft.irfft2(x_out, s=(H, W), norm='backward')
-        return x_out
+#     def forward(self, input):
+#         _, _, H, W = input.shape
+#         x_freq = torch.fft.rfft2(input, norm='backward')
+#         mag = torch.abs(x_freq)
+#         pha = torch.angle(x_freq)
+#         mag = mag + self.process_mag(mag)
+#         pha = pha + self.process_pha(pha)
+#         real = mag * torch.cos(pha)
+#         imag = mag * torch.sin(pha)
+#         x_out = torch.complex(real, imag)
+#         x_out = torch.fft.irfft2(x_out, s=(H, W), norm='backward')
+#         return x_out
         
 
-class FBlock(nn.Module):
+# class FBlock(nn.Module):
     
-    def __init__(self, c, DW_Expand=2, FFN_Expand=2, dilations = [1], extra_depth_wise = False):
-        super(FBlock, self).__init__()
+#     def __init__(self, c, DW_Expand=2, FFN_Expand=2, dilations = [1], extra_depth_wise = False):
+#         super(FBlock, self).__init__()
         
-        self.branches = nn.ModuleList()
-        for dilation in dilations:
-            self.branches.append(Branch_v2(c, DW_Expand, dilation = dilation, extra_depth_wise=extra_depth_wise))
+#         self.branches = nn.ModuleList()
+#         for dilation in dilations:
+#             self.branches.append(Branch_v2(c, DW_Expand, dilation = dilation, extra_depth_wise=extra_depth_wise))
 
-        assert len(dilations) == len(self.branches)
-        self.dw_channel = DW_Expand * c 
-        self.sca = nn.Sequential(
-                       nn.AdaptiveAvgPool2d(1),
-                       nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=self.dw_channel // 2, kernel_size=1, padding=0, stride=1,
-                       groups=1, bias=True, dilation = 1),  
-        )
-        self.sg1 = SimpleGate()
-        self.conv3 = nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
+#         assert len(dilations) == len(self.branches)
+#         self.dw_channel = DW_Expand * c 
+#         self.sca = nn.Sequential(
+#                        nn.AdaptiveAvgPool2d(1),
+#                        nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=self.dw_channel // 2, kernel_size=1, padding=0, stride=1,
+#                        groups=1, bias=True, dilation = 1),  
+#         )
+#         self.sg1 = SimpleGate()
+#         self.conv3 = nn.Conv2d(in_channels=self.dw_channel // 2, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
 
 
 
-        self.norm1 = LayerNorm2d(c)
-        self.norm2 = LayerNorm2d(c)
+#         self.norm1 = LayerNorm2d(c)
+#         self.norm2 = LayerNorm2d(c)
         
-        ffn_channel = FFN_Expand * c
-        self.conv_fpr_intro = nn.Conv2d(in_channels=c, out_channels=ffn_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
-        self.fpa = FPA(nc = ffn_channel)
-        self.conv_fpr_out = nn.Conv2d(in_channels=ffn_channel, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
+#         ffn_channel = FFN_Expand * c
+#         self.conv_fpr_intro = nn.Conv2d(in_channels=c, out_channels=ffn_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
+#         self.fpa = FPA(nc = ffn_channel)
+#         self.conv_fpr_out = nn.Conv2d(in_channels=ffn_channel, out_channels=c, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
         
-        self.gamma = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
-        self.beta = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
+#         self.gamma = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
+#         self.beta = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
 
     def forward(self, inp):
 

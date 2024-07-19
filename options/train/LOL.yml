@@ -61,6 +61,10 @@ train:
   edge_weight: 50.0
   edge_reduction: mean
 
+  frequency: True
+  frequency_criterion: l2
+  frequency_weight: 0.01
+  frequency_reduction: mean
 
 #### save model
 save:

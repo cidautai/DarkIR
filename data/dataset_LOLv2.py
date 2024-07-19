@@ -144,18 +144,6 @@ def main_dataset_lolv2_synth(train_path='/mnt/valab-datasets/LOL-v2/Synthetic/tr
     
     # print(paths_blur)
     print(len(paths_blur), len(paths_blur_valid), len(paths_sharp), len(paths_sharp_valid))
-    
-    # extract the images from their corresponding folders, now we get a list of lists
-    # paths_blur = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur ]
-    # paths_sharp = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp ]
-
-    # paths_blur_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur_valid ]
-    # paths_sharp_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp_valid ]
-
-
-
-    # def flatten_list_comprehension(matrix):
-    #     return [item for row in matrix for item in row]
 
     list_blur = paths_blur
     list_sharp = paths_sharp

@@ -110,10 +110,47 @@ class MSELoss(nn.Module):
             weight (Tensor, optional): of shape (N, C, H, W). Element-wise
                 weights. Default: None.
         """
+        
         return self.loss_weight * mse_loss(
             pred, target, weight, reduction=self.reduction)
 
+class FrequencyLoss(nn.Module):
+    '''
+    Calculates the amplitude of frequencies loss.
+    '''
+    def __init__(self, loss_weight = 0.01, criterion ='l2', reduction = 'mean'):
+        super(FrequencyLoss, self).__init__()
+        if reduction not in ['none', 'mean', 'sum']:
+            raise ValueError(f'Unsupported reduction mode: {reduction}. '
+                             f'Supported ones are: {_reduction_modes}')       
+        self.loss_weight = loss_weight
+        self.reduction = reduction
 
+        if criterion == 'l1':
+            self.criterion = nn.L1Loss(reduction=reduction)
+        elif criterion == 'l2':
+            self.criterion = nn.MSELoss(reduction=reduction)
+        else:
+            raise NotImplementedError('Unsupported criterion loss')
+
+    def forward(self, pred, target, weight=None, **kwargs):
+        """
+        Args:
+            pred (Tensor): of shape (N, C, H, W). Predicted tensor.
+            target (Tensor): of shape (N, C, H, W). Ground truth tensor.
+            weight (Tensor, optional): of shape (N, C, H, W). Element-wise
+                weights. Default: None.
+        """
+        pred_freq = self.get_fft_amplitude(pred)
+        target_freq = self.get_fft_amplitude(target)
+        
+        return self.loss_weight * self.criterion(pred_freq, target_freq)
+
+    def get_fft_amplitude(self, inp):
+        
+        inp_freq = torch.fft.rfft2(inp, norm='backward')
+        amp = torch.abs(inp_freq)
+        return amp
 
 class CharbonnierLoss(nn.Module):
     """Charbonnier loss (one variant of Robust L1Loss, a differentiable
