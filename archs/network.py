@@ -121,18 +121,25 @@ if __name__ == '__main__':
     img_channel = 3
     width = 32
 
-    enc_blks = [1, 2, 3]
+    enc_blks = [1, 1, 1, 3]
     middle_blk_num = 3
-    dec_blks = [3, 1, 1]
-    residual_layers = 2
-    dilations = [1, 4]
+    dec_blks = [2, 1, 1, 1]
+    
+    # enc_blks = [1, 2, 3]
+    # middle_blk_num = 3
+    # dec_blks = [3, 1, 1]
+    residual_layers = None
+    dilations = [1]
+    extra_depth_wise = False
+    
     
     net = Network(img_channel=img_channel, 
                   width=width, 
                   middle_blk_num=middle_blk_num,
                   enc_blk_nums=enc_blks, 
                   dec_blk_nums=dec_blks,
-                  dilations = dilations)
+                  dilations = dilations,
+                  extra_depth_wise = extra_depth_wise)
 
     # NAF = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
     #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)

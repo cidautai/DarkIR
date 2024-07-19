@@ -135,7 +135,7 @@ if __name__ == '__main__':
     
     # net = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
     #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
-    net  = EBlock(c = img_channel, 
+    net  = EBlock_freq(c = img_channel, 
                             dilations = dilations,
                             extra_depth_wise=extra_depth_wise)
 
