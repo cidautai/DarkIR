@@ -1,6 +1,6 @@
 #### general settings
 resume_training:
-  resume_training: True
+  resume_training: False
   resume: must
   id: qa5ramgk
 
@@ -13,7 +13,7 @@ device:
 datasets:
   name: LOLBlur
   train:
-    train_path: /home/leadergpu/Datasets/LOLBlur_temp/train
+    train_path: /mnt/valab-datasets/LOLBlur/train
 
     n_workers: 4  # per GPU
     batch_size_train: 12
@@ -22,31 +22,31 @@ datasets:
     verbose: True
     crop_type: Random
   val:
-    test_path: /home/leadergpu/Datasets/LOLBlur_temp/test
+    test_path: /mnt/valab-datasets/LOLBlur/test
     batch_size_test: 1
 
 #### network structures
 network:
-  name: Network
+  name: NAFNet
   img_channels: 3
   width: 32
   middle_blk_num: 3
-  enc_blk_nums: [1, 2, 3]
-  dec_blk_nums: [3, 1, 1]
+  enc_blk_nums: [1, 1, 1, 3]
+  dec_blk_nums: [2, 1, 1, 1]
   enc_blk_nums_map: None
   middle_blk_num_map: None
   residual_layers: None
-  dilations: [1, 4]
+  dilations: [1]
   spatial: None
-  extra_depth_wise: True
+  extra_depth_wise: False
 
 
 #### training settings: learning rate scheme, loss
 train:
-  lr_initial: !!float 2e-5
+  lr_initial: !!float 5e-4
   lr_scheme: CosineAnnealing
   betas: [0.9, 0.9]
-  epochs: 700
+  epochs: 500
   lr_gamma: 0.5
   weight_decay: !!float 1e-3
   eta_min: !!float 1e-6
@@ -64,22 +64,22 @@ train:
   edge_weight: 50.0
   edge_reduction: mean
 
-  frequency: True
+  frequency: False
   frequency_criterion: l2
   frequency_weight: 0.01
   frequency_reduction: sum
 
 #### save model
 save:
-  path: ./models/Network_v3_new_network_noFPA_LOLBlur.pt
+  path: ./models/NAFNet_14blocks_LOLBlur.pt
   best: ./models/bests/
-  new: ./models/Network_v3_new_network_noFPA_LOLBlur_v2.pt 
+  new: ./models/NAFNet_14blocks_LOLBlur.pt 
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_v3_new_network_noFPA_LOLBlur
+  name: NAFNet_14blocks_LOLBlur
   save_code: True
 
 
