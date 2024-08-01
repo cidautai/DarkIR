@@ -27,18 +27,20 @@ datasets:
 
 #### network structures
 network:
-  name: NAFNet
+  name: Network
   img_channels: 3
   width: 32
-  middle_blk_num: 3
-  enc_blk_nums: [1, 1, 1, 3]
-  dec_blk_nums: [2, 1, 1, 1]
+  middle_blk_num_enc: 2
+  middle_blk_num_dec: 2
+  enc_blk_nums: [1, 2, 3]
+  dec_blk_nums: [3, 1, 1]
   enc_blk_nums_map: None
   middle_blk_num_map: None
   residual_layers: None
-  dilations: [1]
+  dilations: [1, 4, 9]
   spatial: None
-  extra_depth_wise: False
+  extra_depth_wise: True
+  ksize: 5
 
 
 #### training settings: learning rate scheme, loss
@@ -71,15 +73,15 @@ train:
 
 #### save model
 save:
-  path: ./models/NAFNet_14blocks_LOLBlur.pt
+  path: ./models/Network_FAC_LOLBlur.pt
   best: ./models/bests/
-  new: ./models/NAFNet_14blocks_LOLBlur.pt 
+  new: ./models/Network_FAC_LOLBlur.pt 
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: NAFNet_14blocks_LOLBlur
+  name: Network_FAC_LOLBlur
   save_code: True
 
 

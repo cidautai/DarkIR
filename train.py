@@ -31,8 +31,8 @@ opt = parse(path_options)
 # print(opt)
 # define some parameters based on the run we want to make
 # os.environ["CUDA_VISIBLE_DEVICES"]= '0, 1'
-device = torch.device('cuda:0') if opt['device']['cuda'] else torch.device('cpu')
-
+device = torch.device('cuda') if opt['device']['cuda'] else torch.device('cpu')
+# print(device)
 #selected network
 network = opt['network']['name']
 
@@ -113,11 +113,13 @@ else:
 if network == 'Network':
     model = Network(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
-                    middle_blk_num=opt['network']['middle_blk_num'], 
+                    middle_blk_num_enc=opt['network']['middle_blk_num_enc'],
+                    middle_blk_num_dec=opt['network']['middle_blk_num_dec'], 
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'], 
                     dilations=opt['network']['dilations'],
-                    extra_depth_wise=opt['network']['extra_depth_wise'])
+                    extra_depth_wise=opt['network']['extra_depth_wise'],
+                    ksize=opt['network']['ksize'])
 elif network == 'NAFNet':
     model = NAFNet(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
@@ -127,16 +129,22 @@ elif network == 'NAFNet':
 
 else:
     raise NotImplementedError('This network isnt implemented')
-model = model.to(device)
+
 
 # if torch.cuda.device_count() > 1:
 #     print("Usando", torch.cuda.device_count(), "GPUs!")
 #     model = nn.DataParallel(model)
-
+model = model.to(device)
 #calculate MACs and number of parameters
 macs, params = get_model_complexity_info(model, (3, 256, 256), print_per_layer_stat = False)
 print('Computational complexity: ', macs)
 print('Number of parameters: ', params)
+
+
+
+for param in model.parameters():
+    if param.device != torch.device('cuda:0'):
+        print('not on gpu')
 
 # save this stats into opt to upload to wandb
 opt['macs'] = macs
