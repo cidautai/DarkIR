@@ -7,9 +7,10 @@ import torch
 from torch.utils.data import DataLoader
 import torch.optim
 
-from data.datapipeline import *
+
 import cv2 as cv
 
+from .datapipeline import *
 
 def create_path(IMGS_PATH, list_new_files):
     '''
