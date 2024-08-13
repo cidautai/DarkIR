@@ -65,7 +65,7 @@ class Network(nn.Module):
             chan = chan // 2
             self.decoders.append(
                 nn.Sequential(
-                    *[EBlock(chan, dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(num)]
+                    *[EBlock(chan,dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(num)]
                 )
             )
 

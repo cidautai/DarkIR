@@ -1,8 +1,8 @@
 #### general settings
 resume_training:
-  resume_training: False
+  resume_training: True
   resume: must
-  id: qa5ramgk
+  id: o1tfkce7
 
 #### training devices
 device:
@@ -73,15 +73,15 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_FAC_LOLBlur.pt
+  path: ./models/Network_FAC_3blocks_LOLBlur.pt
   best: ./models/bests/
-  new: ./models/Network_FAC_LOLBlur.pt 
+  new: ./models/Network_FAC_3blocks_LOLBlur.pt 
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_FAC_LOLBlur
+  name: Network_FAC_3blocks_LOLBlur
   save_code: True
 
 
