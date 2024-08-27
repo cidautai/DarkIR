@@ -1,8 +1,8 @@
 #### general settings
 resume_training:
-  resume_training: True
+  resume_training: False
   resume: must
-  id: bj1kd9xd
+  id: 78ladjjx
 
 #### training devices
 device:
@@ -16,7 +16,7 @@ datasets:
     train_path: /mnt/valab-datasets/LOLBlur/train
 
     n_workers: 4  # per GPU
-    batch_size_train: 8
+    batch_size_train: 16
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
@@ -40,7 +40,7 @@ network:
   dilations: [1, 4, 9]
   spatial: None
   extra_depth_wise: True
-  ksize: 7
+  ksize: None
 
 
 #### training settings: learning rate scheme, loss
@@ -73,15 +73,15 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_FAC_kernel7_LOLBlur.pt
+  path: ./models/Network_noFAC_LOLBlur.pt
   best: ./models/bests/
-  new: ./models/Network_FAC_kernel7_LOLBlur.pt 
+  new: ./models/Network_noFAC_LOLBlur.pt 
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_FAC_kernel7_LOLBlur
+  name: Network_noFAC_LOLBlur
   save_code: True
 
 

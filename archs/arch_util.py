@@ -225,12 +225,12 @@ class KernelConv2D(nn.Module):
         return feat_out
 
 class FAC_Block(nn.Module):
-    def __init__(self, channels, ksize, final_block = False):
+    def __init__(self, channels, ksize, dilation = 1, final_block = False):
         super(FAC_Block, self).__init__()
         if final_block:
             self.block_ = nn.Sequential(
                 nn.Conv2d(in_channels=channels, out_channels=2 * channels, kernel_size=1, stride=1, padding = 0),
-                nn.Conv2d(in_channels=2 * channels, out_channels= channels * ksize**2, kernel_size=3, stride=1, padding = 1, groups = channels),
+                nn.Conv2d(in_channels=2 * channels, out_channels= channels * ksize**2, kernel_size=3, stride=1, padding = dilation, dilation = dilation, groups = channels),
                 # nn.Conv2d(in_channels= 2 * channels, out_channels=channels * ksize**2, kernel_size=1, stride=1, padding = 0),
                 nn.LeakyReLU(negative_slope=0.1, inplace=True)
             )
@@ -238,7 +238,7 @@ class FAC_Block(nn.Module):
         else:
             self.block_ = nn.Sequential(
                 nn.Conv2d(in_channels=channels, out_channels=2 * channels, kernel_size=1, stride=1, padding = 0),
-                nn.Conv2d(in_channels=2 * channels, out_channels= channels, kernel_size=3, stride=1, padding = 1, groups = channels),
+                nn.Conv2d(in_channels=2 * channels, out_channels= channels, kernel_size=3, stride=1, padding = dilation, dilation=dilation, groups = channels),
                 # nn.Conv2d(in_channels= 2 * channels, out_channels=channels, kernel_size=1, stride=1, padding = 0),
                 nn.LeakyReLU(negative_slope=0.1, inplace=True)
             )
@@ -250,10 +250,10 @@ class FAC(nn.Module):
     def __init__(self, channels, ksize = 5):
         super(FAC, self).__init__()
         self.block= nn.Sequential(
-            FAC_Block(channels=channels, ksize=ksize),
-            FAC_Block(channels=channels, ksize=ksize),
-            FAC_Block(channels=channels, ksize=ksize),
-            FAC_Block(channels=channels, ksize=ksize, final_block=True)
+            FAC_Block(channels=channels, ksize=ksize, dilation = 1),
+            FAC_Block(channels=channels, ksize=ksize, dilation = 1),
+            FAC_Block(channels=channels, ksize=ksize, dilation = 1),
+            FAC_Block(channels=channels, ksize=ksize, dilation = 1,final_block=True)
         )
 
     def forward(self, input):

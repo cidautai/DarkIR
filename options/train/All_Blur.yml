@@ -75,7 +75,7 @@ train:
 save:
   path: ./models/Network_FAC_AllBlur.pt
   best: ./models/bests/
-  new: ./models/Network_FAC_LOLBlur_AllBlur.pt 
+  new: ./models/Network_FAC_AllBlur.pt 
 #### wandb:
 wandb:
   init: True

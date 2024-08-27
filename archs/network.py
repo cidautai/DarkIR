@@ -71,11 +71,10 @@ class Network(nn.Module):
 
         self.padder_size = 2 ** len(self.encoders)        
         
-        self.facs = nn.ModuleList([nn.Identity(), FAC(channels = 2 * width, ksize = ksize),
-                                  FAC(channels = 4 * width, ksize = ksize),
-                                  FAC(channels = 8 * width, ksize = ksize)])
-
-        self.kconv_deblur = KernelConv2D(ksize=ksize, act = True)
+        # self.facs = nn.ModuleList([nn.Identity(), nn.Identity(),
+        #                           nn.Identity(),
+        #                           nn.Identity())
+        # self.kconv_deblur = KernelConv2D(ksize=ksize, act = True)
    
         
     def forward(self, input):
@@ -88,24 +87,24 @@ class Network(nn.Module):
         # encs = []
         facs = []
         # i = 0
-        for encoder, down, fac in zip(self.encoders, self.downs, self.facs[:-1]):
+        for encoder, down in zip(self.encoders, self.downs):
             x = encoder(x)
-            x_fac = fac(x)
-            facs.append(x_fac)
+            # x_fac = fac(x)
+            facs.append(x)
             # print(i, x.shape)
             # encs.append(x)
             x = down(x)
             # i += 1
 
         # we apply the encoder transforms
-        x = self.middle_blks_enc(x)
+        x_light = self.middle_blks_enc(x)
         # calculate the fac at this level
-        x_fac = self.facs[-1](x)
+        # x_fac = self.facs[-1](x)
         # facs.append(x_fac)
         # apply the decoder transforms
-        x = self.middle_blks_dec(x)
+        x = self.middle_blks_dec(x_light)
         # apply the fac transform over this step
-        x = x + self.kconv_deblur(x, x_fac)
+        x = x + x_light
 
         # print('3', x.shape)
         # apply the mask
@@ -119,8 +118,7 @@ class Network(nn.Module):
                 x = x + fac_skip
                 x = decoder(x)
             else:
-                x_fac = self.kconv_deblur(x, fac_skip)
-                x = x + x_fac
+                x = x + fac_skip
                 x = decoder(x)
             i+=1
 
@@ -152,7 +150,7 @@ if __name__ == '__main__':
     residual_layers = None
     dilations = [1, 4, 9]
     extra_depth_wise = True
-    ksize = 7
+    ksize = 5
     
     net = Network(img_channel=img_channel, 
                   width=width, 
@@ -163,7 +161,7 @@ if __name__ == '__main__':
                   dilations = dilations,
                   extra_depth_wise = extra_depth_wise,
                   ksize = ksize)
-
+    
     # NAF = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
     #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
 
