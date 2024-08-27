@@ -251,7 +251,7 @@ class FAC(nn.Module):
         super(FAC, self).__init__()
         self.block= nn.Sequential(
             FAC_Block(channels=channels, ksize=ksize),
-            # FAC_Block(channels=channels, ksize=ksize),
+            FAC_Block(channels=channels, ksize=ksize),
             FAC_Block(channels=channels, ksize=ksize),
             FAC_Block(channels=channels, ksize=ksize, final_block=True)
         )

@@ -152,7 +152,7 @@ if __name__ == '__main__':
     residual_layers = None
     dilations = [1, 4, 9]
     extra_depth_wise = True
-    ksize = 5
+    ksize = 7
     
     net = Network(img_channel=img_channel, 
                   width=width, 
