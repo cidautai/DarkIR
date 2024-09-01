@@ -16,7 +16,7 @@ datasets:
     train_path: /mnt/valab-datasets/LOLBlur/train
 
     n_workers: 4  # per GPU
-    batch_size_train: 16
+    batch_size_train: 12
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
@@ -73,15 +73,15 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_noFAC_LOLBlur.pt
+  path: ./models/Network_noFAC_reduced_LOLBlur.pt
   best: ./models/bests/
-  new: ./models/Network_noFAC_LOLBlur.pt 
+  new: ./models/Network_noFAC_reduced_LOLBlur.pt 
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_noFAC_LOLBlur
+  name: Network_noFAC_reduced_LOLBlur
   save_code: True
 
 
