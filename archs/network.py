@@ -20,7 +20,8 @@ class Network(nn.Module):
                  dec_blk_nums=[],  
                  dilations = [1], 
                  extra_depth_wise = False,
-                 ksize = 5):
+                 ksize = 5,
+                 side_out = True):
         super(Network, self).__init__()
         
         self.intro = nn.Conv2d(in_channels=img_channel, out_channels=width, kernel_size=3, padding=1, stride=1, groups=1,
@@ -71,8 +72,10 @@ class Network(nn.Module):
 
         self.padder_size = 2 ** len(self.encoders)        
 
+        self.side_out = side_out
         # this layer is needed for the computing of the middle loss. It isn't necessary for anything else
-        self.side_out = nn.Conv2d(in_channels = width * 2**len(self.encoders), out_channels = img_channel, 
+        if side_out:
+            self.side_out = nn.Conv2d(in_channels = width * 2**len(self.encoders), out_channels = img_channel, 
                                   kernel_size = 3, stride=1, padding=1)
         # self.facs = nn.ModuleList([nn.Identity(), nn.Identity(),
         #                           nn.Identity(),
@@ -102,7 +105,7 @@ class Network(nn.Module):
         # we apply the encoder transforms
         x_light = self.middle_blks_enc(x)
         
-        if side_loss:
+        if side_loss and self.side_out:
             out_side = self.side_out(x_light)
         # calculate the fac at this level
         # x_fac = self.facs[-1](x)
