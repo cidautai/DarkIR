@@ -73,15 +73,15 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_noFAC_reduced_LOLBlur.pt
+  path: ./models/Network_noFAC_reduced2_LOLBlur.pt
   best: ./models/bests/
-  new: ./models/Network_noFAC_reduced_LOLBlur.pt 
+  new: ./models/Network_noFAC_reduced2_LOLBlur.pt 
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_noFAC_reduced_LOLBlur
+  name: Network_noFAC_reduced2_LOLBlur
   save_code: True
 
 

@@ -157,11 +157,12 @@ class EBlock(nn.Module):
         super().__init__()
         #we define the 2 branches
         self.dw_channel = DW_Expand * c 
-        self.extra_conv = nn.Conv2d(c, c, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity() #optional extra dw
+
         self.conv1 = nn.Conv2d(in_channels=c, out_channels=self.dw_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
+        self.extra_conv = nn.Conv2d(self.dw_channel, self.dw_channel, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity() #optional extra dw
         self.branches = nn.ModuleList()
         for dilation in dilations:
-            self.branches.append(Branch(c, DW_Expand, dilation = dilation))
+            self.branches.append(Branch(self.dw_channel, DW_Expand = 1, dilation = dilation))
             
         assert len(dilations) == len(self.branches)
         self.dw_channel = DW_Expand * c 
@@ -187,7 +188,8 @@ class EBlock(nn.Module):
 
         y = inp
         x = self.norm1(inp)
-        x = self.conv1(self.extra_conv(x))
+        # x = self.conv1(self.extra_conv(x))
+        x = self.extra_conv(self.conv1(x))
         z = 0
         for branch in self.branches:
             z += branch(x)
@@ -287,7 +289,7 @@ if __name__ == '__main__':
     macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
     output = net(torch.randn((4, 3, 256, 256)))
     # print('Values of EBlock:')
-    # print(macs, params)
+    print(macs, params)
 
     channels = 128
     resol = 32
