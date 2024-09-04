@@ -71,17 +71,23 @@ train:
   frequency_weight: 0.01
   frequency_reduction: sum
 
+  enhance: True
+  enhance_criterion: l1
+  enhance_weight: 0.8
+  enhance_reduction: mean
+
+
 #### save model
 save:
-  path: ./models/Network_noFAC_LOLBlur.pt
+  path: ./models/Network_noFAC_EnhanceLoss_LOLBlur.pt
   best: ./models/bests/
-  new: ./models/Network_noFAC_LOLBlur.pt 
+  new: ./models/Network_noFAC_EnhanceLoss_LOLBlur.pt 
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_noFAC_LOLBlur
+  name: Network_noFAC_EnhanceLoss_LOLBlur
   save_code: True
 
 

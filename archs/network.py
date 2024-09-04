@@ -70,14 +70,17 @@ class Network(nn.Module):
             )
 
         self.padder_size = 2 ** len(self.encoders)        
-        
+
+        # this layer is needed for the computing of the middle loss. It isn't necessary for anything else
+        self.side_out = nn.Conv2d(in_channels = width * 2**len(self.encoders), out_channels = img_channel, 
+                                  kernel_size = 3, stride=1, padding=1)
         # self.facs = nn.ModuleList([nn.Identity(), nn.Identity(),
         #                           nn.Identity(),
         #                           nn.Identity())
         # self.kconv_deblur = KernelConv2D(ksize=ksize, act = True)
    
         
-    def forward(self, input):
+    def forward(self, input, side_loss = False):
 
         _, _, H, W = input.shape
 
@@ -98,6 +101,9 @@ class Network(nn.Module):
 
         # we apply the encoder transforms
         x_light = self.middle_blks_enc(x)
+        
+        if side_loss:
+            out_side = self.side_out(x_light)
         # calculate the fac at this level
         # x_fac = self.facs[-1](x)
         # facs.append(x_fac)
@@ -124,8 +130,11 @@ class Network(nn.Module):
 
         x = self.ending(x)
         x = x + input
-        
-        return x[:, :, :H, :W]
+        out = x[:, :, :H, :W] # we recover the original size of the image
+        if side_loss:
+            return out_side, out
+        else:        
+            return out
 
     def check_image_size(self, x):
         _, _, h, w = x.size()
@@ -173,6 +182,8 @@ if __name__ == '__main__':
 
     print(macs, params)    
     inp = torch.randn(1, 3, 256, 256)
-    out = net(inp)
+    out_side, out = net(inp, side_loss= True)
+    print(out_side.shape, out.shape)
+    # print(len(out))
     
     
