@@ -3,21 +3,19 @@ network:
   name: Network
   img_channels: 3
   width: 32
-  middle_blk_num_enc: 2
-  middle_blk_num_dec: 2
+  middle_blk_num: 3
   enc_blk_nums: [1, 2, 3]
   dec_blk_nums: [3, 1, 1]
   enc_blk_nums_map: None
   middle_blk_num_map: None
   residual_layers: None
   dilations: [1, 4, 9]
-  spatial: None
+  spatial: False
   extra_depth_wise: True
-  ksize: None
 
 #### save model
 save:
-  best: ./models/bests/Network_noFAC_LOLBlur.pt
+  best: ./models/bests/Network_no_attention_light_LOLBlur.pt
 
 LOLBlur:
   inputs_path: ./inputs/synthetic

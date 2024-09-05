@@ -62,14 +62,11 @@ print(network)
 if network == 'Network':
     model = Network(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
-                    middle_blk_num_enc=opt['network']['middle_blk_num_enc'],
-                    middle_blk_num_dec=opt['network']['middle_blk_num_dec'], 
+                    middle_blk_num=opt['network']['middle_blk_num'], 
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'], 
                     dilations=opt['network']['dilations'],
-                    extra_depth_wise=opt['network']['extra_depth_wise'],
-                    ksize=opt['network']['ksize'],
-                    side_out=False)
+                    extra_depth_wise = opt['network']['dilations'])
 elif network == 'NAFNet':
     model = NAFNet(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 

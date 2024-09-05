@@ -472,7 +472,7 @@ class L_deblur(nn.Module):
         self.gamma4 = gamma4
 
     def forward(self, X, Y):
-        loss = self.gamma1 * l1_loss(X, Y) + self.gamma2 * mse_loss(X, Y) + self.gamma4 * SSIM_loss(X, Y)
+        loss = self.gamma1 * l1_loss(X, Y) + self.gamma2 * mse_loss(X, Y) + self.gamma3 * TVLoss()(X) + self.gamma4 * SSIM_loss(X, Y)
         return self.loss_weight * loss
 
 class L_enhance(nn.Module):
@@ -485,7 +485,7 @@ class L_enhance(nn.Module):
         self.gamma3 = gamma3
 
     def forward(self, X, Y):
-        loss = self.gamma1 * l1_loss(X, Y) + self.gamma2 * mse_loss(X, Y)
+        loss = self.gamma1 * l1_loss(X, Y) + self.gamma2 * mse_loss(X, Y) + self.gamma3 * TVLoss()(X)
         return self.loss_weight * loss
 
 class L_reblur(nn.Module):
@@ -498,32 +498,4 @@ class L_reblur(nn.Module):
     def forward(self, X, Y):
         loss = self.gamma1 * l1_loss(X, Y)
         return self.loss_weight * loss
-    
-class EnhanceLoss(nn.Module):
-    '''
-    Applies the enhanceLoss. This loss is the l1 loss of the image downsampled at the middle of the
-    encoder-decoder plus the l1 of the features of this downsample image given by the vgg19 (a perceptual
-    element).
-    '''
-    def __init__(self, loss_weight=1.0, criterion = 'l1', reduction='mean'):
-        super(EnhanceLoss, self).__init__()
-        self.loss_weight = loss_weight
-        if reduction not in ['none', 'mean', 'sum']:
-            raise ValueError(f'Unsupported reduction mode: {reduction}. '
-                             f'Supported ones are: {_reduction_modes}')
-
-        if criterion == 'l1':
-            self.criterion = nn.L1Loss(reduction=reduction)
-        elif criterion == 'l2':
-            self.criterion = nn.MSELoss(reduction=reduction)
-        else:
-            raise NotImplementedError('Unsupported criterion loss') 
-        
-        self.vgg19 = VGGLoss(loss_weight = 0.01,
-                              criterion = criterion,
-                              reduction = 'mean')
-        
-    def forward(self, gt, enhanced):
-        gt_low_res = F.interpolate(gt, scale_factor=8, mode = 'nearest')
-        return self.vgg19(gt_low_res, enhanced) + self.loss_weight * self.criterion(gt_low_res, enhanced)
     

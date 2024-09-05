@@ -15,7 +15,7 @@ from ptflops import get_model_complexity_info
 from data.datapipeline import *
 from archs import Network
 from archs import NAFNet
-from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss, FrequencyLoss, EnhanceLoss
+from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss, FrequencyLoss
 
 from data import *
 from options.options import parse
@@ -230,16 +230,8 @@ if frequency:
     frequency_loss = FrequencyLoss(loss_weight = opt['train']['edge_weight'],
                               reduction = opt['train']['edge_reduction'],
                               criterion = opt['train']['frequency_criterion'])
-else:
-    frequency_loss = None
-# the enhance loss
-enhance = opt['train']['enhance']
-if enhance:
-    enhance_loss = EnhanceLoss(loss_weight= opt['train']['enhance_weight'],
-                               reduction = opt['train']['enhance_reduction'],
-                               criterion = opt['train']['enhance_criterion'])
-else:
-    enhance_loss = None
+
+
 calc_SSIM = SSIM(data_range=1.)
 calc_LPIPS = LPIPS(net = 'vgg').to(device)
 
@@ -277,7 +269,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
         optim.zero_grad()
         # Feed the data into the model
-        out_side_batch, enhanced_batch = model(low_batch, side_loss = True)
+        enhanced_batch = model(low_batch)
 
         # calculate loss function to optimize
         l_pixel = pixel_loss(enhanced_batch, high_batch)
@@ -287,8 +279,6 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
             l_pixel += edge_loss(enhanced_batch, high_batch)
         if frequency:
             l_pixel += frequency_loss(enhanced_batch, high_batch)
-        if enhance:
-            l_pixel += enhance_loss(out_side_batch, high_batch)
         optim_loss = l_pixel
 
         # Calculate loss function for the PSNR
@@ -401,6 +391,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
     print('Scheduler last learning rate: ', scheduler.get_last_lr())
     
     
+
 if wandb_log:
     wandb.finish()
 
