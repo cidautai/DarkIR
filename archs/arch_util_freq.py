@@ -60,12 +60,10 @@ class Branch(nn.Module):
     '''
     Branch that lasts lonly the dilated convolutions
     '''
-    def __init__(self, c, DW_Expand, dilation = 1, extra_depth_wise = False):
+    def __init__(self, c, DW_Expand, dilation = 1):
         super().__init__()
         self.dw_channel = DW_Expand * c 
         self.branch = nn.Sequential(
-                       nn.Conv2d(c, c, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity(), #optional extra dw
-                       nn.Conv2d(in_channels=c, out_channels=self.dw_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1),
                        nn.Conv2d(in_channels=self.dw_channel, out_channels=self.dw_channel, kernel_size=3, padding=dilation, stride=1, groups=self.dw_channel,
                                             bias=True, dilation = dilation) # the dconv
         )
@@ -80,10 +78,13 @@ class EBlock_freq(nn.Module):
     def __init__(self, c, DW_Expand=2, dilations = [1], extra_depth_wise = False):
         super().__init__()
         #we define the 2 branches
-        
+        self.dw_channel = DW_Expand * c 
+        self.extra_conv = nn.Conv2d(c, c, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity() #optional extra dw
+        self.conv1 = nn.Conv2d(in_channels=c, out_channels=self.dw_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
+                
         self.branches = nn.ModuleList()
         for dilation in dilations:
-            self.branches.append(Branch(c, DW_Expand, dilation = dilation, extra_depth_wise=extra_depth_wise))
+            self.branches.append(Branch(c, DW_Expand, dilation = dilation))
             
         assert len(dilations) == len(self.branches)
         self.dw_channel = DW_Expand * c 
@@ -103,9 +104,9 @@ class EBlock_freq(nn.Module):
         self.beta = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
 
     def forward(self, inp):
-
         y = inp
         x = self.norm1(inp)
+        x = self.conv1(self.extra_conv(x))
         z = 0
         for branch in self.branches:
             z += branch(x)
