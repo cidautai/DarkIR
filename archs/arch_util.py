@@ -137,12 +137,11 @@ class Branch(nn.Module):
     '''
     Branch that lasts lonly the dilated convolutions
     '''
-    def __init__(self, c, DW_Expand, dilation = 1, extra_depth_wise = False):
+    def __init__(self, c, DW_Expand, dilation = 1):
         super().__init__()
         self.dw_channel = DW_Expand * c 
+        
         self.branch = nn.Sequential(
-                       nn.Conv2d(c, c, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity(), #optional extra dw
-                       nn.Conv2d(in_channels=c, out_channels=self.dw_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1),
                        nn.Conv2d(in_channels=self.dw_channel, out_channels=self.dw_channel, kernel_size=3, padding=dilation, stride=1, groups=self.dw_channel,
                                             bias=True, dilation = dilation) # the dconv
         )
@@ -157,10 +156,13 @@ class EBlock(nn.Module):
     def __init__(self, c, DW_Expand=2, FFN_Expand=2, dilations = [1], extra_depth_wise = False):
         super().__init__()
         #we define the 2 branches
-        
+        self.dw_channel = DW_Expand * c 
+
+        self.conv1 = nn.Conv2d(in_channels=c, out_channels=self.dw_channel, kernel_size=1, padding=0, stride=1, groups=1, bias=True, dilation = 1)
+        self.extra_conv = nn.Conv2d(self.dw_channel, self.dw_channel, kernel_size=3, padding=1, stride=1, groups=c, bias=True, dilation=1) if extra_depth_wise else nn.Identity() #optional extra dw
         self.branches = nn.ModuleList()
         for dilation in dilations:
-            self.branches.append(Branch(c, DW_Expand, dilation = dilation, extra_depth_wise=extra_depth_wise))
+            self.branches.append(Branch(self.dw_channel, DW_Expand = 1, dilation = dilation))
             
         assert len(dilations) == len(self.branches)
         self.dw_channel = DW_Expand * c 
@@ -186,6 +188,8 @@ class EBlock(nn.Module):
 
         y = inp
         x = self.norm1(inp)
+        # x = self.conv1(self.extra_conv(x))
+        x = self.extra_conv(self.conv1(x))
         z = 0
         for branch in self.branches:
             z += branch(x)
@@ -270,7 +274,7 @@ if __name__ == '__main__':
     middle_blk_num = 3
     dec_blks = [3, 1, 1]
     dilations = [1, 4, 9]
-    extra_depth_wise = False
+    extra_depth_wise = True
     
     # net = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
     #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
@@ -282,17 +286,17 @@ if __name__ == '__main__':
 
     from ptflops import get_model_complexity_info
 
-    # macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=True)
-
+    macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
+    output = net(torch.randn((4, 3, 256, 256)))
     # print('Values of EBlock:')
-    # print(macs, params)
+    print(macs, params)
 
     channels = 128
     resol = 32
     ksize = 5
 
-    net = FAC(channels=channels, ksize=ksize)
-    inp_shape = (channels, resol, resol)
-    macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=True)
-    print('Values of FAC:')
-    print(macs, params)
+    # net = FAC(channels=channels, ksize=ksize)
+    # inp_shape = (channels, resol, resol)
+    # macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=True)
+    # print('Values of FAC:')
+    # print(macs, params)
