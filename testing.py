@@ -13,9 +13,6 @@ from ptflops import get_model_complexity_info
 from data.datapipeline import *
 from archs import Network
 from archs import NAFNet
-from archs.network_v2 import Network as Network_v2
-from archs.network_v3 import Network as Network_v3
-from archs.network_MBNv4 import Network as Network_MBNv4
 from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss
 from data.dataset_NBDN import main_dataset_nbdn
 from data.dataset_LOLBlur import main_dataset_lolblur
@@ -124,37 +121,6 @@ elif network == 'NAFNet':
                     middle_blk_num=opt['network']['middle_blk_num'], 
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'])
-
-elif network == 'Network_v2':
-    model = Network_v2(img_channel=opt['network']['img_channels'], 
-                    width=opt['network']['width'], 
-                    middle_blk_num=opt['network']['middle_blk_num'], 
-                    enc_blk_nums=opt['network']['enc_blk_nums'],
-                    dec_blk_nums=opt['network']['dec_blk_nums'], 
-                    residual_layers=opt['network']['residual_layers'],
-                    enc_blk_nums_map=opt['network']['enc_blk_nums_map'],
-                    middle_blk_num_map=opt['network']['middle_blk_num_map'],
-                    spatial = opt['network']['spatial'],
-                    dilations = opt['network']['dilations'])
-
-elif network == 'Network_v3':
-    model = Network_v3(img_channel=opt['network']['img_channels'], 
-                    width=opt['network']['width'], 
-                    middle_blk_num=opt['network']['middle_blk_num'], 
-                    enc_blk_nums=opt['network']['enc_blk_nums'],
-                    dec_blk_nums=opt['network']['dec_blk_nums'], 
-                    residual_layers=opt['network']['residual_layers'],
-                    dilations=opt['network']['dilations'],
-                    extra_depth_wise=opt['network']['extra_depth_wise'])
-
-elif network == 'Network_MBNv4':
-    model = Network_MBNv4(img_channel=opt['network']['img_channels'], 
-                    width=opt['network']['width'], 
-                    middle_blk_num=opt['network']['middle_blk_num'], 
-                    enc_blk_nums=opt['network']['enc_blk_nums'],
-                    dec_blk_nums=opt['network']['dec_blk_nums'], 
-                    residual_layers=opt['network']['residual_layers'],
-                    expand_ratio=opt['network']['expand_ratio'])
 
 else:
     raise NotImplementedError('This network isnt implemented')

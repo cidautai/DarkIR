@@ -69,7 +69,7 @@ if network == 'Network':
                     dilations=opt['network']['dilations'],
                     extra_depth_wise=opt['network']['extra_depth_wise'],
                     ksize=opt['network']['ksize'],
-                    side_out=False)
+                    side_out=True)
 elif network == 'NAFNet':
     model = NAFNet(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
@@ -110,12 +110,23 @@ with torch.no_grad():
     
     for path in path_images_lolblur:
         tensor = path_to_tensor(path).to(device)
-        _, _, H, W = tensor.shape
-        tensor = pad_tensor(tensor)
-        output = torch.clamp(model(tensor), 0., 1.)
-        output = output[:,:, :H, :W]
-        print(output.shape, output.dtype, torch.max(output), torch.min(output))
-        save_tensor(output, os.path.join(PATH_RESULTS_LOLBLUR, os.path.basename(path)))
+        # _, _, H, W = tensor.shape
+        # tensor = pad_tensor(tensor)
+        if network == 'Network':
+            side_out, output = model(tensor, side_loss=True)
+            side_out, output = torch.clamp(side_out, 0., 1.), torch.clamp(output, 0., 1.)
+            # output = output[:,:, :H, :W]
+            print('Image:', output.shape, output.dtype, torch.max(output), torch.min(output))
+            print('Low-Res:', side_out.shape, side_out.dtype, torch.max(side_out), torch.min(side_out))
+            save_tensor(output, os.path.join(PATH_RESULTS_LOLBLUR, os.path.basename(path)))
+            save_tensor(side_out, os.path.join(PATH_RESULTS_LOLBLUR,'low_res'+os.path.basename(path)))
+        
+        else:
+            output = model(tensor, side_loss=False)
+            output = torch.clamp(model(tensor), 0., 1.)
+            # output = output[:,:, :H, :W]
+            print(output.shape, output.dtype, torch.max(output), torch.min(output))
+            save_tensor(output, os.path.join(PATH_RESULTS_LOLBLUR, os.path.basename(path)))
     
     for path in path_images_realblur:
         tensor = path_to_tensor(path).to(device)
