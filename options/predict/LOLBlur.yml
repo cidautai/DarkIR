@@ -17,7 +17,7 @@ network:
 
 #### save model
 save:
-  best: ./models/bests/Network_noFAC_LOLBlur.pt
+  best: ./models/bests/Network_noFAC_reduced2_LOLBlur.pt
 
 LOLBlur:
   inputs_path: ./inputs/synthetic
