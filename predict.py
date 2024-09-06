@@ -55,6 +55,7 @@ device = torch.device('cuda')
 
 #selected network
 network = opt['network']['name']
+side_out = False
 
 # PATH_MODEL = opt['save']['best']
 print(network)
@@ -69,7 +70,7 @@ if network == 'Network':
                     dilations=opt['network']['dilations'],
                     extra_depth_wise=opt['network']['extra_depth_wise'],
                     ksize=opt['network']['ksize'],
-                    side_out=True)
+                    side_out=side_out)
 elif network == 'NAFNet':
     model = NAFNet(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
@@ -112,8 +113,8 @@ with torch.no_grad():
         tensor = path_to_tensor(path).to(device)
         # _, _, H, W = tensor.shape
         # tensor = pad_tensor(tensor)
-        if network == 'Network':
-            side_out, output = model(tensor, side_loss=True)
+        if network == 'Network' and side_out:
+            side_out, output = model(tensor, side_loss=side_out)
             side_out, output = torch.clamp(side_out, 0., 1.), torch.clamp(output, 0., 1.)
             # output = output[:,:, :H, :W]
             print('Image:', output.shape, output.dtype, torch.max(output), torch.min(output))
