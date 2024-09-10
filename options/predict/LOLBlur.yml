@@ -20,8 +20,8 @@ save:
   best: ./models/bests/Network_noFAC_reduced2_LOLBlur.pt
 
 LOLBlur:
-  inputs_path: ./inputs/synthetic
-  results_path: ./results/synthetic
+  inputs_path: /mnt/valab-datasets/RealBlur-Night/realblur_dataset_test
+  results_path: /mnt/valab-datasets/RealBlur-Night_Processed/realblur_dataset_test
 RealBlur:
-  inputs_path: ./inputs/real
-  results_path: ./results/real
+  inputs_path: /mnt/valab-datasets/RealBlur-Night/real_lolblur_video
+  results_path: /mnt/valab-datasets/RealBlur-Night_Processed/real_lolblur_video

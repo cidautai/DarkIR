@@ -98,7 +98,7 @@ PATH_RESULTS_LOLBLUR = opt['LOLBlur']['results_path']
 PATH_IMAGES_REALBLUR = opt['RealBlur']['inputs_path']
 PATH_RESULTS_REALBLUR = opt['RealBlur']['results_path']
 
-not os.path.isdir('./results') and os.mkdir('./results')
+# not os.path.isdir('./results') and os.mkdir('./results')
 not os.path.isdir(PATH_RESULTS_LOLBLUR) and os.mkdir(PATH_RESULTS_LOLBLUR)
 not os.path.isdir(PATH_RESULTS_REALBLUR) and os.mkdir(PATH_RESULTS_REALBLUR)
 
