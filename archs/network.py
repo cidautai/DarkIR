@@ -3,10 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import functools
 try:
-    from .arch_util import EBlock, KernelConv2D, FAC
+    from .arch_util import EBlock
     from .arch_util_freq import EBlock_freq
 except:
-    from arch_util import EBlock, KernelConv2D, FAC
+    from arch_util import EBlock
     from arch_util_freq import EBlock_freq
 
 
@@ -20,7 +20,6 @@ class Network(nn.Module):
                  dec_blk_nums=[],  
                  dilations = [1], 
                  extra_depth_wise = False,
-                 ksize = 5,
                  side_out = True):
         super(Network, self).__init__()
         
@@ -162,7 +161,6 @@ if __name__ == '__main__':
     residual_layers = None
     dilations = [1, 4, 9]
     extra_depth_wise = True
-    ksize = 5
     
     net = Network(img_channel=img_channel, 
                   width=width, 
@@ -171,8 +169,7 @@ if __name__ == '__main__':
                   enc_blk_nums=enc_blks, 
                   dec_blk_nums=dec_blks,
                   dilations = dilations,
-                  extra_depth_wise = extra_depth_wise,
-                  ksize = ksize)
+                  extra_depth_wise = extra_depth_wise)
     
     # NAF = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
     #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)

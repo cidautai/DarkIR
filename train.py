@@ -25,7 +25,7 @@ torch.autograd.set_detect_anomaly(True)
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.
-path_options = './options/train/LOLBlur.yml'
+path_options = './options/train/GOPRO.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
 # print(opt)
@@ -104,6 +104,18 @@ elif opt['datasets']['name'] == 'LOLv2_synth':
                                                 cropsize=opt['datasets']['train']['cropsize'],
                                                 num_workers=opt['datasets']['train']['n_workers'],
                                                 crop_type=opt['datasets']['train']['crop_type'])
+
+elif opt['datasets']['name'] == 'GOPRO':
+    train_loader, test_loader = main_dataset_gopro(train_path=opt['datasets']['train']['train_path'],
+                                                test_path = opt['datasets']['val']['test_path'],
+                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
+                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
+                                                flips = opt['datasets']['train']['flips'],
+                                                verbose=opt['datasets']['train']['verbose'],
+                                                cropsize=opt['datasets']['train']['cropsize'],
+                                                num_workers=opt['datasets']['train']['n_workers'],
+                                                crop_type=opt['datasets']['train']['crop_type'])
+    
 else:
     name_loader = opt['datasets']['name']
     raise NotImplementedError(f'{name_loader} is not implemented')
@@ -118,8 +130,7 @@ if network == 'Network':
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'], 
                     dilations=opt['network']['dilations'],
-                    extra_depth_wise=opt['network']['extra_depth_wise'],
-                    ksize=opt['network']['ksize'])
+                    extra_depth_wise=opt['network']['extra_depth_wise'])
 elif network == 'NAFNet':
     model = NAFNet(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 

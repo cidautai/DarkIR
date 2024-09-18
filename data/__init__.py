@@ -1,4 +1,4 @@
-from .dataset import main_dataset_gopro, main_dataset_synthetic
+from .dataset_gopro import main_dataset_gopro
 from .datapipeline import log_images
 from .dataset_LOL import main_dataset_lol
 from .dataset_LOLBlur import main_dataset_lolblur
