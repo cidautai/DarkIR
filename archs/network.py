@@ -1,26 +1,37 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import functools
 try:
-    from .arch_util import EBlock
-    from .arch_util_freq import EBlock_freq
-except:
-    from arch_util import EBlock
-    from arch_util_freq import EBlock_freq
+    from arch_model import EBlock, DBlock
 
+except:
+    from archs.arch_model import EBlock, DBlock
+
+class CustomSequential(nn.Module):
+    '''
+    Similar to nn.Sequential, but it lets us introduce a second argument in the forward method 
+    so adaptors can be considered in the inference.
+    '''
+    
+    def __init__(self, *args):
+        super(CustomSequential, self).__init__()
+        self.modules_list = nn.ModuleList(args)
+
+    def forward(self, x, additional_arg):
+        for module in self.modules_list:
+            x = module(x, additional_arg)
+        return x
 
 class Network(nn.Module):
     
     def __init__(self, img_channel=3, 
-                 width=16, 
-                 middle_blk_num_enc=1,
-                 middle_blk_num_dec=1, 
-                 enc_blk_nums=[], 
-                 dec_blk_nums=[],  
-                 dilations = [1], 
-                 extra_depth_wise = False,
-                 side_out = True):
+                 width=32, 
+                 middle_blk_num_enc=2,
+                 middle_blk_num_dec=2, 
+                 enc_blk_nums=[1, 2, 3], 
+                 dec_blk_nums=[3, 1, 1],  
+                 dilations = [1, 4, 9], 
+                 extra_depth_wise = True):
         super(Network, self).__init__()
         
         self.intro = nn.Conv2d(in_channels=img_channel, out_channels=width, kernel_size=3, padding=1, stride=1, groups=1,
@@ -33,12 +44,12 @@ class Network(nn.Module):
         self.middle_blks = nn.ModuleList()
         self.ups = nn.ModuleList()
         self.downs = nn.ModuleList()
-
+        
         chan = width
         for num in enc_blk_nums:
             self.encoders.append(
-                nn.Sequential(
-                    *[EBlock_freq(chan, extra_depth_wise=extra_depth_wise) for _ in range(num)]
+                CustomSequential(
+                    *[EBlock(chan, extra_depth_wise=extra_depth_wise) for _ in range(num)]
                 )
             )
             self.downs.append(
@@ -47,12 +58,12 @@ class Network(nn.Module):
             chan = chan * 2
 
         self.middle_blks_enc = \
-            nn.Sequential(
-                *[EBlock_freq(chan, extra_depth_wise=extra_depth_wise) for _ in range(middle_blk_num_enc)]
+            CustomSequential(
+                *[EBlock(chan, extra_depth_wise=extra_depth_wise) for _ in range(middle_blk_num_enc)]
             )
         self.middle_blks_dec = \
-            nn.Sequential(
-                *[EBlock(chan, dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(middle_blk_num_dec)]
+            CustomSequential(
+                *[DBlock(chan, dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(middle_blk_num_dec)]
             )
 
         for num in dec_blk_nums:
@@ -64,25 +75,27 @@ class Network(nn.Module):
             )
             chan = chan // 2
             self.decoders.append(
-                nn.Sequential(
-                    *[EBlock(chan,dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(num)]
+                CustomSequential(
+                    *[DBlock(chan,dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(num)]
                 )
             )
 
+
         self.padder_size = 2 ** len(self.encoders)        
 
-        self.side_out = side_out
-        # this layer is needed for the computing of the middle loss. It isn't necessary for anything else
-        if side_out:
-            self.side_out = nn.Conv2d(in_channels = width * 2**len(self.encoders), out_channels = img_channel, 
-                                  kernel_size = 3, stride=1, padding=1)
-        # self.facs = nn.ModuleList([nn.Identity(), nn.Identity(),
-        #                           nn.Identity(),
-        #                           nn.Identity())
-        # self.kconv_deblur = KernelConv2D(ksize=ksize, act = True)
-   
+        # self.side_out = side_out
         
-    def forward(self, input, side_loss = False):
+        # this layer is needed for the computing of the middle loss. It isn't necessary for anything else
+        # if side_out:
+        self.side_out = nn.Conv2d(in_channels = width * 2**len(self.encoders), out_channels = img_channel, 
+                                kernel_size = 3, stride=1, padding=1)
+   
+
+        # number_adapters = sum(enc_blk_nums + dec_blk_nums + middle_blk_num_dec + middle_blk_num_enc)
+
+            
+        
+    def forward(self, input, side_loss = False, adapter = False):
 
         _, _, H, W = input.shape
 
@@ -93,7 +106,7 @@ class Network(nn.Module):
         facs = []
         # i = 0
         for encoder, down in zip(self.encoders, self.downs):
-            x = encoder(x)
+            x = encoder(x, adapter)
             # x_fac = fac(x)
             facs.append(x)
             # print(i, x.shape)
@@ -102,15 +115,15 @@ class Network(nn.Module):
             # i += 1
 
         # we apply the encoder transforms
-        x_light = self.middle_blks_enc(x)
+        x_light = self.middle_blks_enc(x, adapter)
         
-        if side_loss and self.side_out:
+        if side_loss:
             out_side = self.side_out(x_light)
         # calculate the fac at this level
         # x_fac = self.facs[-1](x)
         # facs.append(x_fac)
         # apply the decoder transforms
-        x = self.middle_blks_dec(x_light)
+        x = self.middle_blks_dec(x_light, adapter)
         # apply the fac transform over this step
         x = x + x_light
 
@@ -124,10 +137,10 @@ class Network(nn.Module):
             x = up(x)
             if i == 2: # in the toppest decoder step
                 x = x + fac_skip
-                x = decoder(x)
+                x = decoder(x, adapter)
             else:
                 x = x + fac_skip
-                x = decoder(x)
+                x = decoder(x, adapter)
             i+=1
 
         x = self.ending(x)
@@ -171,19 +184,34 @@ if __name__ == '__main__':
                   dilations = dilations,
                   extra_depth_wise = extra_depth_wise)
     
+    new_state_dict = net.state_dict()
+    # print(net.state_dict())
     # NAF = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
     #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
+    checkpoints = torch.load('/home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/bests/Network_noFAC_EnhanceLoss_LOLBlur_Original.pt')
+    weights = checkpoints['model_state_dict']
+    new_state_dict.update({k: v for k, v in weights.items() if k in new_state_dict})
+    # inp_shape = (3, 256, 256)
 
-    inp_shape = (3, 256, 256)
+    # net.load_state_dict(checkpoints)
+    net.load_state_dict(new_state_dict)
+    filtered_dict = {k: v for k, v in new_state_dict.items() if '.adapter.' in k}
 
-    from ptflops import get_model_complexity_info
+    for name, param in net.named_parameters():
+        if 'adapter' not in name:
+            param.requires_grad_(False)
 
-    macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
+    for name, param in net.named_parameters():
+        print(f"{name}: requires_grad={param.requires_grad}")    
+    # print(len(new_state_dict.keys()))
+    # from ptflops import get_model_complexity_info
 
-    print(macs, params)    
-    inp = torch.randn(1, 3, 256, 256)
-    out_side, out = net(inp, side_loss= True)
-    print(out_side.shape, out.shape)
-    # print(len(out))
+    # macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
+
+    # print(macs, params)    
+    # inp = torch.randn(1, 3, 256, 256)
+    # out_side, out = net(inp, side_loss= True)
+    # print(out_side.shape, out.shape)
+    # # print(len(out))
     
     

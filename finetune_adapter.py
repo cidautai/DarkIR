@@ -19,7 +19,7 @@ from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLos
 
 from data import *
 from options.options import parse
-from utils.utils import load_weights
+from utils.utils import load_weights, freeze_parameters
 
 from lpips import LPIPS
 torch.autograd.set_detect_anomaly(True)
@@ -142,10 +142,6 @@ elif network == 'NAFNet':
 else:
     raise NotImplementedError('This network isnt implemented')
 
-
-# if torch.cuda.device_count() > 1:
-#     print("Usando", torch.cuda.device_count(), "GPUs!")
-#     model = nn.DataParallel(model)
 model = model.to(device)
 #calculate MACs and number of parameters
 macs, params = get_model_complexity_info(model, (3, 256, 256), print_per_layer_stat = False)
@@ -173,23 +169,28 @@ if opt['train']['lr_scheme'] == 'CosineAnnealing':
 else: 
     raise NotImplementedError('scheduler not implemented')
 
+checkpoints = torch.load(PATH_MODEL)
+weights = checkpoints['model_state_dict']
+model = load_weights(model, old_weights=weights)
+optim.load_state_dict(checkpoints['optimizer_state_dict']),
+scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
+
 # if resume load the weights
+    
 if resume_training:
     checkpoints = torch.load(PATH_MODEL)
-    weights = checkpoints['model_state_dict']
-    # print(weights.keys())
-    remove_prefix = 'module.' # this is needed because the keys now get a module. key that doesn't match with the network one
-    weights = {k[len(remove_prefix):] if k.startswith(remove_prefix) else k: v for k, v in weights.items()}
-    model.load_state_dict(weights)
+    model.load_state_dict(checkpoints['model_state_dict'])
     optim.load_state_dict(checkpoints['optimizer_state_dict']),
     scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
-    start_epochs = checkpoints['epoch']
     resume = opt['resume_training']['resume']
     id = opt['resume_training']['id']
     print('Loaded weights')
 else:
     resume = 'never'
     id = None
+
+#freeze the parameters that aren't from the adapter
+model = freeze_parameters(model, substring='adapter')
 
 #---------------------------------------------------------------------------------------------------
 # LOG INTO WANDB
@@ -390,21 +391,23 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
     print(f"Epoch {epoch + 1} of {last_epochs} took {time.time() - start_time:.3f}s\t Loss:{np.mean(train_loss)}\t PSNR:{np.mean(valid_psnr)}\n")
 
-
-    # Save the model after every epoch
-    model_to_save = {
+    #select only the adapter weights that are the finetuned ones
+    weights = model.state_dict()
+    adapter_weights = {k: v for k, v in weights.items() if 'adapter' in k}
+    # Save the adapter after every epoch
+    adapter_to_save = {
         'epoch': epoch,
-        'model_state_dict': model.state_dict(),
+        'model_state_dict': adapter_weights,
         'optimizer_state_dict': optim.state_dict(),
         'loss': np.mean(train_loss),
         'scheduler_state_dict': scheduler.state_dict()
     }
-    torch.save(model_to_save, NEW_PATH_MODEL)
+    torch.save(adapter_to_save, NEW_PATH_MODEL)
 
     #save best model if new valid_psnr is higher than the best one
     if np.mean(valid_psnr) >= best_valid_psnr:
         
-        torch.save(model_to_save, BEST_PATH_MODEL)
+        torch.save(adapter_to_save, BEST_PATH_MODEL)
         
         best_valid_psnr = np.mean(valid_psnr) # update best psnr
 

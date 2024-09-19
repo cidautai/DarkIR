@@ -1,8 +1,8 @@
 #### general settings
 resume_training:
-  resume_training: False
+  resume_training: True
   resume: must
-  id: 78ladjjx
+  id: m54u1hi1
 
 #### training devices
 device:
@@ -84,7 +84,7 @@ save:
   new: ./models/Network_GOPRO.pt 
 #### wandb:
 wandb:
-  init: True
+  init: False
   project: LOLBlur
   entity: cidautai
   name: Network_GOPRO
