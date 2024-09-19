@@ -1,0 +1,94 @@
+#### general settings
+resume_training:
+  resume_training: False
+  resume: must
+  id: 78ladjjx
+
+#### training devices
+device:
+  cuda: True
+  gpus: 0
+
+#### datasets
+datasets:
+  name: LOLBlur
+  train:
+    train_path: /mnt/valab-datasets/LOLBlur/train
+
+    n_workers: 4  # per GPU
+    batch_size_train: 16
+    cropsize: 256   # size you want to crop out as input sample.
+    flips: True
+    verbose: True
+    crop_type: Random
+  val:
+    test_path: /mnt/valab-datasets/LOLBlur/test
+    batch_size_test: 1
+
+#### network structures
+network:
+  name: Network
+  img_channels: 3
+  width: 32
+  middle_blk_num_enc: 2
+  middle_blk_num_dec: 2
+  enc_blk_nums: [1, 2, 3]
+  dec_blk_nums: [3, 1, 1]
+  enc_blk_nums_map: None
+  middle_blk_num_map: None
+  residual_layers: None
+  dilations: [1, 4, 9]
+  spatial: None
+  extra_depth_wise: True
+  ksize: None
+
+
+#### training settings: learning rate scheme, loss
+train:
+  lr_initial: !!float 5e-4
+  lr_scheme: CosineAnnealing
+  betas: [0.9, 0.9]
+  epochs: 500
+  lr_gamma: 0.5
+  weight_decay: !!float 1e-3
+  eta_min: !!float 1e-6
+
+  pixel_criterion: l1
+  pixel_weight: 1.0
+
+  perceptual: True
+  perceptual_criterion: l1
+  perceptual_weight: 0.01
+  perceptual_reduction: mean
+
+  edge: True 
+  edge_criterion: l2
+  edge_weight: 50.0
+  edge_reduction: mean
+
+  frequency: False
+  frequency_criterion: l2
+  frequency_weight: 0.01
+  frequency_reduction: sum
+
+  enhance: True
+  enhance_criterion: l1
+  enhance_weight: 0.8
+  enhance_reduction: mean
+
+
+#### save model
+save:
+  path_model: ./models/bests/Network_noFAC_EnhanceLoss_LOLBlur_Original.pt
+  path: ./adapters/Network_EnhanceLoss_LOLBlur_Original.pt
+  best: ./adapters/bests/
+  new: ./adapters/Network_noFAC_EnhanceLoss_LOLBlur_Original.pt 
+#### wandb:
+wandb:
+  init: True
+  project: LOLBlur
+  entity: cidautai
+  name: Network_EnhanceLoss_LOLBlur_Original
+  save_code: True
+
+

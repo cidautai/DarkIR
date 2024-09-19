@@ -38,13 +38,14 @@ device = torch.device('cuda') if opt['device']['cuda'] else torch.device('cpu')
 network = opt['network']['name']
 
 #parameters for saving model
-PATH_MODEL     = opt['save']['path']
+PATH_MODEL     = opt['save']['path_model']
+PATH_ADAPTER   = opt['save']['path']
 if opt['save']['new']:
-    NEW_PATH_MODEL = opt['save']['new']
+    NEW_PATH_ADAPTER = opt['save']['new']
 else: 
-    NEW_PATH_MODEL = opt['save']['path']
+    NEW_PATH_ADAPTER = opt['save']['path']
     
-BEST_PATH_MODEL = os.path.join(opt['save']['best'], os.path.basename(NEW_PATH_MODEL))
+BEST_PATH_ADAPTER = os.path.join(opt['save']['best'], os.path.basename(NEW_PATH_ADAPTER))
 
 
 wandb_log = opt['wandb']['init']  # flag if we want to output the results in wandb
@@ -178,7 +179,7 @@ scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
 # if resume load the weights
     
 if resume_training:
-    checkpoints = torch.load(PATH_MODEL)
+    checkpoints = torch.load(PATH_ADAPTER)
     model.load_state_dict(checkpoints['model_state_dict'])
     optim.load_state_dict(checkpoints['optimizer_state_dict']),
     scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
@@ -402,12 +403,12 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         'loss': np.mean(train_loss),
         'scheduler_state_dict': scheduler.state_dict()
     }
-    torch.save(adapter_to_save, NEW_PATH_MODEL)
+    torch.save(adapter_to_save, NEW_PATH_ADAPTER)
 
     #save best model if new valid_psnr is higher than the best one
     if np.mean(valid_psnr) >= best_valid_psnr:
         
-        torch.save(adapter_to_save, BEST_PATH_MODEL)
+        torch.save(adapter_to_save, BEST_PATH_ADAPTER)
         
         best_valid_psnr = np.mean(valid_psnr) # update best psnr
 
