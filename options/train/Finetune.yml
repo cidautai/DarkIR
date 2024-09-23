@@ -11,9 +11,9 @@ device:
 
 #### datasets
 datasets:
-  name: LOLBlur
+  name: GOPRO
   train:
-    train_path: /mnt/valab-datasets/LOLBlur/train
+    train_path: /mnt/valab-datasets/GOPRO/train
 
     n_workers: 4  # per GPU
     batch_size_train: 16
@@ -22,7 +22,7 @@ datasets:
     verbose: True
     crop_type: Random
   val:
-    test_path: /mnt/valab-datasets/LOLBlur/test
+    test_path: /mnt/valab-datasets/GOPRO/test
     batch_size_test: 1
 
 #### network structures
@@ -79,16 +79,16 @@ train:
 
 #### save model
 save:
-  path_model: ./models/bests/Network_noFAC_EnhanceLoss_LOLBlur_Original.pt
-  path: ./adapters/Network_EnhanceLoss_LOLBlur_Original.pt
+  path_model: ./models/bests/Network_GOPRO.pt
+  path: ./adapters/Network_adapter_LOLBlur.pt
   best: ./adapters/bests/
-  new: ./adapters/Network_noFAC_EnhanceLoss_LOLBlur_Original.pt 
+  new: ./adapters/Network_adapter_LOLBlur.pt 
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_EnhanceLoss_LOLBlur_Original
+  name: Network_GOPRO_LOLBlur
   save_code: True
 
 

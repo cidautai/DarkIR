@@ -26,7 +26,7 @@ torch.autograd.set_detect_anomaly(True)
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need.
-path_options = './options/train/GOPRO.yml'
+path_options = './options/train/Finetune.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
 # print(opt)
@@ -171,16 +171,18 @@ else:
     raise NotImplementedError('scheduler not implemented')
 
 checkpoints = torch.load(PATH_MODEL)
-weights = checkpoints['model_state_dict']
-model = load_weights(model, old_weights=weights)
-optim.load_state_dict(checkpoints['optimizer_state_dict']),
-scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
-
+model = load_weights(model, old_weights=checkpoints['model_state_dict'])
+# print(model)
+# optim.load_state_dict(checkpoints['optimizer_state_dict'])
+# scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
+print('--------', type(model))
 # if resume load the weights
-    
+
 if resume_training:
     checkpoints = torch.load(PATH_ADAPTER)
-    model.load_state_dict(checkpoints['model_state_dict'])
+    # weights_adapter = checkpoints['model_state_dict']
+    model = load_weights(model, old_weights=checkpoints['model_state_dict'])
+    # model.load_state_dict(checkpoints['model_state_dict'])
     optim.load_state_dict(checkpoints['optimizer_state_dict']),
     scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
     resume = opt['resume_training']['resume']
@@ -193,6 +195,7 @@ else:
 #freeze the parameters that aren't from the adapter
 model = freeze_parameters(model, substring='adapter')
 
+print(type(model))
 #---------------------------------------------------------------------------------------------------
 # LOG INTO WANDB
 if wandb_log:
@@ -280,6 +283,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         valid_psnr = []
         valid_ssim = []
         valid_lpips = []
+        
     model.train()
     optim_loss = 0
 
@@ -291,7 +295,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
         optim.zero_grad()
         # Feed the data into the model
-        out_side_batch, enhanced_batch = model(low_batch, side_loss = True)
+        out_side_batch, enhanced_batch = model(low_batch, side_loss = True, adapter = True)
 
         # calculate loss function to optimize
         l_pixel = pixel_loss(enhanced_batch, high_batch)
@@ -345,7 +349,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
                     high_crop = high_crop.to(device)
                     low_crop = low_crop.to(device)
 
-                    enhanced_crop = model(low_crop)
+                    out_side_batch, enhanced_crop = model(low_crop, side_loss = True, adapter=True)
                     # loss
                     valid_loss_batch += torch.mean((high_crop - enhanced_crop)**2)
                     valid_ssim_batch += calc_SSIM(enhanced_crop, high_crop)
@@ -361,7 +365,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
             else: # then we process the image normally
                 high_batch_valid = high_batch_valid.to(device)
                 low_batch_valid = low_batch_valid.to(device)
-                enhanced_batch_valid = model(low_batch_valid)
+                enhanced_batch_valid = model(low_batch_valid, adapter = True)
                 # loss
                 valid_loss_batch = torch.mean((high_batch_valid - enhanced_batch_valid)**2)
                 valid_ssim_batch = calc_SSIM(enhanced_batch_valid, high_batch_valid)

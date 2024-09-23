@@ -168,6 +168,8 @@ class EBlock(nn.Module):
 
 
         self.adapter = Adapter(c, ffn_channel=None)
+        
+        # self.use_adapters = False
 
     def forward(self, inp, adapter = None):
         y = inp

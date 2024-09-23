@@ -97,8 +97,8 @@ def main_dataset_gopro(train_path='../../GOPRO_dataset/train',
 
     # we random sort the lists using random_sort_pairs
     
-    list_blur, list_sharp             = random_sort_pairs(list_blur, list_sharp)
-    list_blur_valid, list_sharp_valid = random_sort_pairs(list_blur_valid, list_sharp_valid)
+    # list_blur, list_sharp             = random_sort_pairs(list_blur, list_sharp)
+    # list_blur_valid, list_sharp_valid = random_sort_pairs(list_blur_valid, list_sharp_valid)
 
     # check if all the image routes are correct
     trues = [os.path.isfile(file) for file in list_blur +

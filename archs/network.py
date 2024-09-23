@@ -95,8 +95,10 @@ class Network(nn.Module):
 
             
         
-    def forward(self, input, side_loss = False, adapter = False):
+    def forward(self, input, side_loss = False, adapter = None):
 
+        # side_loss=True
+        # adapter=True
         _, _, H, W = input.shape
 
         input = self.check_image_size(input)
@@ -106,7 +108,7 @@ class Network(nn.Module):
         facs = []
         # i = 0
         for encoder, down in zip(self.encoders, self.downs):
-            x = encoder(x, adapter)
+            x = encoder(x, adapter=adapter)
             # x_fac = fac(x)
             facs.append(x)
             # print(i, x.shape)
@@ -115,7 +117,7 @@ class Network(nn.Module):
             # i += 1
 
         # we apply the encoder transforms
-        x_light = self.middle_blks_enc(x, adapter)
+        x_light = self.middle_blks_enc(x, adapter=adapter)
         
         if side_loss:
             out_side = self.side_out(x_light)
@@ -123,7 +125,7 @@ class Network(nn.Module):
         # x_fac = self.facs[-1](x)
         # facs.append(x_fac)
         # apply the decoder transforms
-        x = self.middle_blks_dec(x_light, adapter)
+        x = self.middle_blks_dec(x_light, adapter=adapter)
         # apply the fac transform over this step
         x = x + x_light
 
@@ -137,10 +139,10 @@ class Network(nn.Module):
             x = up(x)
             if i == 2: # in the toppest decoder step
                 x = x + fac_skip
-                x = decoder(x, adapter)
+                x = decoder(x, adapter=adapter)
             else:
                 x = x + fac_skip
-                x = decoder(x, adapter)
+                x = decoder(x, adapter=adapter)
             i+=1
 
         x = self.ending(x)
@@ -191,27 +193,24 @@ if __name__ == '__main__':
     checkpoints = torch.load('/home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/bests/Network_noFAC_EnhanceLoss_LOLBlur_Original.pt')
     weights = checkpoints['model_state_dict']
     new_state_dict.update({k: v for k, v in weights.items() if k in new_state_dict})
-    # inp_shape = (3, 256, 256)
+    inp_shape = (3, 256, 256)
 
     # net.load_state_dict(checkpoints)
     net.load_state_dict(new_state_dict)
-    filtered_dict = {k: v for k, v in new_state_dict.items() if '.adapter.' in k}
+    # filtered_dict = {k: v for k, v in new_state_dict.items() if '.adapter.' in k}
+
+    # print(len(new_state_dict.keys()))
+    from ptflops import get_model_complexity_info
+
+    macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
+
+    print(macs, params)    
 
     for name, param in net.named_parameters():
         if 'adapter' not in name:
-            param.requires_grad_(False)
+            param.requires_grad_(False)    
 
     for name, param in net.named_parameters():
-        print(f"{name}: requires_grad={param.requires_grad}")    
-    # print(len(new_state_dict.keys()))
-    # from ptflops import get_model_complexity_info
-
-    # macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
-
-    # print(macs, params)    
-    # inp = torch.randn(1, 3, 256, 256)
-    # out_side, out = net(inp, side_loss= True)
-    # print(out_side.shape, out.shape)
-    # # print(len(out))
+        print(f"{name}: requires_grad={param.requires_grad}") 
     
     
