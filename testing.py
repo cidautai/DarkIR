@@ -154,7 +154,7 @@ checkpoints_adapter = torch.load(PATH_ADAPTER)
 # first load the weights of the baseline model
 model = load_weights(model, old_weights = checkpoints_model['model_state_dict'])
 # Then, load the weights of the adapter
-# model = load_weights(model, old_weights=checkpoints_adapter['model_state_dict'])
+model = load_weights(model, old_weights=checkpoints_adapter['model_state_dict'])
 # print(checkpoints_model['model_state_dict'].keys())
 
 #---------------------------------------------------------------------------------------------------
@@ -178,7 +178,7 @@ for high_batch_valid, low_batch_valid in tqdm(test_loader):
     low_batch_valid = low_batch_valid.to(device)
 
     with torch.no_grad():
-        enhanced_batch_valid = model(low_batch_valid, adapter=False)
+        enhanced_batch_valid = model(low_batch_valid, use_adapter=False)
         # loss
         valid_loss_batch = torch.mean((high_batch_valid - enhanced_batch_valid)**2)
         # PSNR (dB) metric

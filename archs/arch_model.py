@@ -108,6 +108,11 @@ class DBlock(nn.Module):
 
         self.adapter = Adapter(c, ffn_channel=None)
 
+        self.use_adapters = False
+
+    def set_use_adapters(self, use_adapters):
+        self.use_adapters = use_adapters
+        
     def forward(self, inp, adapter = None):
 
         y = inp
@@ -128,7 +133,7 @@ class DBlock(nn.Module):
         x = self.conv5(x) # size [B, C, H, W]
         x = y + x * self.gamma
         
-        if adapter:
+        if self.use_adapters:
             return self.adapter(x)
         else:
             return x 
@@ -169,9 +174,12 @@ class EBlock(nn.Module):
 
         self.adapter = Adapter(c, ffn_channel=None)
         
-        # self.use_adapters = False
+        self.use_adapters = False
 
-    def forward(self, inp, adapter = None):
+    def set_use_adapters(self, use_adapters):
+        self.use_adapters = use_adapters
+
+    def forward(self, inp):
         y = inp
         x = self.norm1(inp)
         x = self.conv1(self.extra_conv(x))
@@ -189,7 +197,7 @@ class EBlock(nn.Module):
         x = y * x_freq 
         x = y + x * self.gamma
 
-        if adapter:
+        if self.use_adapters:
             return self.adapter(x)
         else:
             return x 

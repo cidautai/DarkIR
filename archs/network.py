@@ -12,14 +12,15 @@ class CustomSequential(nn.Module):
     Similar to nn.Sequential, but it lets us introduce a second argument in the forward method 
     so adaptors can be considered in the inference.
     '''
-    
     def __init__(self, *args):
         super(CustomSequential, self).__init__()
         self.modules_list = nn.ModuleList(args)
 
-    def forward(self, x, additional_arg):
+    def forward(self, x, use_adapter=False):
         for module in self.modules_list:
-            x = module(x, additional_arg)
+            if hasattr(module, 'set_use_adapters'):
+                module.set_use_adapters(use_adapter)
+            x = module(x)
         return x
 
 class Network(nn.Module):
@@ -95,7 +96,7 @@ class Network(nn.Module):
 
             
         
-    def forward(self, input, side_loss = False, adapter = None):
+    def forward(self, input, side_loss = False, use_adapter = None):
 
         # side_loss=True
         # adapter=True
@@ -108,7 +109,7 @@ class Network(nn.Module):
         facs = []
         # i = 0
         for encoder, down in zip(self.encoders, self.downs):
-            x = encoder(x, adapter=adapter)
+            x = encoder(x, use_adapter=use_adapter)
             # x_fac = fac(x)
             facs.append(x)
             # print(i, x.shape)
@@ -117,7 +118,7 @@ class Network(nn.Module):
             # i += 1
 
         # we apply the encoder transforms
-        x_light = self.middle_blks_enc(x, adapter=adapter)
+        x_light = self.middle_blks_enc(x, use_adapter=use_adapter)
         
         if side_loss:
             out_side = self.side_out(x_light)
@@ -125,7 +126,7 @@ class Network(nn.Module):
         # x_fac = self.facs[-1](x)
         # facs.append(x_fac)
         # apply the decoder transforms
-        x = self.middle_blks_dec(x_light, adapter=adapter)
+        x = self.middle_blks_dec(x_light, use_adapter=use_adapter)
         # apply the fac transform over this step
         x = x + x_light
 
@@ -139,10 +140,10 @@ class Network(nn.Module):
             x = up(x)
             if i == 2: # in the toppest decoder step
                 x = x + fac_skip
-                x = decoder(x, adapter=adapter)
+                x = decoder(x, use_adapter=use_adapter)
             else:
                 x = x + fac_skip
-                x = decoder(x, adapter=adapter)
+                x = decoder(x, use_adapter=use_adapter)
             i+=1
 
         x = self.ending(x)
@@ -206,11 +207,16 @@ if __name__ == '__main__':
 
     print(macs, params)    
 
-    for name, param in net.named_parameters():
-        if 'adapter' not in name:
-            param.requires_grad_(False)    
+    # for name, param in net.named_parameters():
+    #     if 'adapter' in name:
+    #         param.requires_grad_(False)    
 
-    for name, param in net.named_parameters():
-        print(f"{name}: requires_grad={param.requires_grad}") 
+    # for name, param in net.named_parameters():
+    #     print(f"{name}: requires_grad={param.requires_grad}") 
+    
+    weights = net.state_dict()
+    adapter_weights = {k: v for k, v in weights.items() if 'adapter' not in k}
+    
+    print(adapter_weights.keys())
     
     

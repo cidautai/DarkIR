@@ -1,8 +1,8 @@
 #### general settings
 resume_training:
   resume_training: True
-  resume: must
-  id: m54u1hi1
+  resume: never
+  id:
 
 #### training devices
 device:
@@ -45,13 +45,13 @@ network:
 
 #### training settings: learning rate scheme, loss
 train:
-  lr_initial: !!float 5e-4
+  lr_initial: !!float 5e-3
   lr_scheme: CosineAnnealing
   betas: [0.9, 0.9]
-  epochs: 500
+  epochs: 700
   lr_gamma: 0.5
   weight_decay: !!float 1e-3
-  eta_min: !!float 1e-6
+  eta_min: !!float 5e-5
 
   pixel_criterion: l1
   pixel_weight: 1.0
@@ -79,15 +79,15 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_GOPRO.pt
+  path: ./models/Network_GOPRO_resuming.pt
   best: ./models/bests/
-  new: ./models/Network_GOPRO.pt 
+  new: ./models/Network_GOPRO2.pt 
 #### wandb:
 wandb:
-  init: False
+  init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_GOPRO
+  name: Network_GOPRO2
   save_code: True
 
 

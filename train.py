@@ -1,5 +1,5 @@
 import numpy as np
-import os
+import os, sys
 import time
 import wandb
 from tqdm import tqdm
@@ -19,7 +19,7 @@ from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLos
 
 from data import *
 from options.options import parse
-from utils.utils import load_weights
+from utils.utils import load_weights, load_optim, freeze_parameters
 
 from lpips import LPIPS
 torch.autograd.set_detect_anomaly(True)
@@ -162,10 +162,21 @@ for param in model.parameters():
 opt['macs'] = macs
 opt['params'] = params
 
+model = freeze_parameters(model, substring='adapter', reverse = False) # freeze the adapter if there is any
+
+# for name, param in model.named_parameters():
+#     print(name, param.requires_grad)
+
+
+
+
 # define the optimizer
-optim = torch.optim.AdamW(model.parameters(), lr = opt['train']['lr_initial'],
+optim = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), 
+                          lr = opt['train']['lr_initial'],
                           weight_decay = opt['train']['weight_decay'],
                           betas = opt['train']['betas'])
+# print(optim)
+# sys.exit()
 
 # Initialize the cosine annealing scheduler
 if opt['train']['lr_scheme'] == 'CosineAnnealing':
@@ -178,10 +189,11 @@ if resume_training:
     checkpoints = torch.load(PATH_MODEL)
     weights = checkpoints['model_state_dict']
     # print(weights.keys())
-    remove_prefix = 'module.' # this is needed because the keys now get a module. key that doesn't match with the network one
-    weights = {k[len(remove_prefix):] if k.startswith(remove_prefix) else k: v for k, v in weights.items()}
-    model.load_state_dict(weights)
-    optim.load_state_dict(checkpoints['optimizer_state_dict']),
+    # remove_prefix = 'module.' # this is needed because the keys now get a module. key that doesn't match with the network one
+    # weights = {k[len(remove_prefix):] if k.startswith(remove_prefix) else k: v for k, v in weights.items()}
+    model = load_weights(model, old_weights=weights)
+    # model.load_state_dict(weights)
+    optim = load_optim(optim, optim_weights = checkpoints['optimizer_state_dict'], model = model)
     scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
     start_epochs = checkpoints['epoch']
     resume = opt['resume_training']['resume']
@@ -279,6 +291,8 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         valid_ssim = []
         valid_lpips = []
     model.train()
+    
+    model = freeze_parameters(model, substring='adapter', reverse = False) # freeze the adapter if there is any
     optim_loss = 0
 
     for high_batch, low_batch in train_loader:
@@ -289,7 +303,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
         optim.zero_grad()
         # Feed the data into the model
-        out_side_batch, enhanced_batch = model(low_batch, side_loss = True)
+        out_side_batch, enhanced_batch = model(low_batch, side_loss = True, use_adapter = None)
 
         # calculate loss function to optimize
         l_pixel = pixel_loss(enhanced_batch, high_batch)
@@ -343,7 +357,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
                     high_crop = high_crop.to(device)
                     low_crop = low_crop.to(device)
 
-                    enhanced_crop = model(low_crop)
+                    enhanced_crop = model(low_crop, use_adapter = None)
                     # loss
                     valid_loss_batch += torch.mean((high_crop - enhanced_crop)**2)
                     valid_ssim_batch += calc_SSIM(enhanced_crop, high_crop)
@@ -390,11 +404,13 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
     print(f"Epoch {epoch + 1} of {last_epochs} took {time.time() - start_time:.3f}s\t Loss:{np.mean(train_loss)}\t PSNR:{np.mean(valid_psnr)}\n")
 
+    weights = model.state_dict()
+    baseline_weights = {k: v for k, v in weights.items() if 'adapter' not in k}
 
     # Save the model after every epoch
     model_to_save = {
         'epoch': epoch,
-        'model_state_dict': model.state_dict(),
+        'model_state_dict': baseline_weights,
         'optimizer_state_dict': optim.state_dict(),
         'loss': np.mean(train_loss),
         'scheduler_state_dict': scheduler.state_dict()
