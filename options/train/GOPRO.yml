@@ -1,6 +1,6 @@
 #### general settings
 resume_training:
-  resume_training: True
+  resume_training: False
   resume: must
   id: m54u1hi1
 
@@ -15,8 +15,8 @@ datasets:
   train:
     train_path: /mnt/valab-datasets/GOPRO/train
 
-    n_workers: 8  # per GPU
-    batch_size_train: 16
+    n_workers: 4  # per GPU
+    batch_size_train: 8
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
@@ -30,10 +30,10 @@ network:
   name: Network
   img_channels: 3
   width: 32
-  middle_blk_num_enc: 2
-  middle_blk_num_dec: 2
-  enc_blk_nums: [1, 2, 3]
-  dec_blk_nums: [3, 1, 1]
+  middle_blk_num_enc: 8
+  middle_blk_num_dec: 8
+  enc_blk_nums: [1, 1, 1, 1]
+  dec_blk_nums: [1, 1, 1, 1]
   enc_blk_nums_map: None
   middle_blk_num_map: None
   residual_layers: None
@@ -45,13 +45,13 @@ network:
 
 #### training settings: learning rate scheme, loss
 train:
-  lr_initial: !!float 5e-3
+  lr_initial: !!float 5e-4
   lr_scheme: CosineAnnealing
   betas: [0.9, 0.9]
-  epochs: 700
+  epochs: 500
   lr_gamma: 0.5
   weight_decay: !!float 1e-3
-  eta_min: !!float 5e-4
+  eta_min: !!float 1e-6
 
   pixel_criterion: l1
   pixel_weight: 1.0
@@ -61,7 +61,7 @@ train:
   perceptual_weight: 0.01
   perceptual_reduction: mean
 
-  edge: True 
+  edge: True
   edge_criterion: l2
   edge_weight: 50.0
   edge_reduction: mean
@@ -71,7 +71,7 @@ train:
   frequency_weight: 0.01
   frequency_reduction: sum
 
-  enhance: True
+  enhance: False
   enhance_criterion: l1
   enhance_weight: 0.8
   enhance_reduction: mean
@@ -79,16 +79,16 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_GOPRO_resuming.pt
+  path: ./models/Network_GOPRO_step4.pt
   best: ./models/bests
-  new: ./models/Network_GOPRO2.pt 
+  new: ./models/Network_GOPRO_step4.pt 
 
 #### wandb:
 wandb:
   init: True
-  project: LOLBlur
+  project: GOPRO_LOLBlur
   entity: cidautai
-  name: Network_GOPRO2
+  name: Network_GOPRO_step4
   save_code: True
 
 

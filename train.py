@@ -135,12 +135,12 @@ if network == 'Network':
 elif network == 'NAFNet':
     model = NAFNet(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
-                    middle_blk_num=opt['network']['middle_blk_num'], 
+                    middle_blk_num=opt['network']['middle_blk_num_enc'], 
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'])
 
 else:
-    raise NotImplementedError('This network isnt implemented')
+    raise NotImplementedError('This network is not implemented')
 
 
 # if torch.cuda.device_count() > 1:
@@ -164,8 +164,8 @@ opt['params'] = params
 
 model = freeze_parameters(model, substring='adapter', reverse = False) # freeze the adapter if there is any
 
-# for name, param in model.named_parameters():
-#     print(name, param.requires_grad)
+for name, param in model.named_parameters():
+    print(name, param.requires_grad)
 
 
 
@@ -264,6 +264,7 @@ if enhance:
                                criterion = opt['train']['enhance_criterion'])
 else:
     enhance_loss = None
+    
 calc_SSIM = SSIM(data_range=1.)
 calc_LPIPS = LPIPS(net = 'vgg').to(device)
 
@@ -275,6 +276,7 @@ crop_to_4= CropTo4()
 #---------------------------------------------------------------------------------------------------
 # START THE TRAINING
 best_valid_psnr = 0.
+out_side_batch = None
 
 for epoch in tqdm(range(start_epochs, last_epochs)):
 
@@ -303,7 +305,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
         optim.zero_grad()
         # Feed the data into the model
-        out_side_batch, enhanced_batch = model(low_batch, side_loss = True, use_adapter = None)
+        enhanced_batch = model(low_batch)#, side_loss = False, use_adapter = None)
 
         # calculate loss function to optimize
         l_pixel = pixel_loss(enhanced_batch, high_batch)
@@ -357,7 +359,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
                     high_crop = high_crop.to(device)
                     low_crop = low_crop.to(device)
 
-                    enhanced_crop = model(low_crop, use_adapter = None)
+                    enhanced_crop = model(low_crop)#, use_adapter = None)
                     # loss
                     valid_loss_batch += torch.mean((high_crop - enhanced_crop)**2)
                     valid_ssim_batch += calc_SSIM(enhanced_crop, high_crop)

@@ -107,7 +107,7 @@ class DBlock(nn.Module):
 
 
         self.adapter = Adapter(c, ffn_channel=None)
-
+        
         self.use_adapters = False
 
     def set_use_adapters(self, use_adapters):

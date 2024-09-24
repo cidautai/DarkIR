@@ -50,7 +50,7 @@ class Network(nn.Module):
         for num in enc_blk_nums:
             self.encoders.append(
                 CustomSequential(
-                    *[EBlock(chan, extra_depth_wise=extra_depth_wise) for _ in range(num)]
+                    *[DBlock(chan, extra_depth_wise=extra_depth_wise, dilations=dilations) for _ in range(num)]
                 )
             )
             self.downs.append(
@@ -60,7 +60,7 @@ class Network(nn.Module):
 
         self.middle_blks_enc = \
             CustomSequential(
-                *[EBlock(chan, extra_depth_wise=extra_depth_wise) for _ in range(middle_blk_num_enc)]
+                *[DBlock(chan, extra_depth_wise=extra_depth_wise, dilations=dilations) for _ in range(middle_blk_num_enc)]
             )
         self.middle_blks_dec = \
             CustomSequential(
@@ -77,7 +77,7 @@ class Network(nn.Module):
             chan = chan // 2
             self.decoders.append(
                 CustomSequential(
-                    *[DBlock(chan,dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(num)]
+                    *[DBlock(chan, dilations = dilations, extra_depth_wise=extra_depth_wise) for _ in range(num)]
                 )
             )
 
@@ -170,10 +170,10 @@ if __name__ == '__main__':
     # middle_blk_num = 3
     # dec_blks = [2, 1, 1, 1]
     
-    enc_blks = [1, 2, 3]
-    middle_blk_num_enc = 2
-    middle_blk_num_dec = 2
-    dec_blks = [3, 1, 1]
+    enc_blks = [1, 1, 1, 1]
+    middle_blk_num_enc = 8
+    middle_blk_num_dec = 8
+    dec_blks = [1, 1, 1, 1]
     residual_layers = None
     dilations = [1, 4, 9]
     extra_depth_wise = True
@@ -191,9 +191,9 @@ if __name__ == '__main__':
     # print(net.state_dict())
     # NAF = NAFNet(img_channel=img_channel, width=width, middle_blk_num=middle_blk_num,
     #                   enc_blk_nums=enc_blks, dec_blk_nums=dec_blks)
-    checkpoints = torch.load('/home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/bests/Network_noFAC_EnhanceLoss_LOLBlur_Original.pt')
-    weights = checkpoints['model_state_dict']
-    new_state_dict.update({k: v for k, v in weights.items() if k in new_state_dict})
+    # checkpoints = torch.load('/home/danfei/Python_workspace/deblur/Net-Low-Light-Deblurring/models/bests/Network_noFAC_EnhanceLoss_LOLBlur_Original.pt')
+    # weights = checkpoints['model_state_dict']
+    # new_state_dict.update({k: v for k, v in weights.items() if k in new_state_dict})
     inp_shape = (3, 256, 256)
 
     # net.load_state_dict(checkpoints)
@@ -217,6 +217,6 @@ if __name__ == '__main__':
     weights = net.state_dict()
     adapter_weights = {k: v for k, v in weights.items() if 'adapter' not in k}
     
-    print(adapter_weights.keys())
+    # print(adapter_weights.keys())
     
     
