@@ -55,6 +55,7 @@ device = torch.device('cuda')
 
 #selected network
 network = opt['network']['name']
+side_out = False
 
 # PATH_MODEL = opt['save']['best']
 print(network)
@@ -62,11 +63,14 @@ print(network)
 if network == 'Network':
     model = Network(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
-                    middle_blk_num=opt['network']['middle_blk_num'], 
+                    middle_blk_num_enc=opt['network']['middle_blk_num_enc'],
+                    middle_blk_num_dec=opt['network']['middle_blk_num_dec'], 
                     enc_blk_nums=opt['network']['enc_blk_nums'],
                     dec_blk_nums=opt['network']['dec_blk_nums'], 
                     dilations=opt['network']['dilations'],
-                    extra_depth_wise = opt['network']['dilations'])
+                    extra_depth_wise=opt['network']['extra_depth_wise'],
+                    ksize=opt['network']['ksize'],
+                    side_out=side_out)
 elif network == 'NAFNet':
     model = NAFNet(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
@@ -94,7 +98,7 @@ PATH_RESULTS_LOLBLUR = opt['LOLBlur']['results_path']
 PATH_IMAGES_REALBLUR = opt['RealBlur']['inputs_path']
 PATH_RESULTS_REALBLUR = opt['RealBlur']['results_path']
 
-not os.path.isdir('./results') and os.mkdir('./results')
+# not os.path.isdir('./results') and os.mkdir('./results')
 not os.path.isdir(PATH_RESULTS_LOLBLUR) and os.mkdir(PATH_RESULTS_LOLBLUR)
 not os.path.isdir(PATH_RESULTS_REALBLUR) and os.mkdir(PATH_RESULTS_REALBLUR)
 
@@ -107,12 +111,23 @@ with torch.no_grad():
     
     for path in path_images_lolblur:
         tensor = path_to_tensor(path).to(device)
-        _, _, H, W = tensor.shape
-        tensor = pad_tensor(tensor)
-        output = torch.clamp(model(tensor), 0., 1.)
-        output = output[:,:, :H, :W]
-        print(output.shape, output.dtype, torch.max(output), torch.min(output))
-        save_tensor(output, os.path.join(PATH_RESULTS_LOLBLUR, os.path.basename(path)))
+        # _, _, H, W = tensor.shape
+        # tensor = pad_tensor(tensor)
+        if network == 'Network' and side_out:
+            side_out, output = model(tensor, side_loss=side_out)
+            side_out, output = torch.clamp(side_out, 0., 1.), torch.clamp(output, 0., 1.)
+            # output = output[:,:, :H, :W]
+            print('Image:', output.shape, output.dtype, torch.max(output), torch.min(output))
+            print('Low-Res:', side_out.shape, side_out.dtype, torch.max(side_out), torch.min(side_out))
+            save_tensor(output, os.path.join(PATH_RESULTS_LOLBLUR, os.path.basename(path)))
+            save_tensor(side_out, os.path.join(PATH_RESULTS_LOLBLUR,'low_res'+os.path.basename(path)))
+        
+        else:
+            output = model(tensor, side_loss=False)
+            output = torch.clamp(model(tensor), 0., 1.)
+            # output = output[:,:, :H, :W]
+            print(output.shape, output.dtype, torch.max(output), torch.min(output))
+            save_tensor(output, os.path.join(PATH_RESULTS_LOLBLUR, os.path.basename(path)))
     
     for path in path_images_realblur:
         tensor = path_to_tensor(path).to(device)

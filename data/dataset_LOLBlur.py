@@ -49,9 +49,15 @@ def random_sort_pairs(list1, list2):
 
     return list1, list2
 
-def main_dataset_lolblur(train_path='/mnt/valab-datasets/LOLBlur/train', test_path='/mnt/valab-datasets/LOLBlur/test',
-                       batch_size_train=4, batch_size_test=1, verbose=False, cropsize=512, flips = None,
-                       num_workers=1, crop_type='Random'):
+def main_dataset_lolblur(train_path='/mnt/valab-datasets/LOLBlur/train', 
+                         test_path='/mnt/valab-datasets/LOLBlur/test',
+                         batch_size_train=4, 
+                         batch_size_test=1, 
+                         verbose=False, 
+                         cropsize=512, 
+                         flips = None,
+                         num_workers=1, 
+                         crop_type='Random'):
     
     
     PATH_TRAIN = train_path
@@ -109,16 +115,17 @@ def main_dataset_lolblur(train_path='/mnt/valab-datasets/LOLBlur/train', test_pa
 
     # Load the datasets
     train_dataset = MyDataset_Crop(list_blur, list_sharp, cropsize=cropsize,
-                                   tensor_transform=tensor_transform, flips=flip_transform, test=False, crop_type=crop_type)
+                                   tensor_transform=tensor_transform, flips=flip_transform, 
+                                   test=False, crop_type=crop_type)
     test_dataset = MyDataset_Crop(list_blur_valid, list_sharp_valid, cropsize=None,
-                                  tensor_transform=tensor_transform, test=True, crop_type=crop_type)
+                                  tensor_transform=tensor_transform, test=True, 
+                                  crop_type=crop_type)
 
     # #Load the data loaders
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=True,
                               num_workers=num_workers, pin_memory=True, drop_last=True)
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size_test, shuffle=True,
                              num_workers=num_workers, pin_memory=True, drop_last=False)
-    # #test_loader = None
 
     return train_loader, test_loader
 

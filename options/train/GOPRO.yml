@@ -1,8 +1,8 @@
 #### general settings
 resume_training:
-  resume_training: False
+  resume_training: True
   resume: must
-  id: 78ladjjx
+  id: m54u1hi1
 
 #### training devices
 device:
@@ -11,18 +11,18 @@ device:
 
 #### datasets
 datasets:
-  name: LOLBlur
+  name: GOPRO
   train:
-    train_path: /mnt/valab-datasets/LOLBlur/train
+    train_path: /home/danfei/Python_workspace/GOPRO_dataset/train
 
-    n_workers: 4  # per GPU
+    n_workers: 8  # per GPU
     batch_size_train: 16
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
     crop_type: Random
   val:
-    test_path: /mnt/valab-datasets/LOLBlur/test
+    test_path: /home/danfei/Python_workspace/GOPRO_dataset/test
     batch_size_test: 1
 
 #### network structures
@@ -45,13 +45,13 @@ network:
 
 #### training settings: learning rate scheme, loss
 train:
-  lr_initial: !!float 5e-4
+  lr_initial: !!float 5e-3
   lr_scheme: CosineAnnealing
   betas: [0.9, 0.9]
-  epochs: 500
+  epochs: 700
   lr_gamma: 0.5
   weight_decay: !!float 1e-3
-  eta_min: !!float 1e-6
+  eta_min: !!float 5e-4
 
   pixel_criterion: l1
   pixel_weight: 1.0
@@ -79,15 +79,15 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_EnhanceLoss_LOLBlur_Original.pt
+  path: ./models/Network_GOPRO.pt
   best: ./models/bests/
-  new: ./models/Network_noFAC_EnhanceLoss_LOLBlur_Original.pt 
+  new: ./models/Network_GOPRO_resuming.pt 
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_EnhanceLoss_LOLBlur_Original
+  name: Network_GOPRO
   save_code: True
 
 
