@@ -1,5 +1,5 @@
 import numpy as np
-import os, sys
+import os
 import time
 import wandb
 from tqdm import tqdm
@@ -19,14 +19,14 @@ from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLos
 
 from data import *
 from options.options import parse
-from utils.utils import load_weights, load_optim, freeze_parameters
+from utils.utils import load_weights, freeze_parameters
 
 from lpips import LPIPS
 torch.autograd.set_detect_anomaly(True)
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
-# the file and change them what you need
-path_options = './options/train/GOPRO.yml'
+# the file and change them what you need.
+path_options = './options/train/Finetune.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
 # print(opt)
@@ -38,13 +38,14 @@ device = torch.device('cuda') if opt['device']['cuda'] else torch.device('cpu')
 network = opt['network']['name']
 
 #parameters for saving model
-PATH_MODEL     = opt['save']['path']
+PATH_MODEL     = opt['save']['path_model']
+PATH_ADAPTER   = opt['save']['path']
 if opt['save']['new']:
-    NEW_PATH_MODEL = opt['save']['new']
+    NEW_PATH_ADAPTER = opt['save']['new']
 else: 
-    NEW_PATH_MODEL = opt['save']['path']
+    NEW_PATH_ADAPTER = opt['save']['path']
     
-BEST_PATH_MODEL = os.path.join(opt['save']['best'], os.path.basename(NEW_PATH_MODEL))
+BEST_PATH_ADAPTER = os.path.join(opt['save']['best'], os.path.basename(NEW_PATH_ADAPTER))
 
 
 wandb_log = opt['wandb']['init']  # flag if we want to output the results in wandb
@@ -142,10 +143,6 @@ elif network == 'NAFNet':
 else:
     raise NotImplementedError('This network isnt implemented')
 
-
-# if torch.cuda.device_count() > 1:
-#     print("Usando", torch.cuda.device_count(), "GPUs!")
-#     model = nn.DataParallel(model)
 model = model.to(device)
 #calculate MACs and number of parameters
 macs, params = get_model_complexity_info(model, (3, 256, 256), print_per_layer_stat = False)
@@ -162,21 +159,10 @@ for param in model.parameters():
 opt['macs'] = macs
 opt['params'] = params
 
-model = freeze_parameters(model, substring='adapter', reverse = False) # freeze the adapter if there is any
-
-# for name, param in model.named_parameters():
-#     print(name, param.requires_grad)
-
-
-
-
 # define the optimizer
-optim = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), 
-                          lr = opt['train']['lr_initial'],
+optim = torch.optim.AdamW(model.parameters(), lr = opt['train']['lr_initial'],
                           weight_decay = opt['train']['weight_decay'],
                           betas = opt['train']['betas'])
-# print(optim)
-# sys.exit()
 
 # Initialize the cosine annealing scheduler
 if opt['train']['lr_scheme'] == 'CosineAnnealing':
@@ -184,18 +170,21 @@ if opt['train']['lr_scheme'] == 'CosineAnnealing':
 else: 
     raise NotImplementedError('scheduler not implemented')
 
+checkpoints = torch.load(PATH_MODEL)
+model = load_weights(model, old_weights=checkpoints['model_state_dict'])
+# print(model)
+# optim.load_state_dict(checkpoints['optimizer_state_dict'])
+# scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
+print('--------', type(model))
 # if resume load the weights
+
 if resume_training:
-    checkpoints = torch.load(PATH_MODEL)
-    weights = checkpoints['model_state_dict']
-    # print(weights.keys())
-    # remove_prefix = 'module.' # this is needed because the keys now get a module. key that doesn't match with the network one
-    # weights = {k[len(remove_prefix):] if k.startswith(remove_prefix) else k: v for k, v in weights.items()}
-    model = load_weights(model, old_weights=weights)
-    # model.load_state_dict(weights)
-    optim = load_optim(optim, optim_weights = checkpoints['optimizer_state_dict'], model = model)
+    checkpoints = torch.load(PATH_ADAPTER)
+    # weights_adapter = checkpoints['model_state_dict']
+    model = load_weights(model, old_weights=checkpoints['model_state_dict'])
+    # model.load_state_dict(checkpoints['model_state_dict'])
+    optim.load_state_dict(checkpoints['optimizer_state_dict']),
     scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
-    start_epochs = checkpoints['epoch']
     resume = opt['resume_training']['resume']
     id = opt['resume_training']['id']
     print('Loaded weights')
@@ -203,6 +192,10 @@ else:
     resume = 'never'
     id = None
 
+#freeze the parameters that aren't from the adapter
+model = freeze_parameters(model, substring='adapter')
+
+print(type(model))
 #---------------------------------------------------------------------------------------------------
 # LOG INTO WANDB
 if wandb_log:
@@ -290,9 +283,8 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
         valid_psnr = []
         valid_ssim = []
         valid_lpips = []
+        
     model.train()
-    
-    model = freeze_parameters(model, substring='adapter', reverse = False) # freeze the adapter if there is any
     optim_loss = 0
 
     for high_batch, low_batch in train_loader:
@@ -303,7 +295,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
         optim.zero_grad()
         # Feed the data into the model
-        out_side_batch, enhanced_batch = model(low_batch, side_loss = True, use_adapter = None)
+        out_side_batch, enhanced_batch = model(low_batch, side_loss = True, adapter = True)
 
         # calculate loss function to optimize
         l_pixel = pixel_loss(enhanced_batch, high_batch)
@@ -357,7 +349,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
                     high_crop = high_crop.to(device)
                     low_crop = low_crop.to(device)
 
-                    enhanced_crop = model(low_crop, use_adapter = None)
+                    out_side_batch, enhanced_crop = model(low_crop, side_loss = True, adapter=True)
                     # loss
                     valid_loss_batch += torch.mean((high_crop - enhanced_crop)**2)
                     valid_ssim_batch += calc_SSIM(enhanced_crop, high_crop)
@@ -373,7 +365,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
             else: # then we process the image normally
                 high_batch_valid = high_batch_valid.to(device)
                 low_batch_valid = low_batch_valid.to(device)
-                enhanced_batch_valid = model(low_batch_valid)
+                enhanced_batch_valid = model(low_batch_valid, adapter = True)
                 # loss
                 valid_loss_batch = torch.mean((high_batch_valid - enhanced_batch_valid)**2)
                 valid_ssim_batch = calc_SSIM(enhanced_batch_valid, high_batch_valid)
@@ -404,23 +396,23 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
 
     print(f"Epoch {epoch + 1} of {last_epochs} took {time.time() - start_time:.3f}s\t Loss:{np.mean(train_loss)}\t PSNR:{np.mean(valid_psnr)}\n")
 
+    #select only the adapter weights that are the finetuned ones
     weights = model.state_dict()
-    baseline_weights = {k: v for k, v in weights.items() if 'adapter' not in k}
-
-    # Save the model after every epoch
-    model_to_save = {
+    adapter_weights = {k: v for k, v in weights.items() if 'adapter' in k}
+    # Save the adapter after every epoch
+    adapter_to_save = {
         'epoch': epoch,
-        'model_state_dict': baseline_weights,
+        'model_state_dict': adapter_weights,
         'optimizer_state_dict': optim.state_dict(),
         'loss': np.mean(train_loss),
         'scheduler_state_dict': scheduler.state_dict()
     }
-    torch.save(model_to_save, NEW_PATH_MODEL)
+    torch.save(adapter_to_save, NEW_PATH_ADAPTER)
 
     #save best model if new valid_psnr is higher than the best one
     if np.mean(valid_psnr) >= best_valid_psnr:
         
-        torch.save(model_to_save, BEST_PATH_MODEL)
+        torch.save(adapter_to_save, BEST_PATH_ADAPTER)
         
         best_valid_psnr = np.mean(valid_psnr) # update best psnr
 

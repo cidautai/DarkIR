@@ -1,8 +1,8 @@
 #### general settings
 resume_training:
-  resume_training: True
+  resume_training: False
   resume: must
-  id: m54u1hi1
+  id: 78ladjjx
 
 #### training devices
 device:
@@ -15,7 +15,7 @@ datasets:
   train:
     train_path: /mnt/valab-datasets/GOPRO/train
 
-    n_workers: 8  # per GPU
+    n_workers: 4  # per GPU
     batch_size_train: 16
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
@@ -45,13 +45,13 @@ network:
 
 #### training settings: learning rate scheme, loss
 train:
-  lr_initial: !!float 5e-3
+  lr_initial: !!float 5e-4
   lr_scheme: CosineAnnealing
   betas: [0.9, 0.9]
-  epochs: 700
+  epochs: 500
   lr_gamma: 0.5
   weight_decay: !!float 1e-3
-  eta_min: !!float 5e-4
+  eta_min: !!float 1e-6
 
   pixel_criterion: l1
   pixel_weight: 1.0
@@ -79,16 +79,16 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_GOPRO_resuming.pt
-  best: ./models/bests
-  new: ./models/Network_GOPRO2.pt 
-
+  path_model: ./models/bests/Network_GOPRO_resuming.pt
+  path: ./adapters/Network_adapter_LOLBlur.pt
+  best: ./adapters/bests/
+  new: ./adapters/Network_adapter_LOLBlur.pt 
 #### wandb:
 wandb:
   init: True
   project: LOLBlur
   entity: cidautai
-  name: Network_GOPRO2
+  name: Network_GOPRO_LOLBlur
   save_code: True
 
 
