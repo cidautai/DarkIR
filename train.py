@@ -11,17 +11,16 @@ import torch.optim
 import torch.nn as nn
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from ptflops import get_model_complexity_info
+from lpips import LPIPS
 
 from data.datapipeline import *
-from archs import Network
-from archs import NAFNet
+from archs import Network, NAFNet
 from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss, FrequencyLoss, EnhanceLoss
-
 from data import *
 from options.options import parse
 from utils.utils import load_weights, load_optim, freeze_parameters
 
-from lpips import LPIPS
+
 torch.autograd.set_detect_anomaly(True)
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
@@ -29,13 +28,9 @@ torch.autograd.set_detect_anomaly(True)
 path_options = './options/train/GOPRO.yml'
 print(os.path.isfile(path_options))
 opt = parse(path_options)
-# print(opt)
+
 # define some parameters based on the run we want to make
-# os.environ["CUDA_VISIBLE_DEVICES"]= '0, 1'
 device = torch.device('cuda') if opt['device']['cuda'] else torch.device('cpu')
-# print(device)
-#selected network
-network = opt['network']['name']
 
 #parameters for saving model
 PATH_MODEL     = opt['save']['path']
@@ -55,74 +50,10 @@ last_epochs = opt['train']['epochs']
 
 #---------------------------------------------------------------------------------------------------
 # LOAD THE DATALOADERS
-if opt['datasets']['name'] == 'NBDN':
-    train_loader, test_loader = main_dataset_nbdn(train_path=opt['datasets']['train']['train_path'],
-                                                test_path = opt['datasets']['val']['test_path'],
-                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
-                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
-                                                flips = opt['datasets']['train']['flips'],
-                                                verbose=opt['datasets']['train']['verbose'],
-                                                cropsize=opt['datasets']['train']['cropsize'],
-                                                num_workers=opt['datasets']['train']['n_workers'],
-                                                crop_type=opt['datasets']['train']['crop_type'])
-elif opt['datasets']['name'] == 'LOLBlur':
-    train_loader, test_loader = main_dataset_lolblur(train_path=opt['datasets']['train']['train_path'],
-                                                test_path = opt['datasets']['val']['test_path'],
-                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
-                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
-                                                flips = opt['datasets']['train']['flips'],
-                                                verbose=opt['datasets']['train']['verbose'],
-                                                cropsize=opt['datasets']['train']['cropsize'],
-                                                num_workers=opt['datasets']['train']['n_workers'],
-                                                crop_type=opt['datasets']['train']['crop_type'])
-elif opt['datasets']['name'] == 'LOL':
-    train_loader, test_loader = main_dataset_lol(train_path=opt['datasets']['train']['train_path'],
-                                                test_path = opt['datasets']['val']['test_path'],
-                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
-                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
-                                                flips = opt['datasets']['train']['flips'],
-                                                verbose=opt['datasets']['train']['verbose'],
-                                                cropsize=opt['datasets']['train']['cropsize'],
-                                                num_workers=opt['datasets']['train']['n_workers'],
-                                                crop_type=opt['datasets']['train']['crop_type'])
-elif opt['datasets']['name'] == 'LOLv2':
-    train_loader, test_loader = main_dataset_lolv2(train_path=opt['datasets']['train']['train_path'],
-                                                test_path = opt['datasets']['val']['test_path'],
-                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
-                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
-                                                flips = opt['datasets']['train']['flips'],
-                                                verbose=opt['datasets']['train']['verbose'],
-                                                cropsize=opt['datasets']['train']['cropsize'],
-                                                num_workers=opt['datasets']['train']['n_workers'],
-                                                crop_type=opt['datasets']['train']['crop_type'])    
-elif opt['datasets']['name'] == 'LOLv2_synth':
-    train_loader, test_loader = main_dataset_lolv2_synth(train_path=opt['datasets']['train']['train_path'],
-                                                test_path = opt['datasets']['val']['test_path'],
-                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
-                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
-                                                flips = opt['datasets']['train']['flips'],
-                                                verbose=opt['datasets']['train']['verbose'],
-                                                cropsize=opt['datasets']['train']['cropsize'],
-                                                num_workers=opt['datasets']['train']['n_workers'],
-                                                crop_type=opt['datasets']['train']['crop_type'])
-
-elif opt['datasets']['name'] == 'GOPRO':
-    train_loader, test_loader = main_dataset_gopro(train_path=opt['datasets']['train']['train_path'],
-                                                test_path = opt['datasets']['val']['test_path'],
-                                                batch_size_train=opt['datasets']['train']['batch_size_train'],
-                                                batch_size_test=opt['datasets']['val']['batch_size_test'],
-                                                flips = opt['datasets']['train']['flips'],
-                                                verbose=opt['datasets']['train']['verbose'],
-                                                cropsize=opt['datasets']['train']['cropsize'],
-                                                num_workers=opt['datasets']['train']['n_workers'],
-                                                crop_type=opt['datasets']['train']['crop_type'])
-    
-else:
-    name_loader = opt['datasets']['name']
-    raise NotImplementedError(f'{name_loader} is not implemented')
+train_loader, test_loader = create_data(opt['datasets'])
 #---------------------------------------------------------------------------------------------------
 # DEFINE NETWORK, SCHEDULER AND OPTIMIZER
-
+network = opt['network']['name']
 if network == 'Network':
     model = Network(img_channel=opt['network']['img_channels'], 
                     width=opt['network']['width'], 
@@ -143,9 +74,6 @@ else:
     raise NotImplementedError('This network is not implemented')
 
 
-# if torch.cuda.device_count() > 1:
-#     print("Usando", torch.cuda.device_count(), "GPUs!")
-#     model = nn.DataParallel(model)
 model = model.to(device)
 #calculate MACs and number of parameters
 macs, params = get_model_complexity_info(model, (3, 256, 256), print_per_layer_stat = False)

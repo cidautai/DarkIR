@@ -1,8 +1,8 @@
 #### general settings
 resume_training:
-  resume_training: False
+  resume_training: True
   resume: must
-  id: m54u1hi1
+  id: yyx5bnax
 
 #### training devices
 device:
@@ -14,7 +14,6 @@ datasets:
   name: GOPRO
   train:
     train_path: /mnt/valab-datasets/GOPRO/train
-
     n_workers: 4  # per GPU
     batch_size_train: 8
     cropsize: 256   # size you want to crop out as input sample.
@@ -32,12 +31,12 @@ network:
   width: 32
   middle_blk_num_enc: 8
   middle_blk_num_dec: 8
-  enc_blk_nums: [1, 1, 1, 1]
-  dec_blk_nums: [1, 1, 1, 1]
+  enc_blk_nums: [1, 1, 1]
+  dec_blk_nums: [1, 1, 1]
   enc_blk_nums_map: None
   middle_blk_num_map: None
   residual_layers: None
-  dilations: [1, 4, 9]
+  dilations: [1, 1, 1]
   spatial: None
   extra_depth_wise: True
   ksize: None
@@ -79,16 +78,16 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_GOPRO_step4.pt
+  path: ./models/Network_GOPRO_dilation1.pt
   best: ./models/bests
-  new: ./models/Network_GOPRO_step4.pt 
+  new: ./models/Network_GOPRO_dilation1.pt 
 
 #### wandb:
 wandb:
   init: True
   project: GOPRO_LOLBlur
   entity: cidautai
-  name: Network_GOPRO_step4
+  name: Network_GOPRO_dilation1
   save_code: True
 
 
