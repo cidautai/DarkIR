@@ -3,19 +3,15 @@ import os, sys
 import time
 import wandb
 from tqdm import tqdm
-import subprocess
 
-# PyTorch library
 import torch
 import torch.optim
 import torch.nn as nn
-from torch.optim.lr_scheduler import CosineAnnealingLR
-from ptflops import get_model_complexity_info
 from lpips import LPIPS
 
 from data.datapipeline import *
-from archs import create_model, resume_model, freeze_parameters, create_optim_scheduler
-from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss, FrequencyLoss, EnhanceLoss
+from archs import *
+from losses import *
 from data import *
 from options.options import parse
 from utils.utils import init_wandb
@@ -58,7 +54,6 @@ model = freeze_parameters(model, substring='adapter', reverse = False) # freeze 
 # for name, param in model.named_parameters():
 #     print(name, param.requires_grad)
 
-
 # define the optimizer
 optim, scheduler = create_optim_scheduler(opt['train'], model)
 
@@ -70,52 +65,8 @@ model, optim, scheduler, start_epochs = resume_model(model, optim, scheduler, pa
 init_wandb(opt)
 #---------------------------------------------------------------------------------------------------
 # DEFINE LOSSES AND METRICS
+all_losses = create_loss(opt['train'])
 
-# first the pixel losses
-if opt['train']['pixel_criterion'] == 'l1':
-    pixel_loss = L1Loss()
-elif opt['train']['pixel_criterion'] == 'l2':
-    pixel_loss = MSELoss()
-elif opt['train']['pixel_criterion'] == 'Charbonnier':
-    pixel_loss = CharbonnierLoss()
-else:
-    raise NotImplementedError
-
-# now the perceptual loss
-perceptual = opt['train']['perceptual']
-if perceptual:
-    perceptual_loss = VGGLoss(loss_weight = opt['train']['perceptual_weight'],
-                              criterion = opt['train']['perceptual_criterion'],
-                              reduction = opt['train']['perceptual_reduction'])
-else:
-    perceptual_loss = None
-
-# the edge loss
-edge = opt['train']['edge'] 
-if edge:
-    edge_loss = EdgeLoss(loss_weight = opt['train']['edge_weight'],
-                              criterion = opt['train']['edge_criterion'],
-                              reduction = opt['train']['edge_reduction'])
-else:
-    edge_loss = None
-
-# the frequency loss
-frequency = opt['train']['frequency']
-if frequency:
-    frequency_loss = FrequencyLoss(loss_weight = opt['train']['edge_weight'],
-                              reduction = opt['train']['edge_reduction'],
-                              criterion = opt['train']['frequency_criterion'])
-else:
-    frequency_loss = None
-# the enhance loss
-enhance = opt['train']['enhance']
-if enhance:
-    enhance_loss = EnhanceLoss(loss_weight= opt['train']['enhance_weight'],
-                               reduction = opt['train']['enhance_reduction'],
-                               criterion = opt['train']['enhance_criterion'])
-else:
-    enhance_loss = None
-    
 calc_SSIM = SSIM(data_range=1.)
 calc_LPIPS = LPIPS(net = 'vgg').to(device)
 
@@ -127,7 +78,7 @@ crop_to_4= CropTo4()
 #---------------------------------------------------------------------------------------------------
 # START THE TRAINING
 best_valid_psnr = 0.
-out_side_batch = None
+outside_batch = None
 
 for epoch in tqdm(range(start_epochs, opt['train']['epochs'])):
 
@@ -157,18 +108,8 @@ for epoch in tqdm(range(start_epochs, opt['train']['epochs'])):
         optim.zero_grad()
         # Feed the data into the model
         enhanced_batch = model(low_batch)#, side_loss = False, use_adapter = None)
-
         # calculate loss function to optimize
-        l_pixel = pixel_loss(enhanced_batch, high_batch)
-        if perceptual:
-            l_pixel += perceptual_loss(enhanced_batch, high_batch)
-        if edge:
-            l_pixel += edge_loss(enhanced_batch, high_batch)
-        if frequency:
-            l_pixel += frequency_loss(enhanced_batch, high_batch)
-        if enhance:
-            l_pixel += enhance_loss(out_side_batch, high_batch)
-        optim_loss = l_pixel
+        optim_loss = calculate_loss(all_losses, enhanced_batch, high_batch, outside_batch)
 
         # Calculate loss function for the PSNR
         loss = torch.mean((high_batch - enhanced_batch)**2)
