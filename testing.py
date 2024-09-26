@@ -9,7 +9,7 @@ import torch
 import torch.optim
 from ptflops import get_model_complexity_info
 
-from data.datapipeline import *
+from data.datasets.datapipeline import *
 from archs import Network
 from archs import NAFNet
 from losses.loss import SSIM

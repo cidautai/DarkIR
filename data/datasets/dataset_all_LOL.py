@@ -12,7 +12,7 @@ import cv2 as cv
 try:
     from .datapipeline import *
 except:
-    from datapipeline import *
+    from data.datasets.datapipeline import *
     
 def create_path(IMGS_PATH, list_new_files):
     '''

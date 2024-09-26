@@ -9,7 +9,7 @@ import torch.optim
 import torch.nn as nn
 from lpips import LPIPS
 
-from data.datapipeline import *
+from data.datasets.datapipeline import *
 from archs import *
 from losses import *
 from data import *

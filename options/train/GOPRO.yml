@@ -9,7 +9,7 @@ datasets:
   train:
     train_path: /mnt/valab-datasets/GOPRO/train
     n_workers: 4  # per GPU
-    batch_size_train: 2
+    batch_size_train: 16
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
@@ -20,16 +20,16 @@ datasets:
 
 #### network structures
 network:
-  name: Network
-  resume_training: True
+  name: NAFNet
+  resume_training: False
   img_channels: 3
   width: 32
-  middle_blk_num_enc: 8
-  middle_blk_num_dec: 8
-  enc_blk_nums: [1, 1, 1]
-  dec_blk_nums: [1, 1, 1]
-  dilations: [1, 1, 1]
-  extra_depth_wise: True
+  middle_blk_num_enc: 1
+  middle_blk_num_dec: 1
+  enc_blk_nums: [1, 1, 1, 28]
+  dec_blk_nums: [1, 1, 1, 1]
+  dilations: [1]
+  extra_depth_wise: False
 
 
 #### training settings: learning rate scheme, loss
@@ -68,18 +68,18 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_GOPRO_dilation1.pt
+  path: ./models/NAFNet_GOPRO.pt
   best: ./models/bests
-  new: ./models/Network_GOPRO_dilation1.pt 
+  new: ./models/NAFNet_GOPRO.pt 
 
 #### wandb:
 wandb:
-  init: False
+  init: True
   project: GOPRO_LOLBlur
   entity: cidautai
-  name: Network_GOPRO_dilation1
+  name: NAFNet_GOPRO
   save_code: True
   resume: never # resume: must, if uploading to an existing project
-  id: None # must be None if don't want to overwrite an existing project
+  id: # must be empty if don't want to overwrite an existing project
 
 

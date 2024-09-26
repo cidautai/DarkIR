@@ -1,7 +1,7 @@
-from .dataset_gopro import main_dataset_gopro
-from .dataset_LOL import main_dataset_lol
-from .dataset_LOLBlur import main_dataset_lolblur
-from .dataset_LOLv2 import main_dataset_lolv2, main_dataset_lolv2_synth
+from .datasets.dataset_gopro import main_dataset_gopro
+from .datasets.dataset_LOL import main_dataset_lol
+from .datasets.dataset_LOLBlur import main_dataset_lolblur
+from .datasets.dataset_LOLv2 import main_dataset_lolv2, main_dataset_lolv2_synth
 # from .dataset_all_LOL import main_dataset_all_lol
 # from .dataset_gopro_lolblur import main_dataset_gopro_lolblur
 # from .create_data import create_data
