@@ -75,6 +75,8 @@ def create_data(opt):
     else:
         raise NotImplementedError(f'{name} is not implemented')        
 
+    print(f'Using {name} Dataset')
+    
     return train_loader, test_loader
 
 __all__ = ['create_data']

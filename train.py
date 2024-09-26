@@ -14,11 +14,11 @@ from ptflops import get_model_complexity_info
 from lpips import LPIPS
 
 from data.datapipeline import *
-from archs import Network, NAFNet
+from archs import create_model, resume_model, freeze_parameters, create_optim_scheduler
 from losses.loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss, FrequencyLoss, EnhanceLoss
 from data import *
 from options.options import parse
-from utils.utils import load_weights, load_optim, freeze_parameters
+from utils.utils import init_wandb
 
 
 torch.autograd.set_detect_anomaly(True)
@@ -26,7 +26,7 @@ torch.autograd.set_detect_anomaly(True)
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need
 path_options = './options/train/GOPRO.yml'
-print(os.path.isfile(path_options))
+# print(os.path.isfile(path_options))
 opt = parse(path_options)
 
 # define some parameters based on the run we want to make
@@ -41,50 +41,13 @@ else:
     
 BEST_PATH_MODEL = os.path.join(opt['save']['best'], os.path.basename(NEW_PATH_MODEL))
 
-
-wandb_log = opt['wandb']['init']  # flag if we want to output the results in wandb
-resume_training = opt['resume_training']['resume_training'] # flag if we want to resume training
-
-start_epochs = 0
-last_epochs = opt['train']['epochs']
-
 #---------------------------------------------------------------------------------------------------
 # LOAD THE DATALOADERS
 train_loader, test_loader = create_data(opt['datasets'])
+
 #---------------------------------------------------------------------------------------------------
 # DEFINE NETWORK, SCHEDULER AND OPTIMIZER
-network = opt['network']['name']
-if network == 'Network':
-    model = Network(img_channel=opt['network']['img_channels'], 
-                    width=opt['network']['width'], 
-                    middle_blk_num_enc=opt['network']['middle_blk_num_enc'],
-                    middle_blk_num_dec=opt['network']['middle_blk_num_dec'], 
-                    enc_blk_nums=opt['network']['enc_blk_nums'],
-                    dec_blk_nums=opt['network']['dec_blk_nums'], 
-                    dilations=opt['network']['dilations'],
-                    extra_depth_wise=opt['network']['extra_depth_wise'])
-elif network == 'NAFNet':
-    model = NAFNet(img_channel=opt['network']['img_channels'], 
-                    width=opt['network']['width'], 
-                    middle_blk_num=opt['network']['middle_blk_num_enc'], 
-                    enc_blk_nums=opt['network']['enc_blk_nums'],
-                    dec_blk_nums=opt['network']['dec_blk_nums'])
-
-else:
-    raise NotImplementedError('This network is not implemented')
-
-
-model = model.to(device)
-#calculate MACs and number of parameters
-macs, params = get_model_complexity_info(model, (3, 256, 256), print_per_layer_stat = False)
-print('Computational complexity: ', macs)
-print('Number of parameters: ', params)
-
-
-
-for param in model.parameters():
-    if param.device != torch.device('cuda:0'):
-        print('not on gpu')
+model, macs, params = create_model(opt['network'], cuda = opt['device']['cuda'])
 
 # save this stats into opt to upload to wandb
 opt['macs'] = macs
@@ -92,59 +55,19 @@ opt['params'] = params
 
 model = freeze_parameters(model, substring='adapter', reverse = False) # freeze the adapter if there is any
 
-for name, param in model.named_parameters():
-    print(name, param.requires_grad)
-
-
+# for name, param in model.named_parameters():
+#     print(name, param.requires_grad)
 
 
 # define the optimizer
-optim = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), 
-                          lr = opt['train']['lr_initial'],
-                          weight_decay = opt['train']['weight_decay'],
-                          betas = opt['train']['betas'])
-# print(optim)
-# sys.exit()
-
-# Initialize the cosine annealing scheduler
-if opt['train']['lr_scheme'] == 'CosineAnnealing':
-    scheduler = CosineAnnealingLR(optim, T_max=last_epochs, eta_min=opt['train']['eta_min'])
-else: 
-    raise NotImplementedError('scheduler not implemented')
+optim, scheduler = create_optim_scheduler(opt['train'], model)
 
 # if resume load the weights
-if resume_training:
-    checkpoints = torch.load(PATH_MODEL)
-    weights = checkpoints['model_state_dict']
-    # print(weights.keys())
-    # remove_prefix = 'module.' # this is needed because the keys now get a module. key that doesn't match with the network one
-    # weights = {k[len(remove_prefix):] if k.startswith(remove_prefix) else k: v for k, v in weights.items()}
-    model = load_weights(model, old_weights=weights)
-    # model.load_state_dict(weights)
-    optim = load_optim(optim, optim_weights = checkpoints['optimizer_state_dict'], model = model)
-    scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
-    start_epochs = checkpoints['epoch']
-    resume = opt['resume_training']['resume']
-    id = opt['resume_training']['id']
-    print('Loaded weights')
-else:
-    resume = 'never'
-    id = None
+model, optim, scheduler, start_epochs = resume_model(model, optim, scheduler, path_model = PATH_MODEL, resume=opt['network']['resume_training'])
 
 #---------------------------------------------------------------------------------------------------
 # LOG INTO WANDB
-if wandb_log:
-    wandb.login()
-    wandb.init(
-        # set the wandb project where this run will be logged
-        project=opt['wandb']['project'], entity=opt['wandb']['entity'], 
-        name=opt['wandb']['name'], save_code=opt['wandb']['save_code'],
-        config = opt,
-        resume = resume,
-        id = id,
-        notes= subprocess.check_output(["git", "log", "-1", "--pretty=%B"]).decode("utf-8").strip() #latest github commit 
-    )
-
+init_wandb(opt)
 #---------------------------------------------------------------------------------------------------
 # DEFINE LOSSES AND METRICS
 
@@ -206,7 +129,7 @@ crop_to_4= CropTo4()
 best_valid_psnr = 0.
 out_side_batch = None
 
-for epoch in tqdm(range(start_epochs, last_epochs)):
+for epoch in tqdm(range(start_epochs, opt['train']['epochs'])):
 
     start_time = time.time()
     train_loss = []
@@ -328,11 +251,11 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
               'epoch': epoch,  'valid_psnr': np.mean(valid_psnr), 
               'valid_ssim': np.mean(valid_ssim), 'valid_lpips': np.mean(valid_lpips),'examples': images}
 
-    if wandb_log:
+    if opt['wandb']['init']:
         wandb.log(logger)
 
 
-    print(f"Epoch {epoch + 1} of {last_epochs} took {time.time() - start_time:.3f}s\t Loss:{np.mean(train_loss)}\t PSNR:{np.mean(valid_psnr)}\n")
+    print(f"Epoch {epoch + 1} of {opt['train']['epochs']} took {time.time() - start_time:.3f}s\t Loss:{np.mean(train_loss)}\t PSNR:{np.mean(valid_psnr)}\n")
 
     weights = model.state_dict()
     baseline_weights = {k: v for k, v in weights.items() if 'adapter' not in k}
@@ -359,7 +282,7 @@ for epoch in tqdm(range(start_epochs, last_epochs)):
     print('Scheduler last learning rate: ', scheduler.get_last_lr())
     
     
-if wandb_log:
+if opt['wandb']['init']:
     wandb.finish()
 
 

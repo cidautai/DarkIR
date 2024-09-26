@@ -1,9 +1,3 @@
-#### general settings
-resume_training:
-  resume_training: True
-  resume: must
-  id: yyx5bnax
-
 #### training devices
 device:
   cuda: True
@@ -27,19 +21,15 @@ datasets:
 #### network structures
 network:
   name: Network
+  resume_training: True
   img_channels: 3
   width: 32
   middle_blk_num_enc: 8
   middle_blk_num_dec: 8
   enc_blk_nums: [1, 1, 1]
   dec_blk_nums: [1, 1, 1]
-  enc_blk_nums_map: None
-  middle_blk_num_map: None
-  residual_layers: None
   dilations: [1, 1, 1]
-  spatial: None
   extra_depth_wise: True
-  ksize: None
 
 
 #### training settings: learning rate scheme, loss
@@ -84,10 +74,12 @@ save:
 
 #### wandb:
 wandb:
-  init: True
+  init: False
   project: GOPRO_LOLBlur
   entity: cidautai
   name: Network_GOPRO_dilation1
   save_code: True
+  resume: never # resume: must, if uploading to an existing project
+  id: None # must be None if don't want to overwrite an existing project
 
 

@@ -95,11 +95,6 @@ def main_dataset_gopro(train_path='../../GOPRO_dataset/train',
     list_blur_valid = flatten_list_comprehension(list_blur_valid)#[:30]
     list_sharp_valid = flatten_list_comprehension(list_sharp_valid)#[:30]
 
-    # we random sort the lists using random_sort_pairs
-    
-    # list_blur, list_sharp             = random_sort_pairs(list_blur, list_sharp)
-    # list_blur_valid, list_sharp_valid = random_sort_pairs(list_blur_valid, list_sharp_valid)
-
     # check if all the image routes are correct
     trues = [os.path.isfile(file) for file in list_blur +
              list_sharp+list_blur_valid+list_sharp_valid]
@@ -107,27 +102,21 @@ def main_dataset_gopro(train_path='../../GOPRO_dataset/train',
         if true != True:
             print('Non valid route!')
 
-    image_blur = cv.imread(list_blur[0])
-    image_sharp_valid = cv.imread(list_sharp_valid[0])
-    print(image_blur.shape, image_sharp_valid.shape)
-
-    # list_blur  = list_blur + list_blur_valid[:1010]
-    # list_sharp = list_sharp + list_sharp_valid[:1010]
-
-    # list_blur_valid  = list_blur_valid[1011:]
-    # list_sharp_valid = list_sharp_valid[1011:]
-
-    print('Images in the subsets: \n')
-    print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur))
-    print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid))
+    if verbose:
+        print('Images in the subsets:')
+        print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur))
+        print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid))
 
     # define the transforms applied to the image for training and testing (only tensor transform) when read
     # transforms from PIL to torchTensor, normalized to [0,1] and the correct permutations for torching working
     tensor_transform = transforms.ToTensor()
-    flip_transform = transforms.Compose([
-        transforms.RandomHorizontalFlip(),  # flips horizontal with p=0.5
-        transforms.RandomVerticalFlip()  # flips vertical with p = 0.5
-    ])
+    if flips:
+        flip_transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(),  # flips horizontal with p=0.5
+            transforms.RandomVerticalFlip()  # flips vertical with p = 0.5
+        ])
+    else:
+        flip_transform = None
 
     # Load the datasets
     train_dataset = MyDataset_Crop(list_blur, list_sharp, cropsize=cropsize,
