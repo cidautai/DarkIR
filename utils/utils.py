@@ -29,7 +29,7 @@ def create_grid(dict_images):
     images: A dictionary of images 
     '''
     images, caption = [], []
-    for k, v in dict_images:
+    for k, v in dict_images.items():
         caption.append(k)
         images.append(v)
 

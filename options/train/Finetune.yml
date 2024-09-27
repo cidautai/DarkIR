@@ -1,9 +1,3 @@
-#### general settings
-resume_training:
-  resume_training: False
-  resume: must
-  id: 78ladjjx
-
 #### training devices
 device:
   cuda: True
@@ -11,10 +5,9 @@ device:
 
 #### datasets
 datasets:
-  name: GOPRO
+  name: LOLBlur
   train:
-    train_path: /mnt/valab-datasets/GOPRO/train
-
+    train_path: /mnt/valab-datasets/LOLBlur/train
     n_workers: 4  # per GPU
     batch_size_train: 16
     cropsize: 256   # size you want to crop out as input sample.
@@ -22,25 +15,21 @@ datasets:
     verbose: True
     crop_type: Random
   val:
-    test_path: /mnt/valab-datasets/GOPRO/test
+    test_path: /mnt/valab-datasets/LOLBlur/test
     batch_size_test: 1
 
 #### network structures
 network:
   name: Network
+  resume_training: False
   img_channels: 3
   width: 32
-  middle_blk_num_enc: 2
-  middle_blk_num_dec: 2
-  enc_blk_nums: [1, 2, 3]
-  dec_blk_nums: [3, 1, 1]
-  enc_blk_nums_map: None
-  middle_blk_num_map: None
-  residual_layers: None
-  dilations: [1, 4, 9]
-  spatial: None
+  middle_blk_num_enc: 8
+  middle_blk_num_dec: 8
+  enc_blk_nums: [1, 1, 1]
+  dec_blk_nums: [1, 1, 1]
+  dilations: [1, 1, 1]
   extra_depth_wise: True
-  ksize: None
 
 
 #### training settings: learning rate scheme, loss
@@ -61,7 +50,7 @@ train:
   perceptual_weight: 0.01
   perceptual_reduction: mean
 
-  edge: True 
+  edge: True
   edge_criterion: l2
   edge_weight: 50.0
   edge_reduction: mean
@@ -71,7 +60,7 @@ train:
   frequency_weight: 0.01
   frequency_reduction: sum
 
-  enhance: True
+  enhance: False
   enhance_criterion: l1
   enhance_weight: 0.8
   enhance_reduction: mean
@@ -79,16 +68,18 @@ train:
 
 #### save model
 save:
-  path_model: ./models/bests/Network_GOPRO_resuming.pt
+  path_model: ./models/bests/Network_GOPRO_dilation1.pt
   path: ./adapters/Network_adapter_LOLBlur.pt
   best: ./adapters/bests/
   new: ./adapters/Network_adapter_LOLBlur.pt 
 #### wandb:
 wandb:
   init: True
-  project: LOLBlur
+  project: GOPRO_LOLBlur
   entity: cidautai
-  name: Network_GOPRO_LOLBlur
+  name: NAFNet_adapter_LOLBLur
   save_code: True
+  resume: never # resume: must, if uploading to an existing project
+  id: # must be empty if don't want to overwrite an existing project
 
 

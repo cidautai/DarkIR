@@ -72,7 +72,35 @@ def resume_model(model,
         checkpoints = torch.load(path_model)
         weights = checkpoints['model_state_dict']
         model = load_weights(model, old_weights=weights)
-        optim = load_optim(optim, optim_weights = checkpoints['optimizer_state_dict'], model = model)
+        optim = load_optim(optim, optim_weights = checkpoints['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
+        start_epochs = checkpoints['epoch']
+
+        print('Loaded weights')
+    else:
+        start_epochs = 0
+        print('Starting from zero the training')
+    
+    return model, optim, scheduler, start_epochs
+
+def resume_adapter(model,
+                 optim,
+                 scheduler, 
+                 path_adapter,
+                 path_model, resume:str=None):
+    '''
+    Returns the loaded weights of model and optimizer if resume flag is True
+    '''
+    #first load the model weights
+    checkpoints = torch.load(path_model)
+    weights = checkpoints['model_state_dict']
+    model = load_weights(model, old_weights=weights) 
+    #now if needed load the adapter weights
+    if resume:
+        checkpoints = torch.load(path_adapter)
+        weights = checkpoints['model_state_dict']
+        model = load_weights(model, old_weights=weights)
+        optim = load_optim(optim, optim_weights = checkpoints['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
         start_epochs = checkpoints['epoch']
 
@@ -84,8 +112,7 @@ def resume_model(model,
     return model, optim, scheduler, start_epochs
 
 
-
-__all__ = ['create_model', 'resume_model', 'freeze_parameters', 'create_optim_scheduler', 'save_checkpoint']
+__all__ = ['create_model', 'resume_model', 'resume_adapter', 'freeze_parameters', 'create_optim_scheduler', 'save_checkpoint']
 
 
 

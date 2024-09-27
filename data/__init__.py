@@ -21,7 +21,7 @@ def create_data(opt):
     num_workers=opt['train']['n_workers']
     crop_type=opt['train']['crop_type']  
     
-    if name == 'LOLblur':
+    if name == 'LOLBlur':
         train_loader, test_loader = main_dataset_lolblur( train_path=train_path,
                                                 test_path = test_path,
                                                 batch_size_train=batch_size_train,

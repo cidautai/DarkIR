@@ -9,7 +9,7 @@ datasets:
   train:
     train_path: /mnt/valab-datasets/GOPRO/train
     n_workers: 4  # per GPU
-    batch_size_train: 1
+    batch_size_train: 16
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
@@ -68,16 +68,16 @@ train:
 
 #### save model
 save:
-  path: ./models/NAFNet_GOPRO.pt
+  path: ./models/NAFNet_GOPRO_test.pt
   best: ./models/bests
-  new: ./models/NAFNet_GOPRO.pt 
+  new: ./models/NAFNet_GOPRO_test.pt 
 
 #### wandb:
 wandb:
-  init: False
+  init: True
   project: GOPRO_LOLBlur
   entity: cidautai
-  name: NAFNet_GOPRO
+  name: NAFNet_GOPRO_test
   save_code: True
   resume: never # resume: must, if uploading to an existing project
   id: # must be empty if don't want to overwrite an existing project

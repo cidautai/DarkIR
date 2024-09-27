@@ -52,16 +52,16 @@ def load_weights(model, old_weights):
     model.load_state_dict(new_weights)
     return model
 
-def load_optim(optim, optim_weights, model):
+def load_optim(optim, optim_weights):
     '''
     Loads the values of the optimizer picking only the weights that are in the new model.
     '''
     # new_weights = optim.state_dict()
     
-    params_to_train = [param for param in model.parameters() if param.requires_grad]
+    # params_to_train = [param for param in model.parameters() if param.requires_grad]
     
-    # new_weights.update({k: v for k, v in optim_weights.items() if k in new_weights})
-    filtered_state_dict = {k: v for k, v in optim_weights.items() if k in params_to_train}
+    # # new_weights.update({k: v for k, v in optim_weights.items() if k in new_weights})
+    # filtered_state_dict = {k: v for k, v in optim_weights.items() if k in params_to_train}
     
     # optim_weights['state'].update({k: v for k, v in filtered_state_dict['state'].items() if k in new_weights}) 
     # noes = {k: v for k, v in optim_weights.items() if k in new_weights}

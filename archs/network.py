@@ -160,6 +160,7 @@ class Network(nn.Module):
         mod_pad_w = (self.padder_size - w % self.padder_size) % self.padder_size
         x = F.pad(x, (0, mod_pad_w, 0, mod_pad_h), value = 0)
         return x
+        
 
 if __name__ == '__main__':
     
