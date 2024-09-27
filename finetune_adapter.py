@@ -79,11 +79,11 @@ for epoch in tqdm(range(start_epochs, opt['train']['epochs'])):
     # train phase
     model.train()
     model = freeze_parameters(model, substring='adapter', adapter = True) # freeze the baseline
-    model, optim, metrics = train_model(model, optim, all_losses, train_loader, metrics)
+    model, optim, metrics = train_model(model, optim, all_losses, train_loader, metrics, adapter=True)
 
     # eval phase
     model.eval()
-    metrics, imgs_tensor = eval_model(model, test_loader, metrics, largest_capable_size=largest_capable_size)
+    metrics, imgs_tensor = eval_model(model, test_loader, metrics, largest_capable_size=largest_capable_size, adapter=True)
     # log results to wandb       
     dict_images = { '1: Input': imgs_tensor['input'], '2: Output': imgs_tensor['output'], '3: Ground Truth': imgs_tensor['gt']}
     images_grid = create_grid(dict_images)

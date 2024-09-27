@@ -12,7 +12,7 @@ calc_SSIM = SSIM(data_range=1.)
 calc_LPIPS = LPIPS(net = 'vgg', verbose=False).to(device)
 crop_to_4= CropTo4()
 
-def train_model(model, optim, all_losses, train_loader, metrics):
+def train_model(model, optim, all_losses, train_loader, metrics, adapter = None):
     '''
     It trains the model, returning the model, optim, scheduler and metrics dict
     '''
@@ -25,7 +25,8 @@ def train_model(model, optim, all_losses, train_loader, metrics):
 
         optim.zero_grad()
         # Feed the data into the model
-        enhanced_batch = model(low_batch)#, side_loss = False, use_adapter = None)
+        if adapter: enhanced_batch = model(low_batch, use_adapter = adapter)#, side_loss = False, use_adapter = None)
+        else: enhanced_batch = model(low_batch)
         # print(enhanced_batch)
         # calculate loss function to optimize
         optim_loss = calculate_loss(all_losses, enhanced_batch, high_batch, outside_batch)
@@ -41,7 +42,6 @@ def train_model(model, optim, all_losses, train_loader, metrics):
         #calculate ssim metric
         ssim = calc_SSIM(enhanced_batch, high_batch)
         # print(optim_loss)
-        optim_loss.requires_grad = True
         optim_loss.backward()
         optim.step()
 
@@ -52,7 +52,7 @@ def train_model(model, optim, all_losses, train_loader, metrics):
     
     return model, optim, metrics
 
-def eval_model(model, test_loader, metrics, largest_capable_size = 1500):
+def eval_model(model, test_loader, metrics, largest_capable_size = 1500, adapter = None):
     
     with torch.no_grad():
         # Now we need to go over the test_loader and evaluate the results of the epoch
@@ -86,7 +86,9 @@ def eval_model(model, test_loader, metrics, largest_capable_size = 1500):
             else: # then we process the image normally
                 high_batch_valid = high_batch_valid.to(device)
                 low_batch_valid = low_batch_valid.to(device)
-                enhanced_batch_valid = model(low_batch_valid)
+                
+                if adapter: enhanced_batch_valid = model(low_batch_valid, use_adapter = adapter)#, side_loss = False, use_adapter = None)
+                else: enhanced_batch_valid = model(low_batch_valid)
                 # loss
                 valid_loss_batch = torch.mean((high_batch_valid - enhanced_batch_valid)**2)
                 valid_ssim_batch = calc_SSIM(enhanced_batch_valid, high_batch_valid)
