@@ -21,15 +21,15 @@ def crop_center(img, cropx=224, cropy=256):
     starty = y//2-(cropy//2)    
     return img[starty:starty+cropy,startx:startx+cropx]
 
-def log_images(images, caption):
-    '''
-    A function to log the resulting images to wandb.
-    '''
-    n=len(images)
-    images_array = make_grid(images, n)
-    images = wandb.Image(images_array, caption = caption)
+# def log_images(images, caption):
+#     '''
+#     A function to log the resulting images to wandb.
+#     '''
+#     n=len(images)
+#     images_array = make_grid(images, n)
+#     images = wandb.Image(images_array, caption = caption)
     
-    return images
+#     return images
 
 class CropTo4(nn.Module):
     def __init__(self):

@@ -14,7 +14,7 @@ from archs import *
 from losses import *
 from data import *
 from options.options import parse
-from utils.utils import init_wandb
+from utils.utils import init_wandb, create_grid, log_wandb
 
 
 torch.autograd.set_detect_anomaly(True)
@@ -22,7 +22,6 @@ torch.autograd.set_detect_anomaly(True)
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need
 path_options = './options/train/GOPRO.yml'
-# print(os.path.isfile(path_options))
 opt = parse(path_options)
 
 # define some parameters based on the run we want to make
@@ -49,7 +48,7 @@ model, macs, params = create_model(opt['network'], cuda = opt['device']['cuda'])
 opt['macs'] = macs
 opt['params'] = params
 
-model = freeze_parameters(model, substring='adapter', reverse = False) # freeze the adapter if there is any
+model = freeze_parameters(model, substring='adapter', adapter = False) # freeze the adapter if there is any
 
 # for name, param in model.named_parameters():
 #     print(name, param.requires_grad)
@@ -83,20 +82,21 @@ outside_batch = None
 for epoch in tqdm(range(start_epochs, opt['train']['epochs'])):
 
     start_time = time.time()
-    train_loss = []
-    train_psnr = []       # loss and PSNR of the enhanced-light image
-    train_og_loss = []
-    train_og_psnr = []  # loss and PSNR of the low-light image
-    train_ssim    = []
+    metrics = {'train_loss':[], 'train_psnr':[], 'train_og_psnr':[], 'train_ssim':[],
+               'valid_psnr':[], 'valid_ssim':[], 'valid_lpips':[], 'epoch': epoch}
+    # train_loss = []
+    # train_psnr = []       # loss and PSNR of the enhanced-light image
+    # train_og_psnr = []  # loss and PSNR of the low-light image
+    # train_ssim    = []
 
-    if test_loader:
-        valid_loss = []
-        valid_psnr = []
-        valid_ssim = []
-        valid_lpips = []
+    # if test_loader:
+    #     valid_loss = []
+    #     valid_psnr = []
+    #     valid_ssim = []
+    #     valid_lpips = []
     model.train()
     
-    model = freeze_parameters(model, substring='adapter', reverse = False) # freeze the adapter if there is any
+    model = freeze_parameters(model, substring='adapter', adapter = False) # freeze the adapter if there is any
     optim_loss = 0
 
     for high_batch, low_batch in train_loader:
@@ -125,10 +125,10 @@ for epoch in tqdm(range(start_epochs, opt['train']['epochs'])):
         optim_loss.backward()
         optim.step()
 
-        train_loss.append(optim_loss.item())
-        train_psnr.append(psnr.item())
-        train_og_psnr.append(og_psnr.item())
-        train_ssim.append(ssim.item())
+        metrics['train_loss'].append(optim_loss.item())
+        metrics['train_psnr'].append(psnr.item())
+        metrics['train_og_psnr'].append(og_psnr.item())
+        metrics['train_ssim'].append(ssim.item())
 
 
         
@@ -175,28 +175,32 @@ for epoch in tqdm(range(start_epochs, opt['train']['epochs'])):
                 
             valid_psnr_batch = 20 * torch.log10(1. / torch.sqrt(valid_loss_batch))        
     
-            valid_psnr.append(valid_psnr_batch.item())
-            valid_ssim.append(valid_ssim_batch.item())
-            valid_lpips.append(torch.mean(valid_lpips_batch).item())
+            metrics['valid_psnr'].append(valid_psnr_batch.item())
+            metrics['valid_ssim'].append(valid_ssim_batch.item())
+            metrics['valid_lpips'].append(torch.mean(valid_lpips_batch).item())
             
+    dict_images = { '1: Input': low_batch_valid[0], '2: Output': enhanced_batch_valid[0], '3: Ground Truth': high_batch_valid[0]}
     # We take the first image [0] from each batch
-    high_img = high_batch_valid[0]
-    low_img = low_batch_valid[0]
-    enhanced_img = enhanced_batch_valid[0]
+    # high_img = high_batch_valid[0]
+    # low_img = low_batch_valid[0]
+    # enhanced_img = enhanced_batch_valid[0]
 
-    caption = "1: Input, 2: Output, 3: Ground_Truth"
-    images_list = [low_img, enhanced_img, high_img]
-    images = log_images(images_list, caption)
-    logger = {'train_loss': np.mean(train_loss), 'train_psnr': np.mean(train_psnr),
-              'train_ssim': np.mean(train_ssim), 'train_og_psnr': np.mean(train_og_psnr), 
-              'epoch': epoch,  'valid_psnr': np.mean(valid_psnr), 
-              'valid_ssim': np.mean(valid_ssim), 'valid_lpips': np.mean(valid_lpips),'examples': images}
+    # caption = "1: Input, 2: Output, 3: Ground_Truth"
+    # images_list = [low_img, enhanced_img, high_img]
+    images_grid = create_grid(dict_images)
+    log_wandb(metrics=metrics, grid = images_grid, log = opt['wandb']['init'])
+    
 
-    if opt['wandb']['init']:
-        wandb.log(logger)
+    # logger = {'train_loss': np.mean(metrics['train_loss']), 'train_psnr': np.mean(metrics['train_psnr']),
+    #           'train_ssim': np.mean(metrics['train_ssim']), 'train_og_psnr': np.mean(metrics['train_og_psnr']), 
+    #           'epoch': epoch,  'valid_psnr': np.mean(metrics['valid_psnr']), 
+    #           'valid_ssim': np.mean(metrics['valid_ssim']), 'valid_lpips': np.mean(metrics['valid_lpips']),'examples': images}
+
+    # if opt['wandb']['init']:
+    #     wandb.log(logger)
 
 
-    print(f"Epoch {epoch + 1} of {opt['train']['epochs']} took {time.time() - start_time:.3f}s\t Loss:{np.mean(train_loss)}\t PSNR:{np.mean(valid_psnr)}\n")
+    print(f"Epoch {epoch + 1} of {opt['train']['epochs']} took {time.time() - start_time:.3f}s\t Loss:{np.mean(metrics['train_loss'])}\t PSNR:{np.mean(metrics['valid_psnr'])}\n")
 
     weights = model.state_dict()
     baseline_weights = {k: v for k, v in weights.items() if 'adapter' not in k}
@@ -206,17 +210,17 @@ for epoch in tqdm(range(start_epochs, opt['train']['epochs'])):
         'epoch': epoch,
         'model_state_dict': baseline_weights,
         'optimizer_state_dict': optim.state_dict(),
-        'loss': np.mean(train_loss),
+        'loss': np.mean(metrics['train_loss']),
         'scheduler_state_dict': scheduler.state_dict()
     }
     torch.save(model_to_save, NEW_PATH_MODEL)
 
     #save best model if new valid_psnr is higher than the best one
-    if np.mean(valid_psnr) >= best_valid_psnr:
+    if np.mean(metrics['valid_psnr']) >= best_valid_psnr:
         
         torch.save(model_to_save, BEST_PATH_MODEL)
         
-        best_valid_psnr = np.mean(valid_psnr) # update best psnr
+        best_valid_psnr = np.mean(metrics['valid_psnr']) # update best psnr
 
     #update scheduler
     scheduler.step()

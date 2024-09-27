@@ -9,7 +9,7 @@ datasets:
   train:
     train_path: /mnt/valab-datasets/GOPRO/train
     n_workers: 4  # per GPU
-    batch_size_train: 16
+    batch_size_train: 1
     cropsize: 256   # size you want to crop out as input sample.
     flips: True
     verbose: True
@@ -74,7 +74,7 @@ save:
 
 #### wandb:
 wandb:
-  init: True
+  init: False
   project: GOPRO_LOLBlur
   entity: cidautai
   name: NAFNet_GOPRO

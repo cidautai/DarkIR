@@ -70,8 +70,8 @@ def load_optim(optim, optim_weights, model):
 
 def freeze_parameters(model,
                       substring:str,
-                      reverse:bool = False):
-    if reverse:
+                      adapter:bool = False):
+    if adapter:
         for name, param in model.named_parameters():
             if substring not in name:
                 param.requires_grad = False  
