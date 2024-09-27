@@ -51,7 +51,6 @@ def log_wandb(metrics, grid, log:bool = False):
     else:
         print('Not logging to wandb.')
 
-
 if __name__ == '__main__':
     
     pass

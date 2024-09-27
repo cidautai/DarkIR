@@ -4,7 +4,7 @@ from ptflops import get_model_complexity_info
 
 from .nafnet_utils.arch_model import NAFNet
 from .network import Network
-from .arch_util import load_weights, load_optim, freeze_parameters
+from .arch_util import load_weights, load_optim, freeze_parameters, save_checkpoint
 
 def create_model(opt, cuda):
     '''
@@ -85,7 +85,7 @@ def resume_model(model,
 
 
 
-__all__ = ['create_model', 'resume_model', 'freeze_parameters', 'create_optim_scheduler']
+__all__ = ['create_model', 'resume_model', 'freeze_parameters', 'create_optim_scheduler', 'save_checkpoint']
 
 
 

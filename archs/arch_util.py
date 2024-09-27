@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from torch import nn as nn
 from torch.nn import init as init
 
@@ -84,6 +85,32 @@ def freeze_parameters(model,
 
     # for name, param in model.named_parameters():
     #     print(f"{name}: requires_grad={param.requires_grad}") 
+
+
+def save_checkpoint(model, optim, scheduler, metrics, paths):
+
+    weights = model.state_dict()
+    baseline_weights = {k: v for k, v in weights.items() if 'adapter' not in k}
+
+    # Save the model after every epoch
+    model_to_save = {
+        'epoch': metrics['epoch'],
+        'model_state_dict': baseline_weights,
+        'optimizer_state_dict': optim.state_dict(),
+        'loss': np.mean(metrics['train_loss']),
+        'scheduler_state_dict': scheduler.state_dict()
+    }
+    torch.save(model_to_save, paths['new'])
+
+    #save best model if new valid_psnr is higher than the best one
+    if np.mean(metrics['valid_psnr']) >= metrics['best_psnr']:
+        
+        torch.save(model_to_save, paths['best'])
+        
+        metrics['best_psnr'] = np.mean(metrics['valid_psnr']) # update best psnr
+
+    
+    return metrics, metrics['best_psnr']
 
 if __name__ == '__main__':
     
