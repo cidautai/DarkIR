@@ -87,15 +87,18 @@ def freeze_parameters(model,
     #     print(f"{name}: requires_grad={param.requires_grad}") 
 
 
-def save_checkpoint(model, optim, scheduler, metrics, paths):
+def save_checkpoint(model, optim, scheduler, metrics, paths, adapter = False):
 
     weights = model.state_dict()
-    baseline_weights = {k: v for k, v in weights.items() if 'adapter' not in k}
+    if adapter:
+        weights = {k: v for k, v in weights.items() if 'adapter' in k}
+    else:
+        weights = {k: v for k, v in weights.items() if 'adapter' not in k}
 
     # Save the model after every epoch
     model_to_save = {
         'epoch': metrics['epoch'],
-        'model_state_dict': baseline_weights,
+        'model_state_dict': weights,
         'optimizer_state_dict': optim.state_dict(),
         'loss': np.mean(metrics['train_loss']),
         'scheduler_state_dict': scheduler.state_dict()

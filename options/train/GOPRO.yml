@@ -20,16 +20,16 @@ datasets:
 
 #### network structures
 network:
-  name: NAFNet
+  name: Network
   resume_training: False
   img_channels: 3
   width: 32
   middle_blk_num_enc: 1
   middle_blk_num_dec: 1
-  enc_blk_nums: [1, 1, 1, 28]
-  dec_blk_nums: [1, 1, 1, 1]
-  dilations: [1]
-  extra_depth_wise: False
+  enc_blk_nums: [1, 1, 16]
+  dec_blk_nums: [1, 1, 1]
+  dilations: [1, 4, 9]
+  extra_depth_wise: True
 
 
 #### training settings: learning rate scheme, loss
@@ -68,16 +68,16 @@ train:
 
 #### save model
 save:
-  path: ./models/NAFNet_GOPRO_test.pt
+  path: ./models/Network_GOPRO_1116.pt
   best: ./models/bests
-  new: ./models/NAFNet_GOPRO_test.pt 
+  new: ./models/Network_GOPRO_1116.pt 
 
 #### wandb:
 wandb:
   init: True
   project: GOPRO_LOLBlur
   entity: cidautai
-  name: NAFNet_GOPRO_test
+  name: Network_GOPRO_1116
   save_code: True
   resume: never # resume: must, if uploading to an existing project
   id: # must be empty if don't want to overwrite an existing project

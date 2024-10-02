@@ -100,7 +100,7 @@ def resume_adapter(model,
         checkpoints = torch.load(path_adapter)
         weights = checkpoints['model_state_dict']
         model = load_weights(model, old_weights=weights)
-        optim = load_optim(optim, optim_weights = checkpoints['optimizer_state_dict'])
+        # optim = load_optim(optim, optim_weights = checkpoints['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoints['scheduler_state_dict'])
         start_epochs = checkpoints['epoch']
 

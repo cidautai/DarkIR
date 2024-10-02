@@ -47,18 +47,26 @@ opt['params'] = params
 
 model = freeze_parameters(model, substring='adapter', adapter = True) # freeze the baseline
 
+
 # define the optimizer
 optim, scheduler = create_optim_scheduler(opt['train'], model)
 
 # if resume load the weights
-# model, optim, scheduler, start_epochs = resume_model(model, optim, scheduler, path_model = PATH_MODEL, 
-#                                                      resume=True)
 model, optim, scheduler, start_epochs = resume_adapter(model, optim, scheduler, path_adapter=PATH_ADAPTER, 
                                                        path_model = PATH_MODEL, resume=opt['network']['resume_training'])
-
+# for name, param in model.named_parameters():
+#     if 'adapter' in name:
+#         print(name) 
 # INIT WANDB
 init_wandb(opt)
+#---------------------
+# weights = model.state_dict()
+# for name, param in model.named_parameters():
+# # for name in weights.keys():
+#     if 'adapter' in name:
+#         print(name) 
 
+# sys.exit()
 # DEFINE LOSSES AND METRICS
 all_losses = create_loss(opt['train'])
 
@@ -92,7 +100,7 @@ for epoch in tqdm(range(start_epochs, opt['train']['epochs'])):
     # print some results
     print(f"Epoch {epoch + 1} of {opt['train']['epochs']} took {time.time() - start_time:.3f}s\t Loss:{np.mean(metrics['train_loss'])}\t PSNR:{np.mean(metrics['valid_psnr'])}\n")
     # Save the model after every epoch
-    metrics, best_psnr = save_checkpoint(model, optim, scheduler, metrics, paths = {'new':NEW_PATH_ADAPTER, 'best': BEST_PATH_ADAPTER})
+    metrics, best_psnr = save_checkpoint(model, optim, scheduler, metrics, paths = {'new':NEW_PATH_ADAPTER, 'best': BEST_PATH_ADAPTER}, adapter=True)
 
     #update scheduler
     scheduler.step()
