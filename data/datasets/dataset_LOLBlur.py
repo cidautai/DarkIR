@@ -49,6 +49,9 @@ def random_sort_pairs(list1, list2):
 
     return list1, list2
 
+def flatten_list_comprehension(matrix):
+    return [item for row in matrix for item in row]
+
 def main_dataset_lolblur(train_path='/mnt/valab-datasets/LOLBlur/train', 
                          test_path='/mnt/valab-datasets/LOLBlur/test',
                          batch_size_train=4, 
@@ -78,11 +81,6 @@ def main_dataset_lolblur(train_path='/mnt/valab-datasets/LOLBlur/train',
 
     paths_blur_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur_valid ]
     paths_sharp_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp_valid ]
-
-
-
-    def flatten_list_comprehension(matrix):
-        return [item for row in matrix for item in row]
 
     list_blur = flatten_list_comprehension(paths_blur)
     list_sharp = flatten_list_comprehension(paths_sharp)
@@ -131,10 +129,25 @@ def main_dataset_lolblur(train_path='/mnt/valab-datasets/LOLBlur/train',
 
 if __name__ == '__main__':
     
-    train_loader, test_loader = main_dataset_lolblur(verbose = True, crop_type='Random', cropsize=256)
-    print(len(train_loader), len(test_loader))
+    # train_loader, test_loader = main_dataset_lolblur(verbose = True, crop_type='Random', cropsize=256)
+    # print(len(train_loader), len(test_loader))
     
-    for high, low in train_loader:
+    # for high, low in train_loader:
         
-        print(high.shape)
+    #     print(high.shape)
+    
+    PATH_TRAIN = '/mnt/valab-datasets/LOLBlur/train'
+
+    
+    # paths to the blur and sharp sets of images
+    paths_blur = [os.path.join(PATH_TRAIN, 'low_blur_noise', path) for path in os.listdir(os.path.join(PATH_TRAIN, 'low_blur_noise'))]
+    paths_sharp = [os.path.join(PATH_TRAIN, 'high_sharp_scaled', path) for path in os.listdir(os.path.join(PATH_TRAIN, 'high_sharp_scaled'))]
+    
+    
+    # extract the images from their corresponding folders, now we get a list of lists
+    paths_blur = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur ]
+    paths_sharp = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp ]
+
+    list_blur = flatten_list_comprehension(paths_blur)
+    list_sharp = flatten_list_comprehension(paths_sharp)
     

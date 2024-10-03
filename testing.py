@@ -45,15 +45,15 @@ opt['macs'] = macs
 opt['params'] = params
 
 #-----------
-adapter = torch.load(PATH_ADAPTER)
-adapter = adapter['model_state_dict']
-for name, param in adapter.items():
-    if 'adapter' not in name:
-        print(name) 
+# adapter = torch.load(PATH_ADAPTER)
+# adapter = adapter['model_state_dict']
 # for name, param in adapter.items():
-#     print(name)
+#     if 'adapter' not in name:
+#         print(name) 
+# # for name, param in adapter.items():
+# #     print(name)
 
-sys.exit()
+# sys.exit()
 #-----------
 
 # define the optimizer
@@ -90,7 +90,7 @@ for high_batch_valid, low_batch_valid in tqdm(test_loader):
     low_batch_valid = low_batch_valid.to(device)
 
     with torch.no_grad():
-        enhanced_batch_valid = model(low_batch_valid, use_adapter=True)
+        enhanced_batch_valid = model(low_batch_valid, use_adapter=False)
         # loss
         valid_loss_batch = torch.mean((high_batch_valid - enhanced_batch_valid)**2)
         # PSNR (dB) metric

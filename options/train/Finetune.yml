@@ -68,7 +68,7 @@ train:
 
 #### save model
 save:
-  path_model: ./models/bests/Network_GOPRO.pt
+  path_model: ./models/bests/Network_GOPRO_dilation1.pt
   path: ./adapters/Network_adapter_LOLBlur.pt
   best: ./adapters/bests/
   new: ./adapters/Network_adapter_LOLBlur.pt 

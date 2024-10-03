@@ -9,3 +9,6 @@
 scheduler_test.py
 /archs/nafnet_utils/arch_model_dilated.py
 /utils/erfs
+create_set.py
+*.csv
+

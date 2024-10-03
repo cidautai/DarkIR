@@ -12,7 +12,7 @@ import cv2 as cv
 try:
     from .datapipeline import *
 except:
-    from data.datasets.datapipeline import *
+    from datapipeline import *
 
 def create_path(IMGS_PATH, list_new_files):
     '''
@@ -53,7 +53,10 @@ def random_sort_pairs(list1, list2):
 
     return list1, list2
 
-def main_dataset_gopro_lolblur(train_path='../../GOPRO_dataset/train', test_path='../../GOPRO_dataset/test',
+def flatten_list_comprehension(matrix):
+    return [item for row in matrix for item in row]
+
+def main_dataset_gopro_lolblur(train_path='/mnt/valab-datasets/GOPRO/train', test_path='/mnt/valab-datasets/GOPRO/test',
                        batch_size_train=4, flips = None, batch_size_test=1, verbose=False, cropsize=512,
                        num_workers=1, crop_type='Random'):
 
@@ -86,8 +89,8 @@ def main_dataset_gopro_lolblur(train_path='../../GOPRO_dataset/train', test_path
         return [item for row in matrix for item in row]
 
     # we scale the number of gopro images to the images in lolblur
-    list_blur_gopro = flatten_list_comprehension(list_blur) * 5
-    list_sharp_gopro = flatten_list_comprehension(list_sharp) * 5
+    list_blur_gopro = flatten_list_comprehension(list_blur)
+    list_sharp_gopro = flatten_list_comprehension(list_sharp)
 
     list_blur_valid_gopro = flatten_list_comprehension(list_blur_valid)
     list_sharp_valid_gopro = flatten_list_comprehension(list_sharp_valid)
@@ -104,10 +107,12 @@ def main_dataset_gopro_lolblur(train_path='../../GOPRO_dataset/train', test_path
     print("    -Images in the PATH_HIGH_TRAINING folder: ", len(list_sharp_gopro))
     print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid_gopro))
     print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_gopro))
+    
+    print(len(list_blur_gopro))
     # --------------------------------------------------------------------------------------
     # now load the lolblur dataset
 
-    PATH_TRAIN = '/mnt/valab-datasets/LOLBlur/train'
+    PATH_TRAIN = '/mnt/valab-datasets/LOLBlur/train_HARD'
     PATH_VALID = '/mnt/valab-datasets/LOLBlur/test'
     
     # paths to the blur and sharp sets of images
@@ -120,19 +125,14 @@ def main_dataset_gopro_lolblur(train_path='../../GOPRO_dataset/train', test_path
     # print(len(paths_blur), len(paths_blur_valid), len(paths_sharp), len(paths_sharp_valid))
     
     # extract the images from their corresponding folders, now we get a list of lists
-    paths_blur = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur ]
-    paths_sharp = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp ]
+    # paths_blur = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur ]
+    # paths_sharp = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp ]
 
     paths_blur_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur_valid ]
     paths_sharp_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp_valid ]
 
-
-
-    def flatten_list_comprehension(matrix):
-        return [item for row in matrix for item in row]
-
-    list_blur_lolblur = flatten_list_comprehension(paths_blur)
-    list_sharp_lolblur = flatten_list_comprehension(paths_sharp)
+    list_blur_lolblur = paths_blur
+    list_sharp_lolblur = paths_sharp
 
     list_blur_valid_lolblur = flatten_list_comprehension(paths_blur_valid)
     list_sharp_valid_lolblur = flatten_list_comprehension(paths_sharp_valid)
@@ -154,15 +154,15 @@ def main_dataset_gopro_lolblur(train_path='../../GOPRO_dataset/train', test_path
 
     list_blur  = list_blur_gopro + list_blur_lolblur
     list_sharp = list_sharp_gopro + list_sharp_lolblur
-    list_blur_valid = list_blur_valid_gopro + list_blur_valid_lolblur
-    list_sharp_valid = list_sharp_valid_gopro + list_sharp_valid_lolblur 
+    # list_blur_valid = list_blur_valid_gopro + list_blur_valid_lolblur
+    # list_sharp_valid = list_sharp_valid_gopro + list_sharp_valid_lolblur 
 
-    if verbose:
-        print('Total images in the subsets: \n')
-        print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur))
-        print("    -Images in the PATH_HIGH_TRAINING folder: ", len(list_sharp))
-        print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid))
-        print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid))
+    # if verbose:
+    #     print('Total images in the subsets: \n')
+    #     print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur))
+    #     print("    -Images in the PATH_HIGH_TRAINING folder: ", len(list_sharp))
+    #     print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid))
+    #     print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid))
 
     # define the transforms applied to the image for training and testing (only tensor transform) when read
     # transforms from PIL to torchTensor, normalized to [0,1] and the correct permutations for torching working
@@ -184,9 +184,9 @@ def main_dataset_gopro_lolblur(train_path='../../GOPRO_dataset/train', test_path
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=True,
                               num_workers=num_workers, pin_memory=True, drop_last=True)
-    test_loader_gopro = DataLoader(dataset=test_dataset_gopro, batch_size=batch_size_test, shuffle=False,
+    test_loader_gopro = DataLoader(dataset=test_dataset_gopro, batch_size=batch_size_test, shuffle=True,
                              num_workers=num_workers, pin_memory=True, drop_last=False)
-    test_loader_lolblur = DataLoader(dataset=test_dataset_lolblur, batch_size=batch_size_test, shuffle=False,
+    test_loader_lolblur = DataLoader(dataset=test_dataset_lolblur, batch_size=batch_size_test, shuffle=True,
                              num_workers=num_workers, pin_memory=True, drop_last=False)
 
 
