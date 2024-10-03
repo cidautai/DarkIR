@@ -5,7 +5,7 @@ device:
 
 #### datasets
 datasets:
-  name: GOPRO
+  name: GOPRO_LOLBlur
   train:
     train_path: /mnt/valab-datasets/GOPRO/train
     n_workers: 4  # per GPU
@@ -24,9 +24,9 @@ network:
   resume_training: False
   img_channels: 3
   width: 32
-  middle_blk_num_enc: 1
-  middle_blk_num_dec: 1
-  enc_blk_nums: [1, 1, 16]
+  middle_blk_num_enc: 8
+  middle_blk_num_dec: 8
+  enc_blk_nums: [1, 1, 1]
   dec_blk_nums: [1, 1, 1]
   dilations: [1, 4, 9]
   extra_depth_wise: True
@@ -68,16 +68,16 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_GOPRO_1116.pt
+  path: ./models/Network_GOPRO_LOLBlur.pt
   best: ./models/bests
-  new: ./models/Network_GOPRO_1116.pt 
+  new: ./models/Network_GOPRO_LOLBlur.pt 
 
 #### wandb:
 wandb:
   init: True
   project: GOPRO_LOLBlur
   entity: cidautai
-  name: Network_GOPRO_1116
+  name: Network_GOPRO_LOLBlur
   save_code: True
   resume: never # resume: must, if uploading to an existing project
   id: # must be empty if don't want to overwrite an existing project

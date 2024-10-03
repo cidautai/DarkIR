@@ -3,7 +3,7 @@ from .datasets.dataset_LOL import main_dataset_lol
 from .datasets.dataset_LOLBlur import main_dataset_lolblur
 from .datasets.dataset_LOLv2 import main_dataset_lolv2, main_dataset_lolv2_synth
 # from .dataset_all_LOL import main_dataset_all_lol
-# from .dataset_gopro_lolblur import main_dataset_gopro_lolblur
+from .datasets.dataset_gopro_lolblur import main_dataset_gopro_lolblur
 # from .create_data import create_data
 
 def create_data(opt):
@@ -72,6 +72,17 @@ def create_data(opt):
                                                 cropsize=cropsize,
                                                 num_workers=num_workers,
                                                 crop_type=crop_type)
+    elif name == 'GOPRO_LOLBlur':
+        train_loader, test_loader_gopro, test_loader_lolblur = main_dataset_gopro_lolblur( train_path=train_path,
+                                                test_path = test_path,
+                                                batch_size_train=batch_size_train,
+                                                batch_size_test=batch_size_test,
+                                                flips = flips,
+                                                verbose=verbose,
+                                                cropsize=cropsize,
+                                                num_workers=num_workers,
+                                                crop_type=crop_type)  
+        return train_loader, test_loader_gopro, test_loader_lolblur 
     else:
         raise NotImplementedError(f'{name} is not implemented')        
 

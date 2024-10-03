@@ -46,7 +46,7 @@ def log_wandb(metrics, grid, log:bool = False):
         logger = {'train_loss': np.mean(metrics['train_loss']), 'train_psnr': np.mean(metrics['train_psnr']),
                 'train_ssim': np.mean(metrics['train_ssim']), 'train_og_psnr': np.mean(metrics['train_og_psnr']), 
                 'epoch': metrics['epoch'],  'valid_psnr': np.mean(metrics['valid_psnr']), 
-                'valid_ssim': np.mean(metrics['valid_ssim']), 'valid_lpips': np.mean(metrics['valid_lpips']),'examples': grid}
+                'valid_ssim': np.mean(metrics['valid_ssim']), 'valid_lpips': np.mean(metrics['valid_lpips']),'examples': grid[0]}
         wandb.log(logger)
     else:
         print('Not logging to wandb.')
