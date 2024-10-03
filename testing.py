@@ -59,8 +59,10 @@ opt['params'] = params
 # define the optimizer
 optim, scheduler = create_optim_scheduler(opt['train'], model)
 
+checkpoints = torch.load(PATH_MODEL)
+print(checkpoints['epoch'])
 model, optim, scheduler, start_epochs = resume_adapter(model, optim, scheduler, path_adapter=PATH_ADAPTER, 
-                                                       path_model = PATH_MODEL, resume=True)
+                                                       path_model = PATH_MODEL, resume=False)
 
 # # if resume load the weights
 # checkpoints_model = torch.load(PATH_MODEL)

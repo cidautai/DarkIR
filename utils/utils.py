@@ -40,16 +40,28 @@ def create_grid(dict_images):
     
     return images
 
+def logging_dict(metrics, grid):
+    
+    logger = {'train_loss': np.mean(metrics['train_loss']), 'train_psnr': np.mean(metrics['train_psnr']),
+            'train_ssim': np.mean(metrics['train_ssim']), 'train_og_psnr': np.mean(metrics['train_og_psnr']), 
+            'epoch': metrics['epoch'],  'valid_psnr': np.mean(metrics['valid_psnr']), 
+            'valid_ssim': np.mean(metrics['valid_ssim']), 'valid_lpips': np.mean(metrics['valid_lpips']),'examples': grid}
+    return logger
+
 def log_wandb(metrics, grid, log:bool = False):
     
     if log:
-        logger = {'train_loss': np.mean(metrics['train_loss']), 'train_psnr': np.mean(metrics['train_psnr']),
-                'train_ssim': np.mean(metrics['train_ssim']), 'train_og_psnr': np.mean(metrics['train_og_psnr']), 
-                'epoch': metrics['epoch'],  'valid_psnr': np.mean(metrics['valid_psnr']), 
-                'valid_ssim': np.mean(metrics['valid_ssim']), 'valid_lpips': np.mean(metrics['valid_lpips']),'examples': grid}
+        logger = logging_dict(metrics, grid)
         wandb.log(logger)
     else:
         print('Not logging to wandb.')
+
+def combine_dicts(dict1, dict2, names=['gopro', 'lolblur']):
+    
+    combined_dict = {f"{key}_{names[0]}": value for key, value in dict1.items()}
+    combined_dict.update({f"{key}_{names[1]}": value for key, value in dict2.items()})
+    return combined_dict
+
 
 if __name__ == '__main__':
     
