@@ -3,27 +3,28 @@ import os, sys
 import time
 import wandb
 from tqdm import tqdm
+from options.options import parse
+
+path_options = './options/train/GOPRO.yml'
+opt = parse(path_options)
+os.environ["CUDA_VISIBLE_DEVICES"]= str(opt['device']['gpus'])
 
 import torch
 import torch.optim
-import torch.nn as nn
-from lpips import LPIPS
 
 from data.datasets.datapipeline import *
 from archs import *
 from losses import *
 from data import *
-from options.options import parse
 from utils.utils import init_wandb, create_grid, log_wandb
 from utils.train_utils import *
-
 
 torch.autograd.set_detect_anomaly(True)
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need
-path_options = './options/train/GOPRO.yml'
-opt = parse(path_options)
+# path_options = './options/train/GOPRO.yml'
+# opt = parse(path_options)
 
 # define some parameters based on the run we want to make
 device = torch.device('cuda') if opt['device']['cuda'] else torch.device('cpu')

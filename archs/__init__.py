@@ -1,5 +1,6 @@
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.nn import DataParallel
 from ptflops import get_model_complexity_info
 
 from .nafnet_utils.arch_model import NAFNet
@@ -34,7 +35,11 @@ def create_model(opt, cuda):
     else:
         raise NotImplementedError('This network is not implemented')
     print(f'Using {name} network')
-    
+
+    # if torch.cuda.device_count() > 1:
+    #     print("Usando", torch.cuda.device_count(), "GPUs!")
+    #     model = DataParallel(model)
+
     model.to(device)
     input_size = (3, 256, 256)
     macs, params = get_model_complexity_info(model, input_size, print_per_layer_stat = False)

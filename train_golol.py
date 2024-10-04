@@ -3,7 +3,11 @@ import os, sys
 import time
 import wandb
 from tqdm import tqdm
+from options.options import parse
 
+path_options = './options/train/GOPRO.yml'
+opt = parse(path_options)
+os.environ["CUDA_VISIBLE_DEVICES"]= str(opt['device']['gpus'])
 import torch
 import torch.optim
 import torch.nn as nn
@@ -13,7 +17,6 @@ from data.datasets.datapipeline import *
 from archs import *
 from losses import *
 from data import *
-from options.options import parse
 from utils.utils import init_wandb, create_grid, log_wandb, logging_dict, combine_dicts
 from utils.train_utils import *
 

@@ -1,13 +1,13 @@
 #### training devices
 device:
   cuda: True
-  gpus: 0
+  gpus: 1
 
 #### datasets
 datasets:
   name: GOPRO_LOLBlur
   train:
-    train_path: /mnt/valab-datasets/GOPRO/train
+    train_path: /home/danfei/Datasets/GOPRO/train
     n_workers: 4  # per GPU
     batch_size_train: 16
     cropsize: 256   # size you want to crop out as input sample.
@@ -15,21 +15,21 @@ datasets:
     verbose: True
     crop_type: Random
   val:
-    test_path: /mnt/valab-datasets/GOPRO/test
+    test_path: /home/danfei/Datasets/GOPRO/test
     batch_size_test: 1
 
 #### network structures
 network:
-  name: Network
+  name: NAFNet
   resume_training: False
   img_channels: 3
   width: 32
-  middle_blk_num_enc: 8
-  middle_blk_num_dec: 8
-  enc_blk_nums: [1, 1, 1]
-  dec_blk_nums: [1, 1, 1]
-  dilations: [1, 4, 9]
-  extra_depth_wise: True
+  middle_blk_num_enc: 1
+  middle_blk_num_dec: 1
+  enc_blk_nums: [1, 1, 1, 28]
+  dec_blk_nums: [1, 1, 1, 1]
+  dilations: [1]
+  extra_depth_wise: False
 
 
 #### training settings: learning rate scheme, loss
@@ -68,16 +68,16 @@ train:
 
 #### save model
 save:
-  path: ./models/Network_GOPRO_LOLBlur.pt
+  path: ./models/NAFNet_GOPRO_LOLBlur.pt
   best: ./models/bests
-  new: ./models/Network_GOPRO_LOLBlur.pt 
+  new: ./models/NAFNet_GOPRO_LOLBlur.pt 
 
 #### wandb:
 wandb:
   init: True
   project: GOPRO_LOLBlur
   entity: cidautai
-  name: Network_GOPRO_LOLBlur
+  name: NAFNet_GOPRO_LOLBlur
   save_code: True
   resume: never # resume: must, if uploading to an existing project
   id: # must be empty if don't want to overwrite an existing project

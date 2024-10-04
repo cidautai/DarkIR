@@ -112,8 +112,8 @@ def main_dataset_gopro_lolblur(train_path='/mnt/valab-datasets/GOPRO/train', tes
     # --------------------------------------------------------------------------------------
     # now load the lolblur dataset
 
-    PATH_TRAIN = '/mnt/valab-datasets/LOLBlur/train_HARD'
-    PATH_VALID = '/mnt/valab-datasets/LOLBlur/test'
+    PATH_TRAIN = '/home/danfei/Datasets/LOLBlur/train_HARD'
+    PATH_VALID = '/home/danfei/Datasets/LOLBlur/test'
     
     # paths to the blur and sharp sets of images
     paths_blur = [os.path.join(PATH_TRAIN, 'low_blur_noise', path) for path in os.listdir(os.path.join(PATH_TRAIN, 'low_blur_noise'))]
