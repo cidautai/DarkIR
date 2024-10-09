@@ -1,5 +1,6 @@
 import torch
-import sys
+import torch.distributed as dist
+import sys, os
 from lpips import LPIPS
 
 sys.path.append('../losses')
@@ -9,10 +10,23 @@ from data.datasets.datapipeline import CropTo4
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 calc_SSIM = SSIM(data_range=1.)
-calc_LPIPS = LPIPS(net = 'vgg', verbose=False).to(device)
 crop_to_4= CropTo4()
 
-def train_model(model, optim, all_losses, train_loader, metrics, adapter = None):
+def setup(rank, world_size):
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
+    # print('before starting the process')
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+    # dist.barrier()
+    
+def cleanup():
+    dist.destroy_process_group()
+    
+def save_model(model, path):
+    if dist.get_rank() == 0:
+        torch.save(model.state_dict(), path)
+
+def train_model(model, optim, all_losses, train_loader, metrics, adapter = None, rank = None):
     '''
     It trains the model, returning the model, optim, scheduler and metrics dict
     '''
@@ -20,8 +34,12 @@ def train_model(model, optim, all_losses, train_loader, metrics, adapter = None)
     for high_batch, low_batch in train_loader:
 
         # Move the data to the GPU
-        high_batch = high_batch.to(device)
-        low_batch = low_batch.to(device)
+        if not rank:
+            high_batch = high_batch.to(device)
+            low_batch = low_batch.to(device)
+        else:
+            high_batch = high_batch.to(rank)
+            low_batch = low_batch.to(rank)
 
         optim.zero_grad()
         # Feed the data into the model
@@ -52,8 +70,8 @@ def train_model(model, optim, all_losses, train_loader, metrics, adapter = None)
     
     return model, optim, metrics
 
-def eval_model(model, test_loader, metrics, largest_capable_size = 1500, adapter = None):
-    
+def eval_model(model, test_loader, metrics, largest_capable_size = 1500, adapter = None, rank=None):
+    calc_LPIPS = LPIPS(net = 'vgg', verbose=False).to(rank)
     with torch.no_grad():
         # Now we need to go over the test_loader and evaluate the results of the epoch
         for high_batch_valid, low_batch_valid in test_loader:
@@ -83,10 +101,13 @@ def eval_model(model, test_loader, metrics, largest_capable_size = 1500, adapter
                 high_batch_valid = high_crop
                 low_batch_valid = low_crop
                 
-            else: # then we process the image normally
-                high_batch_valid = high_batch_valid.to(device)
-                low_batch_valid = low_batch_valid.to(device)
-                
+            else: # If not, we process the image normally
+                if not rank:
+                    high_batch_valid = high_batch_valid.to(device)
+                    low_batch_valid = low_batch_valid.to(device)
+                else:
+                    high_batch_valid = high_batch_valid.to(rank)
+                    low_batch_valid = low_batch_valid.to(rank)                                    
                 if adapter: enhanced_batch_valid = model(low_batch_valid, use_adapter = adapter)#, side_loss = False, use_adapter = None)
                 else: enhanced_batch_valid = model(low_batch_valid)
                 # loss

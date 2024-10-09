@@ -318,7 +318,7 @@ class PerceptualLoss(nn.Module):
 class VGG19(torch.nn.Module):
     def __init__(self, requires_grad=False):
         super().__init__()
-        vgg_pretrained_features = torchvision.models.vgg19(pretrained=True).features
+        vgg_pretrained_features = torchvision.models.vgg19(weights=torchvision.models.VGG19_Weights.IMAGENET1K_V1).features
         self.slice1 = torch.nn.Sequential()
         self.slice2 = torch.nn.Sequential()
         self.slice3 = torch.nn.Sequential()
@@ -377,7 +377,7 @@ class VGGLoss(nn.Module):
 #---------------------------------------------------------------
 #define the edge loss to enhance the deblurring task
 class EdgeLoss(nn.Module):
-    def __init__(self,loss_weight=1.0, criterion = 'l2',reduction='mean'):
+    def __init__(self, rank, loss_weight=1.0, criterion = 'l2',reduction='mean'):
         super(EdgeLoss, self).__init__()
         if reduction not in ['none', 'mean', 'sum']:
             raise ValueError(f'Unsupported reduction mode: {reduction}. '
@@ -392,7 +392,7 @@ class EdgeLoss(nn.Module):
             raise NotImplementedError('Unsupported criterion loss')        
 
         k = torch.Tensor([[.05, .25, .4, .25, .05]])
-        self.kernel = torch.matmul(k.t(),k).unsqueeze(0).repeat(3,1,1,1).cuda()
+        self.kernel = torch.matmul(k.t(),k).unsqueeze(0).repeat(3,1,1,1).to(rank)
 
         self.weight = loss_weight
         

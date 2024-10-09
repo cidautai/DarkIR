@@ -1,18 +1,35 @@
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel as DDP
 from ptflops import get_model_complexity_info
 
 from .nafnet_utils.arch_model import NAFNet
 from .network import Network
-from .arch_util import load_weights, load_optim, freeze_parameters, save_checkpoint
+from .arch_util import load_weights, load_optim, save_checkpoint
 
-def create_model(opt, cuda):
+def freeze_parameters(model,
+                      substring:str,
+                      adapter:bool = False):
+    if adapter:
+        for name, param in model.named_parameters():
+            if substring not in name:
+                param.requires_grad = False  
+        return model
+    else:
+        for name, param in model.named_parameters():
+            if substring in name:
+                param.requires_grad = False  
+        return model        
+
+    # for name, param in model.named_parameters():
+    #     print(f"{name}: requires_grad={param.requires_grad}") 
+
+def create_model(opt, cuda,rank, adapter = False, substring = 'adapter'):
     '''
     Creates the model.
     opt: a dictionary from the yaml config key network
     '''
-    
+    print(rank)
     name = opt['name']
 
     device = torch.device('cuda') if cuda else torch.device('cpu') 
@@ -30,22 +47,32 @@ def create_model(opt, cuda):
                         width=opt['width'], 
                         middle_blk_num=opt['middle_blk_num_enc'], 
                         enc_blk_nums=opt['enc_blk_nums'],
-                        dec_blk_nums=opt['dec_blk_nums'])
+                        dec_blk_nums=opt['dec_blk_nums'])#.to(rank)
 
     else:
         raise NotImplementedError('This network is not implemented')
     print(f'Using {name} network')
 
-    # if torch.cuda.device_count() > 1:
-    #     print("Usando", torch.cuda.device_count(), "GPUs!")
-    #     model = DataParallel(model)
-
-    model.to(device)
     input_size = (3, 256, 256)
     macs, params = get_model_complexity_info(model, input_size, print_per_layer_stat = False)
     print(f'Computational complexity at {input_size}: {macs}')
     print('Number of parameters: ', params)    
-
+    # if torch.cuda.device_count() > 1:
+    #     print("Usando", torch.cuda.device_count(), "GPUs!")
+    #     model = DataParallel(model)
+    #if wanted, distribute into different gpus
+    # print(cuda['ids'])
+    # if len(cuda['ids']) > 1:
+    #     # model.to(rank)
+    #     model = DDP(model, device_ids=[rank])
+    # else:
+    #     model.to(device)
+    model.to(rank)
+    
+    #freeze the parameters before feeding into the DDP
+    model = freeze_parameters(model, substring=substring, adapter=adapter)
+    model = DDP(model, device_ids=[rank])
+    
     return model, macs, params
 
 def create_optim_scheduler(opt, model):
@@ -68,13 +95,15 @@ def create_optim_scheduler(opt, model):
 def resume_model(model,
                  optim,
                  scheduler, 
-                 path_model, resume:str=None):
+                 path_model, 
+                 rank,resume:str=None):
     
     '''
     Returns the loaded weights of model and optimizer if resume flag is True
     '''
+    map_location = {'cuda:%d' % 0: 'cuda:%d' % rank}
     if resume:
-        checkpoints = torch.load(path_model)
+        checkpoints = torch.load(path_model, map_location=map_location, weights_only=False)
         weights = checkpoints['model_state_dict']
         model = load_weights(model, old_weights=weights)
         optim = load_optim(optim, optim_weights = checkpoints['optimizer_state_dict'])
@@ -92,17 +121,19 @@ def resume_adapter(model,
                  optim,
                  scheduler, 
                  path_adapter,
-                 path_model, resume:str=None):
+                 path_model,
+                 rank, resume:str=None):
     '''
     Returns the loaded weights of model and optimizer if resume flag is True
     '''
+    map_location = {'cuda:%d' % 0: 'cuda:%d' % rank}
     #first load the model weights
-    checkpoints = torch.load(path_model)
+    checkpoints = torch.load(path_model, map_location=map_location, weights_only=False)
     weights = checkpoints['model_state_dict']
     model = load_weights(model, old_weights=weights) 
     #now if needed load the adapter weights
     if resume:
-        checkpoints = torch.load(path_adapter)
+        checkpoints = torch.load(path_adapter,map_location=map_location, weights_only=False)
         weights = checkpoints['model_state_dict']
         model = load_weights(model, old_weights=weights)
         # optim = load_optim(optim, optim_weights = checkpoints['optimizer_state_dict'])

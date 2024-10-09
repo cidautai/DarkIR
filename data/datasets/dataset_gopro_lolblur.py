@@ -4,7 +4,7 @@ import random
 
 # PyTorch library
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, DistributedSampler
 import torch.optim
 
 import cv2 as cv
@@ -56,9 +56,9 @@ def random_sort_pairs(list1, list2):
 def flatten_list_comprehension(matrix):
     return [item for row in matrix for item in row]
 
-def main_dataset_gopro_lolblur(train_path='/mnt/valab-datasets/GOPRO/train', test_path='/mnt/valab-datasets/GOPRO/test',
+def main_dataset_gopro_lolblur(rank=1, train_path='/mnt/valab-datasets/GOPRO/train', test_path='/mnt/valab-datasets/GOPRO/test',
                        batch_size_train=4, flips = None, batch_size_test=1, verbose=False, cropsize=512,
-                       num_workers=1, crop_type='Random'):
+                       num_workers=1, crop_type='Random', world_size = 1):
 
     # begin by loading the gopro dataset
     PATH_TRAIN = train_path
@@ -182,12 +182,17 @@ def main_dataset_gopro_lolblur(train_path='/mnt/valab-datasets/GOPRO/train', tes
     test_dataset_lolblur = MyDataset_Crop(list_blur_valid_lolblur, list_sharp_valid_lolblur, cropsize=None,
                                   tensor_transform=tensor_transform, test=True, crop_type=crop_type)
 
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=True,
-                              num_workers=num_workers, pin_memory=True, drop_last=True)
-    test_loader_gopro = DataLoader(dataset=test_dataset_gopro, batch_size=batch_size_test, shuffle=True,
-                             num_workers=num_workers, pin_memory=True, drop_last=False)
-    test_loader_lolblur = DataLoader(dataset=test_dataset_lolblur, batch_size=batch_size_test, shuffle=True,
-                             num_workers=num_workers, pin_memory=True, drop_last=False)
+    # Now we need to apply the Distributed sampler
+    train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, shuffle= True, rank=rank)
+    test_sampler_gopro = DistributedSampler(test_dataset_gopro, num_replicas=world_size, shuffle= True, rank=rank)
+    test_sampler_lolblur = DistributedSampler(test_dataset_lolblur, num_replicas=world_size, shuffle= True, rank=rank)
+
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=False,
+                              num_workers=num_workers, pin_memory=True, drop_last=True, sampler = train_sampler)
+    test_loader_gopro = DataLoader(dataset=test_dataset_gopro, batch_size=batch_size_test, shuffle=False,
+                             num_workers=num_workers, pin_memory=True, drop_last=False, sampler = test_sampler_gopro)
+    test_loader_lolblur = DataLoader(dataset=test_dataset_lolblur, batch_size=batch_size_test, shuffle=False,
+                             num_workers=num_workers, pin_memory=True, drop_last=False, sampler= test_sampler_lolblur)
 
 
     return train_loader, test_loader_gopro, test_loader_lolblur

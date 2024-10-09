@@ -1,7 +1,8 @@
 #### training devices
 device:
   cuda: True
-  gpus: 1
+  gpus: 0,1
+  ids: [0,1] 
 
 #### datasets
 datasets:
@@ -21,7 +22,7 @@ datasets:
 #### network structures
 network:
   name: NAFNet
-  resume_training: False
+  resume_training: True
   img_channels: 3
   width: 32
   middle_blk_num_enc: 1
@@ -68,9 +69,9 @@ train:
 
 #### save model
 save:
-  path: ./models/NAFNet_GOPRO_LOLBlur.pt
+  path: ./models/NAFNet_GOPRO_LOLBlur_.pt
   best: ./models/bests
-  new: ./models/NAFNet_GOPRO_LOLBlur.pt 
+  new: ./models/NAFNet_GOPRO_LOLBlur_.pt 
 
 #### wandb:
 wandb:
@@ -79,7 +80,7 @@ wandb:
   entity: cidautai
   name: NAFNet_GOPRO_LOLBlur
   save_code: True
-  resume: never # resume: must, if uploading to an existing project
-  id: # must be empty if don't want to overwrite an existing project
+  resume: must # resume: must, if uploading to an existing project
+  id: hhx03lws # must be empty if don't want to overwrite an existing project
 
 

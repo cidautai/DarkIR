@@ -6,7 +6,7 @@ from .datasets.dataset_LOLv2 import main_dataset_lolv2, main_dataset_lolv2_synth
 from .datasets.dataset_gopro_lolblur import main_dataset_gopro_lolblur
 # from .create_data import create_data
 
-def create_data(opt):
+def create_data(rank, world_size, opt):
     '''
     opt: a dictionary from the yaml config key datasets 
     '''
@@ -73,7 +73,8 @@ def create_data(opt):
                                                 num_workers=num_workers,
                                                 crop_type=crop_type)
     elif name == 'GOPRO_LOLBlur':
-        train_loader, test_loader_gopro, test_loader_lolblur = main_dataset_gopro_lolblur( train_path=train_path,
+        train_loader, test_loader_gopro, test_loader_lolblur = main_dataset_gopro_lolblur( rank=rank,
+                                                train_path=train_path,
                                                 test_path = test_path,
                                                 batch_size_train=batch_size_train,
                                                 batch_size_test=batch_size_test,
@@ -81,7 +82,8 @@ def create_data(opt):
                                                 verbose=verbose,
                                                 cropsize=cropsize,
                                                 num_workers=num_workers,
-                                                crop_type=crop_type)  
+                                                crop_type=crop_type,
+                                                world_size=world_size)  
         return train_loader, test_loader_gopro, test_loader_lolblur 
     else:
         raise NotImplementedError(f'{name} is not implemented')        

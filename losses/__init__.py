@@ -1,6 +1,6 @@
 from .loss import MSELoss, L1Loss, CharbonnierLoss, SSIM, VGGLoss, EdgeLoss, FrequencyLoss, EnhanceLoss
 
-def create_loss(opt):
+def create_loss(opt, rank):
     
     '''
     Returns the needed losses for evaluating our model
@@ -17,31 +17,32 @@ def create_loss(opt):
     else:
         raise NotImplementedError('Pixel Criterion not implemented')
 
-    losses['pixel_loss'] = pixel_loss
+    losses['pixel_loss'] = pixel_loss.to(rank)
     
     # now the perceptual loss
     if opt['perceptual']:     
         perceptual_loss = VGGLoss(loss_weight = opt['perceptual_weight'],
                                 criterion = opt['perceptual_criterion'],
-                                reduction = opt['perceptual_reduction'])
+                                reduction = opt['perceptual_reduction']).to(rank)
         losses['perceptual_loss'] = perceptual_loss
     # the edge loss
     if opt['edge']: 
         edge_loss = EdgeLoss(loss_weight = opt['edge_weight'],
                                 criterion = opt['edge_criterion'],
-                                reduction = opt['edge_reduction'])
+                                reduction = opt['edge_reduction'],
+                                rank = rank).to(rank)
         losses['edge_loss'] = edge_loss
     # the frequency loss
     if opt['frequency']:
         frequency_loss = FrequencyLoss(loss_weight = opt['edge_weight'],
                                 reduction = opt['edge_reduction'],
-                                criterion = opt['frequency_criterion'])
+                                criterion = opt['frequency_criterion']).to(rank)
         losses['frequecy_loss'] = frequency_loss
     # the enhance loss
     if opt['enhance']:
         enhance_loss = EnhanceLoss(loss_weight= opt['enhance_weight'],
                                 reduction = opt['enhance_reduction'],
-                                criterion = opt['enhance_criterion'])
+                                criterion = opt['enhance_criterion']).to(rank)
         losses['enhance_loss'] = enhance_loss
     
     return losses

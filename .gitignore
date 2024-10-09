@@ -1,3 +1,4 @@
+output.txt
 **/__pycache__/
 /wandb
 *.png
