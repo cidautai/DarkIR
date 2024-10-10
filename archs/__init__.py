@@ -101,7 +101,7 @@ def resume_model(model,
     '''
     Returns the loaded weights of model and optimizer if resume flag is True
     '''
-    map_location = {'cuda:%d' % 0: 'cuda:%d' % rank}
+    map_location = {'hip:%d' % 0: 'hip:%d' % rank}
     if resume:
         checkpoints = torch.load(path_model, map_location=map_location, weights_only=False)
         weights = checkpoints['model_state_dict']

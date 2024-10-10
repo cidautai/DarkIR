@@ -182,20 +182,37 @@ def main_dataset_gopro_lolblur(rank=1, train_path='/mnt/valab-datasets/GOPRO/tra
     test_dataset_lolblur = MyDataset_Crop(list_blur_valid_lolblur, list_sharp_valid_lolblur, cropsize=None,
                                   tensor_transform=tensor_transform, test=True, crop_type=crop_type)
 
-    # Now we need to apply the Distributed sampler
-    train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, shuffle= True, rank=rank)
-    test_sampler_gopro = DistributedSampler(test_dataset_gopro, num_replicas=world_size, shuffle= True, rank=rank)
-    test_sampler_lolblur = DistributedSampler(test_dataset_lolblur, num_replicas=world_size, shuffle= True, rank=rank)
+    if world_size > 1:
+        # Now we need to apply the Distributed sampler
+        train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, shuffle= True, rank=rank)
+        test_sampler_gopro = DistributedSampler(test_dataset_gopro, num_replicas=world_size, shuffle= True, rank=rank)
+        test_sampler_lolblur = DistributedSampler(test_dataset_lolblur, num_replicas=world_size, shuffle= True, rank=rank)
 
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=False,
-                              num_workers=num_workers, pin_memory=True, drop_last=True, sampler = train_sampler)
-    test_loader_gopro = DataLoader(dataset=test_dataset_gopro, batch_size=batch_size_test, shuffle=False,
-                             num_workers=num_workers, pin_memory=True, drop_last=False, sampler = test_sampler_gopro)
-    test_loader_lolblur = DataLoader(dataset=test_dataset_lolblur, batch_size=batch_size_test, shuffle=False,
-                             num_workers=num_workers, pin_memory=True, drop_last=False, sampler= test_sampler_lolblur)
+        samplers = []
+        # samplers = {'train': train_sampler, 'test': [test_sampler_gopro, test_sampler_lolblur]}
+        samplers.append(train_sampler)
+        samplers.append(test_sampler_gopro)
+        samplers.append(test_sampler_lolblur)
 
+        train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=False,
+                                num_workers=num_workers, pin_memory=True, drop_last=True, sampler = train_sampler)
+        test_loader_gopro = DataLoader(dataset=test_dataset_gopro, batch_size=batch_size_test, shuffle=False,
+                                num_workers=num_workers, pin_memory=True, drop_last=False, sampler = test_sampler_gopro)
+        test_loader_lolblur = DataLoader(dataset=test_dataset_lolblur, batch_size=batch_size_test, shuffle=False,
+                                num_workers=num_workers, pin_memory=True, drop_last=False, sampler= test_sampler_lolblur)
+        
+    else:
+        train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=True,
+                                num_workers=num_workers, pin_memory=True, drop_last=True, sampler = None)
+        test_loader_gopro = DataLoader(dataset=test_dataset_gopro, batch_size=batch_size_test, shuffle=True,
+                                num_workers=num_workers, pin_memory=True, drop_last=False, sampler = None)
+        test_loader_lolblur = DataLoader(dataset=test_dataset_lolblur, batch_size=batch_size_test, shuffle=True,
+                                num_workers=num_workers, pin_memory=True, drop_last=False, sampler= None)       
+        samplers = None
 
-    return train_loader, test_loader_gopro, test_loader_lolblur
+    test_loader = {'gopro':test_loader_gopro, 'lolblur':test_loader_lolblur}
+
+    return train_loader, test_loader, samplers
 
 if __name__ == '__main__':
     

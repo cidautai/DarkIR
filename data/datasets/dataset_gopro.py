@@ -4,7 +4,7 @@ import random
 
 # PyTorch library
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, DistributedSampler
 import torch.optim
 
 
@@ -51,8 +51,11 @@ def random_sort_pairs(list1, list2):
 
     return list1, list2
 
+def flatten_list_comprehension(matrix):
+    return [item for row in matrix for item in row]
 
-def main_dataset_gopro(train_path='../../GOPRO_dataset/train', 
+def main_dataset_gopro(rank = 1,
+                       train_path='../../GOPRO_dataset/train', 
                        test_path='../../GOPRO_dataset/test',
                        batch_size_train=4, 
                        batch_size_test=1, 
@@ -60,7 +63,8 @@ def main_dataset_gopro(train_path='../../GOPRO_dataset/train',
                        cropsize=512,
                        flips = None,
                        num_workers=1, 
-                       crop_type='Random'):
+                       crop_type='Random',
+                       world_size = 1):
 
     PATH_TRAIN = train_path
     PATH_VALID = test_path
@@ -85,9 +89,6 @@ def main_dataset_gopro(train_path='../../GOPRO_dataset/train',
                        for x in paths_blur_valid]
     list_sharp_valid = [glob(os.path.join(x, '*.png'))
                         for x in paths_sharp_valid]
-
-    def flatten_list_comprehension(matrix):
-        return [item for row in matrix for item in row]
 
     list_blur = flatten_list_comprehension(list_blur)#[:200]
     list_sharp = flatten_list_comprehension(list_sharp)#[:200]
@@ -126,12 +127,28 @@ def main_dataset_gopro(train_path='../../GOPRO_dataset/train',
                                   tensor_transform=tensor_transform, test=True, 
                                   crop_type=crop_type)
 
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=True,
-                              num_workers=num_workers, pin_memory=True, drop_last=True)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size_test, shuffle=True,
-                             num_workers=num_workers, pin_memory=True, drop_last=False)
+    if world_size > 1:
+        # Now we need to apply the Distributed sampler
+        train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, shuffle= True, rank=rank)
+        test_sampler = DistributedSampler(test_dataset, num_replicas=world_size, shuffle= True, rank=rank)
 
-    return train_loader, test_loader
+        samplers = []
+        # samplers = {'train': train_sampler, 'test': [test_sampler_gopro, test_sampler_lolblur]}
+        samplers.append(train_sampler)
+        samplers.append(test_sampler)
+
+        train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=False,
+                                num_workers=num_workers, pin_memory=True, drop_last=True, sampler=train_sampler)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size_test, shuffle=False,
+                                num_workers=num_workers, pin_memory=True, drop_last=False, sampler=test_sampler)
+    else:
+        train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=True,
+                                num_workers=num_workers, pin_memory=True, drop_last=True)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size_test, shuffle=True,
+                                num_workers=num_workers, pin_memory=True, drop_last=False)    
+        samplers = None   
+
+    return train_loader, test_loader, samplers
 
 if __name__ == '__main__':
     

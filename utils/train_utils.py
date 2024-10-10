@@ -2,7 +2,7 @@ import torch
 import torch.distributed as dist
 import sys, os
 from lpips import LPIPS
-
+import numpy as np
 sys.path.append('../losses')
 sys.path.append('../data/datasets/datapipeline')
 from losses import *
@@ -26,11 +26,21 @@ def save_model(model, path):
     if dist.get_rank() == 0:
         torch.save(model.state_dict(), path)
 
+def shuffle_sampler(samplers, epoch):
+    '''
+    A function that shuffles all the Distributed samplers in the loaders.
+    '''
+    if not samplers: # if they are none
+        return
+    for sampler in samplers:
+        sampler.set_epoch(epoch)
+
 def train_model(model, optim, all_losses, train_loader, metrics, adapter = None, rank = None):
     '''
     It trains the model, returning the model, optim, scheduler and metrics dict
     '''
     outside_batch = None
+    mean_metrics = {'train_loss': [], 'train_psnr': [], 'train_og_psnr': [], 'train_ssim':[]}
     for high_batch, low_batch in train_loader:
 
         # Move the data to the GPU
@@ -63,15 +73,20 @@ def train_model(model, optim, all_losses, train_loader, metrics, adapter = None,
         optim_loss.backward()
         optim.step()
 
-        metrics['train_loss'].append(optim_loss.item())
-        metrics['train_psnr'].append(psnr.item())
-        metrics['train_og_psnr'].append(og_psnr.item())
-        metrics['train_ssim'].append(ssim.item())    
+        mean_metrics['train_loss'].append(optim_loss.item())
+        mean_metrics['train_psnr'].append(psnr.item())
+        mean_metrics['train_og_psnr'].append(og_psnr.item())
+        mean_metrics['train_ssim'].append(ssim.item()) 
+    metrics['train_loss'] = np.mean(mean_metrics['train_loss'])
+    metrics['train_psnr'] = np.mean(mean_metrics['train_psnr'])
+    metrics['train_og_psnr'] = np.mean(mean_metrics['train_og_psnr'])
+    metrics['train_ssim'] = np.mean(mean_metrics['train_ssim'])
     
     return model, optim, metrics
 
-def eval_model(model, test_loader, metrics, largest_capable_size = 1500, adapter = None, rank=None):
+def eval_one_loader(model, test_loader, metrics, largest_capable_size = 1500, adapter = None, rank=None):
     calc_LPIPS = LPIPS(net = 'vgg', verbose=False).to(rank)
+    mean_metrics = {'valid_psnr':[], 'valid_ssim':[], 'valid_lpips':[]}
     with torch.no_grad():
         # Now we need to go over the test_loader and evaluate the results of the epoch
         for high_batch_valid, low_batch_valid in test_loader:
@@ -117,8 +132,36 @@ def eval_model(model, test_loader, metrics, largest_capable_size = 1500, adapter
                 
             valid_psnr_batch = 20 * torch.log10(1. / torch.sqrt(valid_loss_batch))        
     
-            metrics['valid_psnr'].append(valid_psnr_batch.item())
-            metrics['valid_ssim'].append(valid_ssim_batch.item())
-            metrics['valid_lpips'].append(torch.mean(valid_lpips_batch).item())
-    imgs_tensor = {'input':low_batch_valid[0], 'output':enhanced_batch_valid[0], 'gt':high_batch_valid[0]}
-    return metrics, imgs_tensor
+            mean_metrics['valid_psnr'].append(valid_psnr_batch.item())
+            mean_metrics['valid_ssim'].append(valid_ssim_batch.item())
+            mean_metrics['valid_lpips'].append(torch.mean(valid_lpips_batch).item())
+    
+    metrics['valid_psnr'] = np.mean(mean_metrics['valid_psnr'])
+    metrics['valid_ssim'] = np.mean(mean_metrics['valid_ssim'])
+    metrics['valid_lpips'] = np.mean(mean_metrics['valid_lpips'])
+            
+    imgs_dict = {'input':low_batch_valid[0], 'output':enhanced_batch_valid[0], 'gt':high_batch_valid[0]}
+    return metrics, imgs_dict
+
+def eval_model(model, test_loader, metrics, largest_capable_size = 1500, adapter = None, rank=None):
+    '''
+    This function runs over the multiple test loaders and returns the whole metrics.
+    '''
+    #first you need to assert that test_loader is a dictionary
+    # print(test_loader)
+    if type(test_loader) != dict:
+        test_loader = {'data': test_loader}
+    # print(test_loader)
+    if len(test_loader) > 1:
+        
+        all_metrics = {}
+        all_imgs_dict = {}
+        for key, loader in test_loader.items():
+            # print(key, loader)
+            metrics, imgs_dict = eval_one_loader(model, loader, metrics, largest_capable_size = largest_capable_size, adapter = adapter, rank=rank)
+            all_metrics[f'{key}'] = metrics
+            all_imgs_dict[f'{key}'] = imgs_dict
+        return all_metrics, all_imgs_dict
+    else:
+        metrics, imgs_dict = eval_one_loader(model, test_loader['data'], metrics, largest_capable_size = largest_capable_size, adapter = adapter, rank=rank)
+        return metrics, imgs_dict

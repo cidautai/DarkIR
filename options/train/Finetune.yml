@@ -2,6 +2,7 @@
 device:
   cuda: True
   gpus: 0
+  ids: [0]
 
 #### datasets
 datasets:

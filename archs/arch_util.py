@@ -70,11 +70,20 @@ def load_optim(optim, optim_weights):
     return optim
 
 
-def save_checkpoint(model, optim, scheduler, metrics, paths, adapter = False, rank = None):
+def save_checkpoint(model, optim, scheduler, metrics_eval, metrics_train, paths, adapter = False, rank = None):
 
-
+    '''
+    Save the .pt of the model after each epoch.
+    
+    WOULD BE INTERESTING TO DEFINE THE BEST PSNR BASED ON DIFFERENT DATASETS!!
+    '''
+    best_psnr = metrics_train['best_psnr']
     if rank!=0: 
-        return metrics, metrics['best_psnr']
+        return best_psnr
+    
+    if type(next(iter(metrics_eval.values()))) != dict:
+        metrics_eval = {'metrics': metrics_eval}
+
     weights = model.state_dict()
     if adapter:
         weights = {k: v for k, v in weights.items() if 'adapter' in k}
@@ -83,47 +92,22 @@ def save_checkpoint(model, optim, scheduler, metrics, paths, adapter = False, ra
 
     # Save the model after every epoch
     model_to_save = {
-        'epoch': metrics['epoch'],
+        'epoch': metrics_train['epoch'],
         'model_state_dict': weights,
         'optimizer_state_dict': optim.state_dict(),
-        'loss': np.mean(metrics['train_loss']),
+        'loss': metrics_train['train_loss'],
         'scheduler_state_dict': scheduler.state_dict()
     }
     torch.save(model_to_save, paths['new'])
 
     #save best model if new valid_psnr is higher than the best one
-    if np.mean(metrics['valid_psnr']) >= metrics['best_psnr']:
+    if next(iter(metrics_eval.values()))['valid_psnr'] >= metrics_train['best_psnr']:
         
         torch.save(model_to_save, paths['best'])
         
-        metrics['best_psnr'] = np.mean(metrics['valid_psnr']) # update best psnr
-    # elif not rank:
-    #     weights = model.state_dict()
-    #     if adapter:
-    #         weights = {k: v for k, v in weights.items() if 'adapter' in k}
-    #     else:
-    #         weights = {k: v for k, v in weights.items() if 'adapter' not in k}
-
-    #     # Save the model after every epoch
-    #     model_to_save = {
-    #         'epoch': metrics['epoch'],
-    #         'model_state_dict': weights,
-    #         'optimizer_state_dict': optim.state_dict(),
-    #         'loss': np.mean(metrics['train_loss']),
-    #         'scheduler_state_dict': scheduler.state_dict()
-    #     }
-    #     torch.save(model_to_save, paths['new'])
-
-    #     #save best model if new valid_psnr is higher than the best one
-    #     if np.mean(metrics['valid_psnr']) >= metrics['best_psnr']:
-            
-    #         torch.save(model_to_save, paths['best'])
-            
-    #         metrics['best_psnr'] = np.mean(metrics['valid_psnr']) # update best psnr 
-    # else:
-    #     raise ValueError(f'Not valid value for rank: {rank}')      
+        metrics_train['best_psnr'] = next(iter(metrics_eval.values()))['valid_psnr'] # update best psnr   
     
-    return metrics, metrics['best_psnr']
+    return metrics_train['best_psnr']
 
 if __name__ == '__main__':
     

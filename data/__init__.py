@@ -21,6 +21,7 @@ def create_data(rank, world_size, opt):
     num_workers=opt['train']['n_workers']
     crop_type=opt['train']['crop_type']  
     
+    samplers = None # TEmporal change!!
     if name == 'LOLBlur':
         train_loader, test_loader = main_dataset_lolblur( train_path=train_path,
                                                 test_path = test_path,
@@ -63,7 +64,8 @@ def create_data(rank, world_size, opt):
                                                 crop_type=crop_type)   
 
     elif name == 'GOPRO':
-        train_loader, test_loader = main_dataset_gopro( train_path=train_path,
+        train_loader, test_loader, samplers = main_dataset_gopro( rank=rank,
+                                                train_path=train_path,
                                                 test_path = test_path,
                                                 batch_size_train=batch_size_train,
                                                 batch_size_test=batch_size_test,
@@ -71,9 +73,10 @@ def create_data(rank, world_size, opt):
                                                 verbose=verbose,
                                                 cropsize=cropsize,
                                                 num_workers=num_workers,
-                                                crop_type=crop_type)
+                                                crop_type=crop_type,
+                                                world_size=world_size)
     elif name == 'GOPRO_LOLBlur':
-        train_loader, test_loader_gopro, test_loader_lolblur = main_dataset_gopro_lolblur( rank=rank,
+        train_loader, test_loader, samplers = main_dataset_gopro_lolblur( rank=rank,
                                                 train_path=train_path,
                                                 test_path = test_path,
                                                 batch_size_train=batch_size_train,
@@ -84,12 +87,12 @@ def create_data(rank, world_size, opt):
                                                 num_workers=num_workers,
                                                 crop_type=crop_type,
                                                 world_size=world_size)  
-        return train_loader, test_loader_gopro, test_loader_lolblur 
+
     else:
         raise NotImplementedError(f'{name} is not implemented')        
-
+    # print(samplers, train_loader, test_loader)
     print(f'Using {name} Dataset')
     
-    return train_loader, test_loader
+    return train_loader, test_loader, samplers
 
 __all__ = ['create_data']
