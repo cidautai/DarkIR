@@ -21,6 +21,8 @@ def create_data(rank, world_size, opt):
     num_workers=opt['train']['n_workers']
     crop_type=opt['train']['crop_type']  
     
+    if rank != 0:
+        verbose = False
     samplers = None # TEmporal change!!
     if name == 'LOLBlur':
         train_loader, test_loader, samplers = main_dataset_lolblur(rank = rank,

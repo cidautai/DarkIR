@@ -71,11 +71,11 @@ def run_model(rank, world_size):
         model.train()
         # model = freeze_parameters(model, substring='adapter', adapter = False) # freeze the adapter if there is any
         model, optim, metrics_train = train_model(model, optim, all_losses, train_loader,
-                                            metrics_train, rank = rank)
+                                            metrics_train, adapter = True, rank = rank)
         # eval phase
         model.eval()
         metrics_eval, imgs_dict = eval_model(model, test_loader, metrics_eval, 
-                                                    largest_capable_size=largest_capable_size, rank=rank)
+                                                    largest_capable_size=largest_capable_size, adapter= True, rank=rank)
         
         # print some results
         print(f"Epoch {epoch + 1} of {opt['train']['epochs']} took {time.time() - start_time:.3f}s\n")

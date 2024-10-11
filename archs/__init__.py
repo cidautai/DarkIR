@@ -24,12 +24,12 @@ def freeze_parameters(model,
     # for name, param in model.named_parameters():
     #     print(f"{name}: requires_grad={param.requires_grad}") 
 
-def create_model(opt, cuda,rank, adapter = False, substring = 'adapter'):
+def create_model(opt, cuda, rank, adapter = False, substring = 'adapter'):
     '''
     Creates the model.
     opt: a dictionary from the yaml config key network
     '''
-    print(rank)
+    # print(rank)
     name = opt['name']
 
     # device = torch.device('cuda') if cuda else torch.device('cpu') 
@@ -51,22 +51,16 @@ def create_model(opt, cuda,rank, adapter = False, substring = 'adapter'):
 
     else:
         raise NotImplementedError('This network is not implemented')
-    print(f'Using {name} network')
+    if rank ==0:
+        print(f'Using {name} network')
 
-    input_size = (3, 256, 256)
-    macs, params = get_model_complexity_info(model, input_size, print_per_layer_stat = False)
-    print(f'Computational complexity at {input_size}: {macs}')
-    print('Number of parameters: ', params)    
-    # if torch.cuda.device_count() > 1:
-    #     print("Usando", torch.cuda.device_count(), "GPUs!")
-    #     model = DataParallel(model)
-    #if wanted, distribute into different gpus
-    # print(cuda['ids'])
-    # if len(cuda['ids']) > 1:
-    #     # model.to(rank)
-    #     model = DDP(model, device_ids=[rank])
-    # else:
-    #     model.to(device)
+        input_size = (3, 256, 256)
+        macs, params = get_model_complexity_info(model, input_size, print_per_layer_stat = False)
+        print(f'Computational complexity at {input_size}: {macs}')
+        print('Number of parameters: ', params)    
+    else:
+        macs, params = None, None
+
     model.to(rank)
     
     #freeze the parameters before feeding into the DDP

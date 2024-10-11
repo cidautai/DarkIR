@@ -79,12 +79,13 @@ def run_model(rank, world_size):
                                                     largest_capable_size=largest_capable_size, rank=rank)
         
         # print some results
-        print(f"Epoch {epoch + 1} of {opt['train']['epochs']} took {time.time() - start_time:.3f}s\n")
-        if type(next(iter(metrics_eval.values()))) == dict:
-            for key, metric_eval in metrics_eval.items():
-                print(f' \t {key} --- PSNR: {metric_eval['valid_psnr']}, SSIM: {metric_eval['valid_ssim']}, LPIPS: {metric_eval['valid_lpips']}')
-        else:
-            print(f' \t {opt['datasets']['name']} --- PSNR: {metrics_eval['valid_psnr']}, SSIM: {metrics_eval['valid_ssim']}, LPIPS: {metrics_eval['valid_lpips']}')
+        if rank==0:
+            print(f"Epoch {epoch + 1} of {opt['train']['epochs']} took {time.time() - start_time:.3f}s\n")
+            if type(next(iter(metrics_eval.values()))) == dict:
+                for key, metric_eval in metrics_eval.items():
+                    print(f' \t {key} --- PSNR: {metric_eval['valid_psnr']}, SSIM: {metric_eval['valid_ssim']}, LPIPS: {metric_eval['valid_lpips']}')
+            else:
+                print(f' \t {opt['datasets']['name']} --- PSNR: {metrics_eval['valid_psnr']}, SSIM: {metrics_eval['valid_ssim']}, LPIPS: {metrics_eval['valid_lpips']}')
         # Save the model after every epoch
         best_psnr = save_checkpoint(model, optim, scheduler, metrics_eval = metrics_eval, metrics_train=metrics_train, 
                                     paths = {'new':NEW_PATH_MODEL, 'best': BEST_PATH_MODEL}, rank=rank)

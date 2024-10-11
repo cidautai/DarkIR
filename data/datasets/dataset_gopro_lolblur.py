@@ -47,11 +47,12 @@ def main_dataset_gopro_lolblur(rank=1, train_path='/mnt/valab-datasets/GOPRO/tra
     check_paths([list_blur_gopro, list_blur_valid_gopro, 
                  list_sharp_gopro, list_sharp_valid_gopro])
 
-    print('Images in the GOPRO subsets: \n')
-    print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur_gopro))
-    print("    -Images in the PATH_HIGH_TRAINING folder: ", len(list_sharp_gopro))
-    print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid_gopro))
-    print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_gopro))
+    if verbose:
+        print('Images in the GOPRO subsets: \n')
+        print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur_gopro))
+        print("    -Images in the PATH_HIGH_TRAINING folder: ", len(list_sharp_gopro))
+        print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid_gopro))
+        print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_gopro))
     
     # --------------------------------------------------------------------------------------
     # now load the lolblur dataset

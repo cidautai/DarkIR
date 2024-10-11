@@ -84,7 +84,7 @@ def train_model(model, optim, all_losses, train_loader, metrics, adapter = None,
     
     return model, optim, metrics
 
-def eval_one_loader(model, test_loader, metrics, largest_capable_size = 1500, adapter = None, rank=None):
+def eval_one_loader(model, test_loader, metrics, largest_capable_size = 1500, adapter = None, rank=0):
     calc_LPIPS = LPIPS(net = 'vgg', verbose=False).to(rank)
     mean_metrics = {'valid_psnr':[], 'valid_ssim':[], 'valid_lpips':[]}
     with torch.no_grad():
@@ -139,7 +139,7 @@ def eval_one_loader(model, test_loader, metrics, largest_capable_size = 1500, ad
     metrics['valid_psnr'] = np.mean(mean_metrics['valid_psnr'])
     metrics['valid_ssim'] = np.mean(mean_metrics['valid_ssim'])
     metrics['valid_lpips'] = np.mean(mean_metrics['valid_lpips'])
-            
+    # print(low_batch_valid.shape, torch.max(low_batch_valid))
     imgs_dict = {'input':low_batch_valid[0], 'output':enhanced_batch_valid[0], 'gt':high_batch_valid[0]}
     return metrics, imgs_dict
 
@@ -147,21 +147,26 @@ def eval_model(model, test_loader, metrics, largest_capable_size = 1500, adapter
     '''
     This function runs over the multiple test loaders and returns the whole metrics.
     '''
+    # if rank != 0:
+    #     return None, None
     #first you need to assert that test_loader is a dictionary
     # print(test_loader)
     if type(test_loader) != dict:
         test_loader = {'data': test_loader}
     # print(test_loader)
     if len(test_loader) > 1:
-        
         all_metrics = {}
         all_imgs_dict = {}
+        # print(test_loader)
         for key, loader in test_loader.items():
             # print(key, loader)
-            metrics, imgs_dict = eval_one_loader(model, loader, metrics, largest_capable_size = largest_capable_size, adapter = adapter, rank=rank)
+            all_metrics[f'{key}'] = {}
+            metrics, imgs_dict = eval_one_loader(model, loader, all_metrics[f'{key}'], largest_capable_size = largest_capable_size, adapter = adapter, rank=rank)
             all_metrics[f'{key}'] = metrics
             all_imgs_dict[f'{key}'] = imgs_dict
+        print(all_metrics)
         return all_metrics, all_imgs_dict
+    
     else:
         metrics, imgs_dict = eval_one_loader(model, test_loader['data'], metrics, largest_capable_size = largest_capable_size, adapter = adapter, rank=rank)
         return metrics, imgs_dict
