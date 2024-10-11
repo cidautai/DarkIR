@@ -102,14 +102,26 @@ def combine_dicts(dict1, dict2, names=['gopro', 'lolblur']):
     return combined_dict
 
 def create_path_models(opt):
-    PATH_MODEL     = opt['path']
-    if opt['new']:
-        NEW_PATH_MODEL = opt['new']
+    
+    if 'path_model' not in opt: # we load the paths for the baseline training
+        PATH_MODEL     = opt['path']
+        if opt['new']:
+            NEW_PATH_MODEL = opt['new']
+        else: 
+            NEW_PATH_MODEL = opt['path']
+            
+        BEST_PATH_MODEL = os.path.join(opt['best'], os.path.basename(NEW_PATH_MODEL))
+        return PATH_MODEL, NEW_PATH_MODEL, BEST_PATH_MODEL
     else: 
-        NEW_PATH_MODEL = opt['path']
-        
-    BEST_PATH_MODEL = os.path.join(opt['best'], os.path.basename(NEW_PATH_MODEL))
-    return PATH_MODEL, NEW_PATH_MODEL, BEST_PATH_MODEL
+        PATH_MODEL     = opt['path_model']
+        PATH_ADAPTER   = opt['path']
+        if opt['new']:
+            NEW_PATH_ADAPTER = opt['new']
+        else: 
+            NEW_PATH_ADAPTER = opt['path']
+            
+        BEST_PATH_ADAPTER = os.path.join(opt['best'], os.path.basename(NEW_PATH_ADAPTER))
+        return PATH_MODEL, PATH_ADAPTER, NEW_PATH_ADAPTER, BEST_PATH_ADAPTER
 
 if __name__ == '__main__':
     

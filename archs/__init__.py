@@ -32,7 +32,7 @@ def create_model(opt, cuda,rank, adapter = False, substring = 'adapter'):
     print(rank)
     name = opt['name']
 
-    device = torch.device('cuda') if cuda else torch.device('cpu') 
+    # device = torch.device('cuda') if cuda else torch.device('cpu') 
     if name == 'Network':
         model = Network(img_channel=opt['img_channels'], 
                         width=opt['width'], 
@@ -101,7 +101,7 @@ def resume_model(model,
     '''
     Returns the loaded weights of model and optimizer if resume flag is True
     '''
-    map_location = {'hip:%d' % 0: 'hip:%d' % rank}
+    map_location = {'cuda:%d' % 0: 'cuda:%d' % rank}
     if resume:
         checkpoints = torch.load(path_model, map_location=map_location, weights_only=False)
         weights = checkpoints['model_state_dict']
@@ -133,7 +133,7 @@ def resume_adapter(model,
     model = load_weights(model, old_weights=weights) 
     #now if needed load the adapter weights
     if resume:
-        checkpoints = torch.load(path_adapter,map_location=map_location, weights_only=False)
+        checkpoints = torch.load(path_adapter, map_location=map_location, weights_only=False)
         weights = checkpoints['model_state_dict']
         model = load_weights(model, old_weights=weights)
         # optim = load_optim(optim, optim_weights = checkpoints['optimizer_state_dict'])

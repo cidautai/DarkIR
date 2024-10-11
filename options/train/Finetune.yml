@@ -1,8 +1,8 @@
 #### training devices
 device:
   cuda: True
-  gpus: 0
-  ids: [0]
+  gpus: 0,1
+  ids: [0,1] 
 
 #### datasets
 datasets:

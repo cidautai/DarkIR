@@ -7,7 +7,7 @@ from options.options import parse
 
 # read the options file and define the variables from it. If you want to change the hyperparameters of the net and the conditions of training go to
 # the file and change them what you need
-path_options = './options/train/GOPRO.yml'
+path_options = './options/train/Baseline.yml'
 opt = parse(path_options)
 os.environ["CUDA_VISIBLE_DEVICES"]= str(opt['device']['gpus']) # you need to fix this before importing torch
 
