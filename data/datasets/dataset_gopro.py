@@ -1,58 +1,15 @@
 import os
 from glob import glob
-import random
 
 # PyTorch library
-import torch
 from torch.utils.data import DataLoader, DistributedSampler
-import torch.optim
 
-
-import cv2 as cv
-
-from .datapipeline import *
-
-def create_path(IMGS_PATH, list_new_files):
-    '''
-    Util function to add the file path of all the images to the list of names of the selected 
-    images that will form the valid ones.
-    '''
-    file_path, name = os.path.split(
-        IMGS_PATH[0])  # we pick only one element of the list
-    output = [os.path.join(file_path, element) for element in list_new_files]
-
-    return output
-
-
-def common_member(a, b):
-    '''
-    Returns true if the two lists (valid and training) have a common element.
-    '''
-    a_set = set(a)
-    b_set = set(b)
-    if (a_set & b_set):
-        return True
-    else:
-        return False
-
-
-def random_sort_pairs(list1, list2):
-    '''
-    This function makes the same random sort to each list, so that they are sorted and the pairs are maintained.
-    '''
-    # Combine the lists
-    combined = list(zip(list1, list2))
-
-    # Shuffle the combined list
-    random.shuffle(combined)
-
-    # Unzip back into separate lists
-    list1[:], list2[:] = zip(*combined)
-
-    return list1, list2
-
-def flatten_list_comprehension(matrix):
-    return [item for row in matrix for item in row]
+try:
+    from .datapipeline import *
+    from .utils import *
+except:
+    from datapipeline import *
+    from utils import *
 
 def main_dataset_gopro(rank = 1,
                        train_path='../../GOPRO_dataset/train', 
@@ -97,11 +54,7 @@ def main_dataset_gopro(rank = 1,
     list_sharp_valid = flatten_list_comprehension(list_sharp_valid)#[:30]
 
     # check if all the image routes are correct
-    trues = [os.path.isfile(file) for file in list_blur +
-             list_sharp+list_blur_valid+list_sharp_valid]
-    for true in trues:
-        if true != True:
-            print('Non valid route!')
+    check_paths([list_blur, list_blur_valid, list_sharp, list_sharp_valid])
 
     if verbose:
         print('Images in the subsets:')

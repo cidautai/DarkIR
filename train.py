@@ -94,7 +94,6 @@ def run_model(rank, world_size):
         #update scheduler
         scheduler.step()
 
-
     cleanup()
 
 def main():

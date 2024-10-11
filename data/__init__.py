@@ -23,7 +23,8 @@ def create_data(rank, world_size, opt):
     
     samplers = None # TEmporal change!!
     if name == 'LOLBlur':
-        train_loader, test_loader = main_dataset_lolblur( train_path=train_path,
+        train_loader, test_loader, samplers = main_dataset_lolblur(rank = rank,
+                                                train_path=train_path,
                                                 test_path = test_path,
                                                 batch_size_train=batch_size_train,
                                                 batch_size_test=batch_size_test,
@@ -31,9 +32,11 @@ def create_data(rank, world_size, opt):
                                                 verbose=verbose,
                                                 cropsize=cropsize,
                                                 num_workers=num_workers,
-                                                crop_type=crop_type)
+                                                crop_type=crop_type,
+                                                world_size = world_size)
     elif name == 'LOL':
-        train_loader, test_loader = main_dataset_lol( train_path=train_path,
+        train_loader, test_loader, samplers = main_dataset_lol( rank = rank,
+                                                train_path=train_path,
                                                 test_path = test_path,
                                                 batch_size_train=batch_size_train,
                                                 batch_size_test=batch_size_test,
@@ -41,9 +44,11 @@ def create_data(rank, world_size, opt):
                                                 verbose=verbose,
                                                 cropsize=cropsize,
                                                 num_workers=num_workers,
-                                                crop_type=crop_type)   
+                                                crop_type=crop_type,
+                                                world_size = world_size )   
     elif name == 'LOLv2':
-        train_loader, test_loader = main_dataset_lolv2( train_path=train_path,
+        train_loader, test_loader, samplers = main_dataset_lolv2( rank = rank,
+                                                train_path=train_path,
                                                 test_path = test_path,
                                                 batch_size_train=batch_size_train,
                                                 batch_size_test=batch_size_test,
@@ -51,9 +56,11 @@ def create_data(rank, world_size, opt):
                                                 verbose=verbose,
                                                 cropsize=cropsize,
                                                 num_workers=num_workers,
-                                                crop_type=crop_type)   
+                                                crop_type=crop_type,
+                                                world_size=world_size)   
     elif name == 'LOLv2_synth':
-        train_loader, test_loader = main_dataset_lolv2_synth( train_path=train_path,
+        train_loader, test_loader, samplers = main_dataset_lolv2_synth(rank=rank, 
+                                                train_path=train_path,
                                                 test_path = test_path,
                                                 batch_size_train=batch_size_train,
                                                 batch_size_test=batch_size_test,
@@ -61,7 +68,8 @@ def create_data(rank, world_size, opt):
                                                 verbose=verbose,
                                                 cropsize=cropsize,
                                                 num_workers=num_workers,
-                                                crop_type=crop_type)   
+                                                crop_type=crop_type, 
+                                                world_size=world_size)   
 
     elif name == 'GOPRO':
         train_loader, test_loader, samplers = main_dataset_gopro( rank=rank,

@@ -1,60 +1,15 @@
 import os
 from glob import glob
-import random
 
 # PyTorch library
-import torch
 from torch.utils.data import DataLoader, DistributedSampler
-import torch.optim
-
-import cv2 as cv
 
 try:
     from .datapipeline import *
+    from .utils import *
 except:
     from datapipeline import *
-
-def create_path(IMGS_PATH, list_new_files):
-    '''
-    Util function to add the file path of all the images to the list of names of the selected 
-    images that will form the valid ones.
-    '''
-    file_path, name = os.path.split(
-        IMGS_PATH[0])  # we pick only one element of the list
-    output = [os.path.join(file_path, element) for element in list_new_files]
-
-    return output
-
-
-def common_member(a, b):
-    '''
-    Returns true if the two lists (valid and training) have a common element.
-    '''
-    a_set = set(a)
-    b_set = set(b)
-    if (a_set & b_set):
-        return True
-    else:
-        return False
-
-
-def random_sort_pairs(list1, list2):
-    '''
-    This function makes the same random sort to each list, so that they are sorted and the pairs are maintained.
-    '''
-    # Combine the lists
-    combined = list(zip(list1, list2))
-
-    # Shuffle the combined list
-    random.shuffle(combined)
-
-    # Unzip back into separate lists
-    list1[:], list2[:] = zip(*combined)
-
-    return list1, list2
-
-def flatten_list_comprehension(matrix):
-    return [item for row in matrix for item in row]
+    from utils import *
 
 def main_dataset_gopro_lolblur(rank=1, train_path='/mnt/valab-datasets/GOPRO/train', test_path='/mnt/valab-datasets/GOPRO/test',
                        batch_size_train=4, flips = None, batch_size_test=1, verbose=False, cropsize=512,
@@ -66,27 +21,20 @@ def main_dataset_gopro_lolblur(rank=1, train_path='/mnt/valab-datasets/GOPRO/tra
 
     dirs_train = os.listdir(PATH_TRAIN)
     dirs_valid = os.listdir(PATH_VALID)
-    # print(dirs_train)
+
     # paths to the blur and sharp sets of images
     paths_blur = [os.path.join(PATH_TRAIN, x, 'blur') for x in dirs_train]
     paths_sharp = [os.path.join(PATH_TRAIN, x, 'sharp') for x in dirs_train]
 
-    paths_blur_valid = [os.path.join(PATH_VALID, x, 'blur')
-                        for x in dirs_valid]
-    paths_sharp_valid = [os.path.join(
-        PATH_VALID, x, 'sharp') for x in dirs_valid]
+    paths_blur_valid = [os.path.join(PATH_VALID, x, 'blur') for x in dirs_valid]
+    paths_sharp_valid = [os.path.join(PATH_VALID, x, 'sharp') for x in dirs_valid]
 
     # add the blurred and sharp images from each gopro
     list_blur = [glob(os.path.join(x, '*.png')) for x in paths_blur]
     list_sharp = [glob(os.path.join(x, '*.png')) for x in paths_sharp]
 
-    list_blur_valid = [glob(os.path.join(x, '*.png'))
-                       for x in paths_blur_valid]
-    list_sharp_valid = [glob(os.path.join(x, '*.png'))
-                        for x in paths_sharp_valid]
-
-    def flatten_list_comprehension(matrix):
-        return [item for row in matrix for item in row]
+    list_blur_valid = [glob(os.path.join(x, '*.png')) for x in paths_blur_valid]
+    list_sharp_valid = [glob(os.path.join(x, '*.png')) for x in paths_sharp_valid]
 
     # we scale the number of gopro images to the images in lolblur
     list_blur_gopro = flatten_list_comprehension(list_blur)
@@ -96,11 +44,8 @@ def main_dataset_gopro_lolblur(rank=1, train_path='/mnt/valab-datasets/GOPRO/tra
     list_sharp_valid_gopro = flatten_list_comprehension(list_sharp_valid)
 
     # check if all the image routes are correct
-    trues = [os.path.isfile(file) for file in list_blur_gopro +
-             list_sharp_gopro+list_blur_valid_gopro+list_sharp_valid_gopro]
-    for true in trues:
-        if true != True:
-            print('Non valid route!')
+    check_paths([list_blur_gopro, list_blur_valid_gopro, 
+                 list_sharp_gopro, list_sharp_valid_gopro])
 
     print('Images in the GOPRO subsets: \n')
     print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur_gopro))
@@ -108,7 +53,6 @@ def main_dataset_gopro_lolblur(rank=1, train_path='/mnt/valab-datasets/GOPRO/tra
     print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid_gopro))
     print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid_gopro))
     
-    print(len(list_blur_gopro))
     # --------------------------------------------------------------------------------------
     # now load the lolblur dataset
 
@@ -122,12 +66,6 @@ def main_dataset_gopro_lolblur(rank=1, train_path='/mnt/valab-datasets/GOPRO/tra
     paths_blur_valid = [os.path.join(PATH_VALID, 'low_blur_noise', path) for path in os.listdir(os.path.join(PATH_VALID, 'low_blur_noise'))]
     paths_sharp_valid = [os.path.join(PATH_VALID, 'high_sharp_scaled', path) for path in os.listdir(os.path.join(PATH_VALID, 'high_sharp_scaled'))]        
     
-    # print(len(paths_blur), len(paths_blur_valid), len(paths_sharp), len(paths_sharp_valid))
-    
-    # extract the images from their corresponding folders, now we get a list of lists
-    # paths_blur = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur ]
-    # paths_sharp = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp ]
-
     paths_blur_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_blur_valid ]
     paths_sharp_valid = [[os.path.join(path_element, path_png) for path_png in os.listdir(path_element)] for path_element in paths_sharp_valid ]
 
@@ -138,11 +76,8 @@ def main_dataset_gopro_lolblur(rank=1, train_path='/mnt/valab-datasets/GOPRO/tra
     list_sharp_valid_lolblur = flatten_list_comprehension(paths_sharp_valid)
 
     # check if all the image routes are correct
-    trues = [os.path.isfile(file) for file in list_blur_lolblur +
-             list_sharp_lolblur+list_blur_valid_lolblur+list_sharp_valid_lolblur]
-    for true in trues:
-        if true != True:
-            print('Non valid route!')
+    check_paths([list_blur_lolblur, list_blur_valid_lolblur, 
+                 list_sharp_lolblur, list_sharp_valid_lolblur])
 
     if verbose:
         print('Images in the LOLBlur subsets: \n')
@@ -154,15 +89,6 @@ def main_dataset_gopro_lolblur(rank=1, train_path='/mnt/valab-datasets/GOPRO/tra
 
     list_blur  = list_blur_gopro + list_blur_lolblur
     list_sharp = list_sharp_gopro + list_sharp_lolblur
-    # list_blur_valid = list_blur_valid_gopro + list_blur_valid_lolblur
-    # list_sharp_valid = list_sharp_valid_gopro + list_sharp_valid_lolblur 
-
-    # if verbose:
-    #     print('Total images in the subsets: \n')
-    #     print("    -Images in the PATH_LOW_TRAINING folder: ", len(list_blur))
-    #     print("    -Images in the PATH_HIGH_TRAINING folder: ", len(list_sharp))
-    #     print("    -Images in the PATH_LOW_VALID folder: ", len(list_blur_valid))
-    #     print("    -Images in the PATH_HIGH_VALID folder: ", len(list_sharp_valid))
 
     # define the transforms applied to the image for training and testing (only tensor transform) when read
     # transforms from PIL to torchTensor, normalized to [0,1] and the correct permutations for torching working

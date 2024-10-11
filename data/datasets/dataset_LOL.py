@@ -1,61 +1,19 @@
 import os
 from glob import glob
-import random
 
 # PyTorch library
-import torch
-from torch.utils.data import DataLoader
-import torch.optim
-
-import cv2 as cv
+from torch.utils.data import DataLoader, DistributedSampler
 
 try:
     from .datapipeline import *
+    from .utils import *
 except:
-    from data.datasets.datapipeline import *
+    from datapipeline import *
+    from utils import *
 
-def create_path(IMGS_PATH, list_new_files):
-    '''
-    Util function to add the file path of all the images to the list of names of the selected 
-    images that will form the valid ones.
-    '''
-    file_path, name = os.path.split(
-        IMGS_PATH[0])  # we pick only one element of the list
-    output = [os.path.join(file_path, element) for element in list_new_files]
-
-    return output
-
-
-def common_member(a, b):
-    '''
-    Returns true if the two lists (valid and training) have a common element.
-    '''
-    a_set = set(a)
-    b_set = set(b)
-    if (a_set & b_set):
-        return True
-    else:
-        return False
-
-
-def random_sort_pairs(list1, list2):
-    '''
-    This function makes the same random sort to each list, so that they are sorted and the pairs are maintained.
-    '''
-    # Combine the lists
-    combined = list(zip(list1, list2))
-
-    # Shuffle the combined list
-    random.shuffle(combined)
-
-    # Unzip back into separate lists
-    list1[:], list2[:] = zip(*combined)
-
-    return list1, list2
-
-def main_dataset_lol(train_path='/mnt/valab-datasets/LOL/train', test_path='/mnt/valab-datasets/LOL/test',
+def main_dataset_lol(rank = 0,train_path='/mnt/valab-datasets/LOL/train', test_path='/mnt/valab-datasets/LOL/test',
                        batch_size_train=4, batch_size_test=1, verbose=False, cropsize=512, flips = None,
-                       num_workers=1, crop_type='Random'):
+                       num_workers=1, crop_type='Random', world_size=1):
     
     
     PATH_TRAIN = train_path
@@ -68,9 +26,6 @@ def main_dataset_lol(train_path='/mnt/valab-datasets/LOL/train', test_path='/mnt
     paths_blur_valid = [os.path.join(PATH_VALID, 'low', path) for path in os.listdir(os.path.join(PATH_VALID, 'low'))]
     paths_sharp_valid = [os.path.join(PATH_VALID, 'high', path) for path in os.listdir(os.path.join(PATH_VALID, 'high'))]        
 
-    print(len(paths_blur), len(paths_blur_valid), len(paths_sharp), len(paths_sharp_valid))
-
-
     list_blur = paths_blur
     list_sharp = paths_sharp
 
@@ -78,11 +33,7 @@ def main_dataset_lol(train_path='/mnt/valab-datasets/LOL/train', test_path='/mnt
     list_sharp_valid = paths_sharp_valid
 
     # check if all the image routes are correct
-    trues = [os.path.isfile(file) for file in list_blur +
-             list_sharp+list_blur_valid+list_sharp_valid]
-    for true in trues:
-        if true != True:
-            print('Non valid route!')
+    check_paths([list_blur, list_blur_valid, list_sharp, list_sharp_valid])
 
     if verbose:
         print('Images in the subsets: \n')
@@ -106,14 +57,28 @@ def main_dataset_lol(train_path='/mnt/valab-datasets/LOL/train', test_path='/mnt
     test_dataset = MyDataset_Crop(list_blur_valid, list_sharp_valid, cropsize=None,
                                   tensor_transform=tensor_transform, test=True, crop_type=crop_type)
 
-    # #Load the data loaders
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=True,
-                              num_workers=num_workers, pin_memory=True, drop_last=True)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size_test, shuffle=True,
-                             num_workers=num_workers, pin_memory=True, drop_last=False)
-    # #test_loader = None
+    if world_size > 1:
+        # Now we need to apply the Distributed sampler
+        train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, shuffle= True, rank=rank)
+        test_sampler = DistributedSampler(test_dataset, num_replicas=world_size, shuffle= True, rank=rank)
 
-    return train_loader, test_loader
+        samplers = []
+        # samplers = {'train': train_sampler, 'test': [test_sampler_gopro, test_sampler_lolblur]}
+        samplers.append(train_sampler)
+        samplers.append(test_sampler)
+
+        train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=False,
+                                num_workers=num_workers, pin_memory=True, drop_last=True, sampler=train_sampler)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size_test, shuffle=False,
+                                num_workers=num_workers, pin_memory=True, drop_last=False, sampler=test_sampler)
+    else:
+        train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size_train, shuffle=True,
+                                num_workers=num_workers, pin_memory=True, drop_last=True)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size_test, shuffle=True,
+                                num_workers=num_workers, pin_memory=True, drop_last=False)    
+        samplers = None   
+
+    return train_loader, test_loader, samplers
 
 if __name__ == '__main__':
     
