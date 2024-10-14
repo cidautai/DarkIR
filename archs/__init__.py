@@ -24,7 +24,7 @@ def freeze_parameters(model,
     # for name, param in model.named_parameters():
     #     print(f"{name}: requires_grad={param.requires_grad}") 
 
-def create_model(opt, cuda, rank, adapter = False, substring = 'adapter'):
+def create_model(opt, rank, adapter = False, substring = 'adapter'):
     '''
     Creates the model.
     opt: a dictionary from the yaml config key network
@@ -65,7 +65,7 @@ def create_model(opt, cuda, rank, adapter = False, substring = 'adapter'):
     
     #freeze the parameters before feeding into the DDP
     model = freeze_parameters(model, substring=substring, adapter=adapter)
-    model = DDP(model, device_ids=[rank])
+    model = DDP(model, device_ids=[rank], find_unused_parameters=True)
     
     return model, macs, params
 

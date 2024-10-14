@@ -42,7 +42,7 @@ def run_model(rank, world_size):
     # LOAD THE DATALOADERS
     train_loader, test_loader, samplers = create_data(rank, world_size=world_size, opt = opt['datasets'])
     # DEFINE NETWORK, SCHEDULER AND OPTIMIZER
-    model, macs, params = create_model(opt['network'], cuda = opt['device'], rank=rank, adapter=True)
+    model, macs, params = create_model(opt['network'], rank=rank, adapter=True)
 
     # save this stats into opt to upload to wandb
     opt['macs'] = macs
