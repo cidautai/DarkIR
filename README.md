@@ -155,11 +155,13 @@ which will be saved in `./videos/results`.
 This work has been accepted for publication and presentation at The IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) 2025.
 
 ```
-@inproceedings{feijoo2024darkir,
-  title={DarkIR: Robust Low-Light Image Restoration},
-  author={Feijoo, Daniel and Benito, Juan C and Garcia, Alvaro and Conde, Marcos V},
-  booktitle={IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year={2025}
+@InProceedings{Feijoo_2025_CVPR,
+    author    = {Feijoo, Daniel and Benito, Juan C. and Garcia, Alvaro and Conde, Marcos V.},
+    title     = {DarkIR: Robust Low-Light Image Restoration},
+    booktitle = {Proceedings of the Computer Vision and Pattern Recognition Conference (CVPR)},
+    month     = {June},
+    year      = {2025},
+    pages     = {10879-10889}
 }
 ```
 
