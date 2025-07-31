@@ -5,11 +5,16 @@
 
 **[Daniel Feijoo](https://scholar.google.com/citations?hl=en&user=hqbPn4YAAAAJ), [Juan C. Benito](https://scholar.google.com/citations?hl=en&user=f186MIUAAAAJ), [Alvaro Garcia](https://scholar.google.com/citations?hl=en&user=c6SJPnMAAAAJ), [Marcos V. Conde](https://scholar.google.com/citations?user=NtB1kjYAAAAJ&hl=en)** (CIDAUT AI  and University of Wuerzburg)
 
-🚀 Try the model for free in 🤗 [HuggingFace Spaces: DarkIR](https://huggingface.co/spaces/Cidaut/DarkIR), download [model weights/checkpoint](https://cidautes-my.sharepoint.com/:f:/g/personal/alvgar_cidaut_es/Epntbl4SucFNpeIT_jyYZ-cB9BamMbacbyq_svrkMCpShA?e=XB9YBB) and [HF checkpoint](https://huggingface.co/Cidaut/DarkIR/). 
+🚀 The model was presented at CVPR 2025, thanks for your support. Try the model for free in 🤗 [HuggingFace Spaces: DarkIR](https://huggingface.co/spaces/Cidaut/DarkIR), download [model weights/checkpoint](https://cidautes-my.sharepoint.com/:f:/g/personal/alvgar_cidaut_es/Epntbl4SucFNpeIT_jyYZ-cB9BamMbacbyq_svrkMCpShA?e=XB9YBB) and [HF checkpoint](https://huggingface.co/Cidaut/DarkIR/). 
 
 **TLDR.** In low-light conditions, you have noise and blur in the images, yet, previous methods cannot tackle dark noisy images and dark blurry using a single model. We propose the first approach for all-in-one low-light restoration including illumination, noisy and blur enhancement.
 
 *We evaluate our model on LOLBlur, RealLOLBlur, LOL, LOLv2 and LSRW. Follow this repo to receive updates :)*
+
+🔥 [NEWS 2025] DarkIR was a top solution in 3 NTIRE 2025 challenges! 
+- "NTIRE 2024 challenge on low light image enhancement"
+- "NTIRE 2025 challenge on efficient burst hdr and restoration"
+- "NTIRE 2025 challenge on day and night raindrop removal for dual-focused images" 
 
 <details>
 <summary> <b> ABSTRACT </b> </summary>
