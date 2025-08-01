@@ -8,7 +8,11 @@ except:
     from archs.arch_model import EBlock, DBlock
     from .arch_util import CustomSequential
 
-class DarkIR(nn.Module):
+
+from huggingface_hub import PyTorchModelHubMixin
+
+
+class DarkIR(nn.Module, PyTorchModelHubMixin, repo_url="https://github.com/cidautai/DarkIR", pipeline_tag="image-to-image", tags=["image-super-resolution"]):
     
     def __init__(self, img_channel=3, 
                  width=32, 
