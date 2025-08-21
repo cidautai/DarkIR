@@ -15,7 +15,7 @@ args = parser.parse_args()
 
 path_options = args.config
 opt = parse(path_options)
-os.environ["CUDA_VISIBLE_DEVICES"]= "1"
+os.environ["CUDA_VISIBLE_DEVICES"]= "0"
 
 # PyTorch library
 import torch
