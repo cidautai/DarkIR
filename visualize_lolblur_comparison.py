@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# Team responsibility: Hemanth Sai -- LOLBlur qualitative comparison.
 from pathlib import Path
 import re
 import torch

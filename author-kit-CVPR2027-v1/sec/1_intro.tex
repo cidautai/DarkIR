@@ -1,0 +1,79 @@
+\section{Introduction}
+\label{sec:intro}
+
+Low-light imaging suffers from insufficient illumination, sensor noise,
+motion blur, color distortion, and loss of fine structural details.
+These effects degrade visual appearance and reduce the reliability of
+downstream computer vision systems operating on the captured image.
+Restoration methods are commonly optimized using pixel fidelity and
+perceptual objectives, such as L1 loss, LPIPS, or structural similarity.
+However, improved image-level metrics do not necessarily produce an image
+that is more useful for object detection or recognition.
+
+DarkIR is a compact convolutional restoration framework designed for
+low-light enhancement and deblurring~\cite{feijoo2025darkir}. It combines
+spatial and frequency-domain processing in an asymmetric encoder-decoder
+architecture and achieves competitive restoration performance on LOLBlur
+and several low-light restoration benchmarks. DarkIR provides a suitable
+baseline for this project because its pretrained weights, moderate model
+size, and efficient architecture permit controlled fine-tuning and
+downstream evaluation.
+
+The central research question is whether task-aware supervision can guide
+low-light restoration toward stronger downstream object-detection utility
+while maintaining competitive restoration quality. The preliminary project
+proposal investigated this problem by proposing a lightweight task-aware
+loss based on intermediate representations from a fixed vision model. It
+also proposed adaptive feature modulation and a four-way ablation, but these
+components were not implemented during the final experiments. The
+preliminary report therefore represents a research plan rather than the
+description of the final algorithm.
+
+The midterm study implemented a first controlled task-aware experiment,
+denoted V1. In V1, a frozen Faster R-CNN ResNet-50 FPN was used to extract
+normalized features from restored and paired-reference images~\cite{ren2015fasterrcnn}.
+A cosine-distance feature-consistency loss was added to L1 restoration
+supervision, while detector parameters remained fixed. The V1
+implementation was evaluated after correcting its detector preprocessing
+and COCO evaluation protocol. Matched 50,000-step control and task-aware
+runs showed no consistent detection improvement; in particular, the
+original low-light inputs remained stronger than the enhanced variants
+under the frozen COCO-pretrained detector. These results indicated that
+feature similarity alone does not guarantee improved detection utility.
+
+Based on this evidence, the final methodology was redesigned as Balanced
+V2. Both control and detection-guided arms use the same restoration
+objective:
+\[
+L_{\mathrm{restoration}}
+=
+L_1
++
+0.10L_{\mathrm{LPIPS}}
++
+0.05L_{\mathrm{edge}},
+\]
+and differ only by direct detection-loss supervision. The detection-guided
+objective uses the sum of the Faster R-CNN classification, box-regression,
+objectness, and RPN box-regression losses from a frozen ExDark-trained
+teacher:
+\[
+L_{\mathrm{V2}}
+=
+L_{\mathrm{restoration}}
++
+\lambda_{\mathrm{det}}L_{\mathrm{detector}}.
+\]
+
+Detection weights of 0.05, 0.10, and 0.20 are evaluated. The 0.10 model is
+selected as the primary model because it provides the strongest balance of
+mAP@50 and mAP@50:95 among the tested guided configurations.
+
+The 5K Balanced V2 experiments show that detection guidance improves
+detection relative to the matched control under both an ExDark-trained
+teacher and an independent frozen COCO-pretrained detector. The improvement
+comes with a modest restoration-quality trade-off. The original low-light
+inputs remain stronger in absolute detection scores in both protocols, and
+only one training seed is available. The final study therefore evaluates a
+conditional restoration--detection trade-off rather than claiming that
+image enhancement universally improves detection.

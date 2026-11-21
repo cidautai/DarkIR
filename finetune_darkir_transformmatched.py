@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# Team responsibility: Hemanth Sai -- V1 feature-consistency experiments.
 """Matched DarkIR fine-tuning with detector-transform-aligned feature supervision.
 
 Task mode uses the same torchvision Faster R-CNN normalize/resize transform used at

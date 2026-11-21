@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Team responsibility: Hemanth Sai -- Balanced V2 DarkIR fine-tuning implementation.
 """Balanced V2 DarkIR fine-tuning: restoration control or detector-guided.
 
 Run from the DarkIR repository root. This local experiment script does not

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Team responsibility: Bhanu Prakash -- implementation/evaluation; Sanjay Naidu -- evaluator review.
 """Cross-detector validation of Balanced V2 DarkIR on official ExDark validation.
 
 Uses an independent, frozen torchvision COCO-pretrained Faster R-CNN ResNet-50 FPN

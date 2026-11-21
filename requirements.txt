@@ -6,6 +6,7 @@ numpy==2.0.0
 opencv-python==4.10.0.84
 pandas==2.2.2
 pillow==10.3.0
+pycocotools==2.0.11
 ptflops==0.7.3
 pyiqa==0.1.13
 pytorch-msssim==1.0.0

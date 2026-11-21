@@ -1,0 +1,56 @@
+% CVPR 2027 Paper Template; see https://github.com/cvpr-org/author-kit
+
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+%%%%%%%%% PAPER TYPE  - PLEASE UPDATE FOR FINAL VERSION
+% \usepackage{cvpr}              % To produce the CAMERA-READY version
+\usepackage[pagenumbers]{cvpr} % Course-report layout with page numbers
+% 
+
+% Import additional packages in the preamble file, before hyperref
+\input{preamble}
+
+% It is strongly recommended to use hyperref, especially for the review version.
+% hyperref with option pagebackref eases the reviewers' job.
+% Please disable hyperref *only* if you encounter grave issues, 
+% e.g. with the file validation for the camera-ready version.
+%
+% If you comment hyperref and then uncomment it, you should delete *.aux before re-running LaTeX.
+% (Or just hit 'q' on the first LaTeX run, let it finish, and you should be clear).
+\definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
+\usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
+
+\def\confName{DLCV}
+\def\confYear{Fall 2026}
+
+%%%%%%%%% TITLE - PLEASE UPDATE
+\title{Task-Aware Low-Light Image Restoration for Robust Computer Vision}
+
+%%%%%%%%% AUTHORS - PLEASE UPDATE
+\author{Machi Reddy Hemanth Sai --- S20230030389\\
+{\tt\small hemanthsai.m23@iiits.in}
+\and
+N. Bhanu Prakash --- S20230020325\\
+{\tt\small bhanuprakash.n23@iiits.in}
+\and
+K. Sanjay Naidu --- S20230020309\\
+{\tt\small sanjaynaidu.k23@iiits.in}\\
+Indian Institute of Information Technology Sri City\\
+{\small Group 22 --- Deep Learning for Computer Vision, Fall 2026}
+}
+
+\begin{document}
+\maketitle
+\input{sec/0_abstract}    
+\input{sec/1_intro}
+\input{sec/2_formatting}
+{
+    \small
+    \bibliographystyle{ieeenat_fullname}
+    \bibliography{main}
+}
+
+% WARNING: do not forget to delete the supplementary pages from your submission 
+% \input{sec/X_suppl}
+
+\end{document}

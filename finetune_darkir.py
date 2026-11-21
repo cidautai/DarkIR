@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# Team responsibility: Hemanth Sai -- matched DarkIR fine-tuning experiments.
 """Matched fine-tuning control/task-aware experiment for DarkIR on LOL-Blur."""
 import argparse
 import random

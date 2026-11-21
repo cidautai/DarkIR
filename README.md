@@ -120,6 +120,52 @@ To check our results you could run the evaluation of DarkIR in each of the datas
 
 > You may also check the qualitative results in `Real-LOLBlur` and LLIE unpaired by running `python testing_unpaired.py -p ./options/test/<config.yml>`. Default is RealBlur.
 
+## Balanced V2 Research Reproduction
+
+The Balanced V2 scripts use the generated manifests under
+`data/manifests/balanced_v2/`. Run the following commands from the repository
+root. The 5K checkpoints, ExDark teacher checkpoint, and raw datasets are
+local artifacts and are not included in this repository.
+
+```bash
+# Train or retrain the ExDark teacher
+python train_exdark_teacher_v2.py
+
+# Train the 5K control and detection-guided models
+python train_darkir_balanced_v2_memory_safe.py --mode control --steps 5000 \
+  --output-dir models/balanced_v2_5k
+
+python train_darkir_balanced_v2_memory_safe.py --mode detection --steps 5000 \
+  --detection-weight 0.10 --output-dir models/balanced_v2_5k
+
+# Evaluate the weight-0.10 models on LOLBlur internal validation
+# and ExDark official validation
+python evaluate_balanced_v2.py \
+  --control-checkpoint models/balanced_v2_5k/DarkIR_v2_control_pilot_5000.pt \
+  --detection-checkpoint models/balanced_v2_5k/DarkIR_v2_detection_pilot_5000.pt \
+  --output-dir results/balanced_v2_5k_validation
+
+# Evaluate the same checkpoints with the independent COCO detector
+python evaluate_v2_independent_coco_detector.py \
+  --control-checkpoint models/balanced_v2_5k/DarkIR_v2_control_pilot_5000.pt \
+  --detection-checkpoint models/balanced_v2_5k/DarkIR_v2_detection_pilot_5000.pt \
+  --output-dir results/v2_independent_coco_detector_5k
+
+# Generate qualitative detector overlays from the final checkpoints
+python visualize_exdark_checkpoint_comparison.py
+
+# Reconcile 12-class per-class results
+python analyze_balanced_v2_5k_fixed.py
+```
+
+Repeat detection training with `--detection-weight 0.05` or `0.20` and
+matching ablation output directories. The control and all detection-guided
+arms use seed 2026 and 5,000 optimizer steps. No GPU retraining or metric
+rerun is required to interpret or package the committed result artifacts.
+The qualitative visualization command requires the local ExDark images,
+the listed checkpoints, and CUDA; it runs the checkpoints on three fixed
+official-validation examples and does not recompute aggregate metrics.
+
 ## Inference
 
 You can restore a whole set of images in a folder by running: 
@@ -173,4 +219,3 @@ This work has been accepted for publication and presentation at The IEEE/CVF Con
 ## Contact
 
 If you have any questions, please contact danfei@cidaut.es and marcos.conde@uni-wuerzburg.de
-

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Team responsibility: Sanjay Naidu -- ExDark Faster R-CNN teacher training.
 """Fine-tune a 12-class ExDark Faster R-CNN teacher for Balanced V2.
 
 Run from the DarkIR repository root. Uses the generated manifests in

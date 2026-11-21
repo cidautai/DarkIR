@@ -1,0 +1,31 @@
+\begin{abstract}
+Low-light images suffer from illumination loss, noise, blur, and color
+distortion that reduce both visual quality and downstream recognition
+performance. This project investigates whether detection-aware supervision
+can improve low-light restoration while preserving restoration fidelity,
+using DarkIR as the restoration baseline. We first reproduced DarkIR-m on
+LOLBlur and implemented a V1 feature-consistency approach based on normalized
+Faster R-CNN feature distances. Matched 50,000-step control and task-aware
+experiments showed no consistent detection improvement, motivating a direct
+detection-loss formulation.
+
+The final Balanced V2 method trains a DarkIR-m network using a combined L1,
+LPIPS, and Sobel edge restoration loss. Detection-guided variants additionally
+minimize the four Faster R-CNN detection losses---classification, box
+regression, objectness, and RPN box regression---from a frozen
+ExDark-trained Faster R-CNN ResNet-50 FPN teacher. Detection weights of
+0.05, 0.10, and 0.20 are compared against a matched control, with 0.10
+selected as the primary model.
+
+On the 1,020-image scene-disjoint LOLBlur validation split, the control
+achieves the best restoration quality. Relative to control, the 0.10 model
+decreases PSNR from 33.5311 to 33.4139 dB and SSIM from 0.92083 to 0.91929,
+while increasing LPIPS from 0.06793 to 0.06976. Under the ExDark-trained
+teacher on 1,800 official-validation images, the 0.10 model improves
+mAP@50 from 0.6985 to 0.7189 and mAP@50:95 from 0.4058 to 0.4204 relative
+to control. Similar gains occur under an independent frozen
+COCO-pretrained detector. Original low-light inputs remain stronger in
+absolute detection scores in both protocols. These results demonstrate a
+measured restoration--detection trade-off without establishing statistical
+significance or universal improvement across raw low-light images.
+\end{abstract}

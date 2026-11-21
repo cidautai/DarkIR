@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Team responsibility: Bhanu Prakash -- evaluator implementation; Sanjay Naidu -- protocol review.
 """Compare a frozen COCO Faster R-CNN on ExDark low-light images and DarkIR variants.
 
 Default split is ExDark validation (split code 2). Keep the ExDark test split (code 3)

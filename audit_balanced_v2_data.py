@@ -1,3 +1,9 @@
+"""
+Team responsibility: Bhanu Prakash -- Balanced V2 dataset and partition audit.
+
+This script verifies LOLBlur scene/pair separation and ExDark official split
+resolution without modifying datasets or checkpoints.
+"""
 from pathlib import Path
 from collections import Counter
 from PIL import Image

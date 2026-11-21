@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Team responsibility: Bhanu Prakash -- evaluator implementation; Sanjay Naidu -- protocol review.
 """Audited ExDark detection evaluation for DarkIR variants using standard COCOeval.
 
 Uses the official ExDark split and bbox format, maps its 12 labels to matching COCO

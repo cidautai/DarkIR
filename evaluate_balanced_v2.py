@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Team responsibility: Bhanu Prakash -- implementation/evaluation; Sanjay Naidu -- evaluator review.
 """Validate Balanced V2 DarkIR pilots on reserved LOLBlur and ExDark splits.
 
 Run from the DarkIR repository root. This script is read-only with respect to

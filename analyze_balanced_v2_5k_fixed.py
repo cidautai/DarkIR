@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Team responsibility: Bhanu Prakash -- per-class result reconciliation.
 """Compare per-class Balanced V2 5K results from both ExDark evaluators.
 
 Reads the two existing JSON metric files only. The ExDark-teacher evaluator
